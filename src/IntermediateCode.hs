@@ -6,6 +6,7 @@
                 syntax tree.
   Copyright   : 2014, Jonas Cleve
                 2015, Tay Phuong Ho
+                2016, Philip Schmiel
   License     : GPL-3
 -}
 module IntermediateCode (
@@ -140,6 +141,8 @@ command cmd next = case cmd of
           then return (tac ++ [TAC.Output data_], [], "")
         else if type_ == "double"
           then return (tac ++ [TAC.FOutput data_], [], "")
+        else if type_ == "char"
+          then return (tac ++ [TAC.Output data_], [], "")
         else error "No native support for outputting arrays."
   AST.Return e -> do -- $ added
     (tac,data_,type_) <- expression e
@@ -379,6 +382,7 @@ expressionInto varFunc expr = case expr of
           return (tac ++ [TAC.Call var' $ head signature], TAC.Variable var', returnType)
   AST.Integer n -> return ([], TAC.ImmediateInteger n, "int")  -- $ modified
   AST.Double n -> return ([], TAC.ImmediateDouble n, "double") -- $ added
+  AST.Character c -> return ([], TAC.ImmediateChar c, "char")
 
 -- | Generates three address code for one boolean expression in the AST
 -- (possibly generating code for boolean subexpressions first).

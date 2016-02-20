@@ -3,6 +3,7 @@
   Description :
   Copyright   : 2014, Jonas Cleve
                 2015, Tay Phuong Ho
+                2016, Philip Schmiel
   License     : GPL-3
 -}
 module Interface.Nasm (
@@ -20,7 +21,7 @@ import Prelude (
     String, Int, Bool (..), Maybe (..),
     show, otherwise, not,
     (++), (*), (||), (&&),
-    Double
+    Double, Char
   )
 import Data.Int (
     Int64
@@ -105,12 +106,14 @@ instance NasmCode Location where
 data Immediate 
   = ImmediateInt Int64     -- $ modified
   | ImmediateDouble Double -- $ added
+  | ImmediateChar Char
   deriving (Eq, Ord, Show)
 
 -- $| Show the immediate.
 instance NasmCode Immediate where
   toCode (ImmediateInt i) = show i     -- $ modified
   toCode (ImmediateDouble i) = show i  -- $ added
+  toCode (ImmediateChar c) = show c
 
 -- | General operands for assembly instructions.
 data Operand

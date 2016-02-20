@@ -6,6 +6,7 @@
                 representation.
   Copyright   : 2014, Jonas Cleve
                 2015, Tay Phuong Ho
+                2016, Philip Schmiel
   License     : GPL-3
 -}
 module Nasm (
@@ -138,6 +139,7 @@ dataToOperand :: TAC.Data -> State StateContent Operand
 dataToOperand (TAC.Variable v) = variableToOperand v
 dataToOperand (TAC.ImmediateInteger i) = return $ Immediate $ ImmediateInt i   -- $ modified
 dataToOperand (TAC.ImmediateDouble i) = return $ Immediate $ ImmediateDouble i -- $ added
+dataToOperand (TAC.ImmediateChar c) = return $ Immediate $ ImmediateChar c
 
 -- | Converts a IC variable to an assembly operand.
 variableToOperand :: TAC.Variable -> State StateContent Operand

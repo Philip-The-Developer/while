@@ -4,17 +4,18 @@
                 syntax tree.
   Copyright   : 2014, Jonas Cleve
                 2015, Tay Phuong Ho
+                2016, Philip Schmiel
   License     : GPL-3
 -}
 module Interface.TAC (
-  TAC, Command (..), Data (..), Variable, ImmediateInteger, ImmediateDouble, Label, GotoCondition1 (..),
+  TAC, Command (..), Data (..), Variable, ImmediateInteger, ImmediateDouble, ImmediateChar, Label, GotoCondition1 (..),
   GotoCondition2 (..),
   invertCond1, invertCond2, isGoto, getLabelFromGoto,
   getDefVariables, getUseVariables, getVariables, renameVariables
 ) where
 
 import Prelude (
-    Show (show), Eq,
+    Show (show), Eq, Char,
     String, Bool (..),
     error,
     (++), ($), (==),
@@ -171,6 +172,7 @@ data Data
   = Variable Variable
   | ImmediateInteger ImmediateInteger -- $ modified
   | ImmediateDouble ImmediateDouble   -- $ added
+  | ImmediateChar ImmediateChar
   deriving (Eq)
 
 -- | Returns variable names as they are and applies `show` to immediate values.
@@ -178,6 +180,7 @@ instance Show Data where
   show (Variable v) = v
   show (ImmediateInteger i) = show i                             -- $ modified
   show (ImmediateDouble i) = show i                              -- $ added
+  show (ImmediateChar c) = show c                              
 
 -- | Variable names are just strings.
 type Variable = String
@@ -187,6 +190,9 @@ type ImmediateInteger = Int64
 
 -- $| Double-precision floating-point numbers as values.
 type ImmediateDouble = Double
+
+-- |Character as values
+type ImmediateChar = Char
 
 -- | Labels are just names, i.e. strings.
 type Label = String
