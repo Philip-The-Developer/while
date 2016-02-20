@@ -4,6 +4,7 @@
   Description : Converts source code given as string to a token stream.
   Copyright   : 2014, Jonas Cleve
                 2015, Tay Phuong Ho
+                2016, Philip Schmiel
   License     : GPL-3
 -}
 module Lexer (
@@ -12,12 +13,12 @@ module Lexer (
 ) where
 
 import Prelude (
-    String, Bool (..), Char,
+    String, Bool (..),
     break, (==), length, span, read, error, ($), (++), show, (||),
     (&&), (/=), head
   )
 import qualified Prelude (
-    Double
+    Double, Char
   )
 
 import Data.Int (
@@ -142,6 +143,7 @@ process (cur:source) pos
         "do"     -> Do
         "int"    -> Type Int      -- $ added
         "double" -> Type Double   -- $ added
+        "char"   -> Type Char
         "function"->Function      -- $ added
         _        -> Id (cur:name)
 
@@ -161,6 +163,9 @@ process (cur:source) pos
       l = length (cur:rest)
       token = Real (read ("0." ++ rest) :: Prelude.Double)
 
+-- Character
+process ('\'':c:'\'':source) pos = PosToken pos (Character (c)):process source (incrColumn pos 3)
+
 -- Single char tokens
 process (cur:source) pos
   | cur `elem` tokenCharacters =
@@ -178,7 +183,7 @@ process (cur:_) pos = error $ "Lexical error: unexpected '" ++ [cur] ++ "' " ++
 {-# ANN tokenCharacters "HLint: ignore Use string literal" #-}
 {-# ANN tokenCharacters "HLint: ignore Use String" #-}
 -- | List of special characters that should be detected by the lexer
-tokenCharacters :: [Char]
+tokenCharacters :: [Prelude.Char]
 tokenCharacters = [
     '{', '}',
     '(', ')',
@@ -187,10 +192,10 @@ tokenCharacters = [
   ]
 
 -- | Returns whether a given character is a character from @[a-zA-Z]@.
-isAlpha :: Char -> Bool
+isAlpha :: Prelude.Char -> Bool
 isAlpha c = isAsciiLower c || isAsciiUpper c
 
 {-# ANN isAlphaNumeric "HLint: ignore Use isAlphaNum" #-}
 -- | Returns whether a given character is a character from @[a-zA-Z0-9]@.
-isAlphaNumeric :: Char -> Bool
+isAlphaNumeric :: Prelude.Char -> Bool
 isAlphaNumeric c = isAlpha c || isDigit c
