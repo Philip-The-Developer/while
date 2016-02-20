@@ -1,0 +1,42 @@
+function int printarray (int[] a) {
+  int i; i := 0;
+  while i < length(a) do {
+    output a[i];
+    i := i + 1;
+  };
+  return 0;
+};
+
+#source:http://www.java-uni.de/index.php?Seite=85
+function int[] bubblesort(int[] x) {
+  int temp; int unsorted; unsorted := 1;
+  while unsorted = 1 do {
+    unsorted := 0;
+    int i; i := 0;
+    while i < length(x)-1 do {
+      if x[i] > x[i+1] then {
+        temp := x[i];
+        x[i] := x[i+1];
+        x[i+1] := temp;
+        unsorted := 1;
+      };
+    i := i+1;
+    };
+  };
+  return x;
+};
+
+int mock;
+int[10] a;
+a[0] := 8;
+a[1] := 6;
+a[2] := 2;
+a[3] := 5;
+a[4] := 3;
+a[5] := 9;
+a[6] := 4;
+a[7] := 10;
+a[8] := 1;
+a[9] := 7;
+a := bubblesort(a);
+mock := printarray(a);

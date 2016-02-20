@@ -1,0 +1,16 @@
+int k;
+read k;
+int i;
+i := 0;
+while k > 1 do {
+    output k;
+    if k mod 2 = 0 then {
+        k := k / 2;
+    }
+    else {
+        k := k * 3 + 1;
+    };
+    i := i + 1;
+};
+output k;
+output i;

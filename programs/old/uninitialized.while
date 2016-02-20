@@ -1,0 +1,8 @@
+int b;
+b := 0;
+while b <= 1 do {
+    int a;
+    if b = 1 then output a;
+    a := 15;
+    b := b + 1;
+};

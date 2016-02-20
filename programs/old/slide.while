@@ -1,0 +1,2 @@
+int x;
+if x >= 14 then x := 2 * x + 1;

@@ -1,0 +1,30 @@
+# We read two positions
+int x1; int y1; int z1;
+int x2; int y2; int z2;
+read x1; read y1; read z1;
+read x2; read y2; read z2;
+
+# We calculate the direction vector
+int x3; int y3; int z3;
+x3 := x2 - x1;
+y3 := y2 - y1;
+z3 := z2 - z1;
+
+# Output it
+output x3;
+output y3;
+output z3;
+# We read the desired "length"
+int length;
+read length;
+
+# We calculate the new position
+int x4; int y4; int z4;
+x4 := x1 + x3 * length;
+y4 := y1 + y3 * length;
+z4 := z1 + z3 * length;
+
+# Output it
+output x4;
+output y4;
+output z4;

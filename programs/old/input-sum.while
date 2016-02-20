@@ -1,0 +1,9 @@
+# Sums all numbers from input and outputs the result
+int sum;
+sum := 0;
+while not eof do {
+    int x;
+    read x;
+    sum := sum + x
+};
+output sum;

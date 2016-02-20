@@ -1,0 +1,15 @@
+int a; a := 1; int b; b := 1;
+double y; y := 1.; double z; z := .1;
+
+y := a + y;
+y := y + b;
+output y;
+y := y + z;
+output y;
+read z;
+y := y - z;
+output y;
+y := 2*y;
+output y;
+y := y/10;
+output y;

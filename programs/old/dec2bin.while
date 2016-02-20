@@ -1,0 +1,17 @@
+# Reads numbers from stdin and outputs them in binary form
+while not eof do {
+    int numberdec;
+    read numberdec;
+    int numberbin;
+    numberbin := 0;
+    int digit;
+    digit := 1;
+    while numberdec > 0 do {
+        int bit;
+        bit := numberdec mod 2;
+        numberdec := numberdec / 2;
+        if bit = 1 then  numberbin := numberbin + digit;
+        digit := digit * 10;
+    };
+    output numberbin;
+};

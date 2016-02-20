@@ -1,0 +1,247 @@
+src/Optimization/Dataflow/GlobalCommonSubexpressions.hs:50:1: Warning:
+    The import of `Control.Monad.State' is redundant
+      except perhaps to import instances from `Control.Monad.State'
+    To import instances alone, use: import Control.Monad.State()
+
+src/Optimization/Dataflow/GlobalCommonSubexpressions.hs:67:19: Warning:
+    This binding for `exprs' shadows the existing binding
+      bound at src/Optimization/Dataflow/GlobalCommonSubexpressions.hs:66:10
+
+src/Optimization/Dataflow/GlobalCommonSubexpressions.hs:67:26: Warning:
+    This binding for `eUsed' shadows the existing binding
+      bound at src/Optimization/Dataflow/GlobalCommonSubexpressions.hs:66:17
+
+src/Optimization/Dataflow/GlobalCommonSubexpressions.hs:67:33: Warning:
+    This binding for `eKilled' shadows the existing binding
+      bound at src/Optimization/Dataflow/GlobalCommonSubexpressions.hs:66:24
+[13 of 27] Compiling Optimization.TAC.PruneLabels ( src/Optimization/TAC/PruneLabels.hs, dist/build/compiler/compiler-tmp/Optimization/TAC/PruneLabels.o ) [Interface.TAC changed]
+[14 of 27] Compiling Optimization.TAC.UnnecessaryJumps ( src/Optimization/TAC/UnnecessaryJumps.hs, dist/build/compiler/compiler-tmp/Optimization/TAC/UnnecessaryJumps.o ) [Interface.TAC changed]
+[15 of 27] Compiling Optimization.TAC.UnneededLabels ( src/Optimization/TAC/UnneededLabels.hs, dist/build/compiler/compiler-tmp/Optimization/TAC/UnneededLabels.o ) [Interface.TAC changed]
+[16 of 27] Compiling Nasm.RegisterAllocation ( src/Nasm/RegisterAllocation.hs, dist/build/compiler/compiler-tmp/Nasm/RegisterAllocation.o )
+
+src/Nasm/RegisterAllocation.hs:66:8: Warning:
+    This binding for `registers' shadows the existing binding
+      bound at src/Nasm/RegisterAllocation.hs:48:27
+
+src/Nasm/RegisterAllocation.hs:66:19: Warning:
+    This binding for `fregisters' shadows the existing binding
+      bound at src/Nasm/RegisterAllocation.hs:48:37
+
+src/Nasm/RegisterAllocation.hs:106:10: Warning:
+    This binding for `registers' shadows the existing binding
+      bound at src/Nasm/RegisterAllocation.hs:48:27
+
+src/Nasm/RegisterAllocation.hs:106:21: Warning:
+    This binding for `fregisters' shadows the existing binding
+      bound at src/Nasm/RegisterAllocation.hs:48:37
+[17 of 27] Compiling GarbageCollection.GarbageCollection ( src/GarbageCollection/GarbageCollection.hs, dist/build/compiler/compiler-tmp/GarbageCollection/GarbageCollection.o )
+
+src/GarbageCollection/GarbageCollection.hs:33:14: Warning:
+    This binding for `deallocs' shadows the existing binding
+      bound at src/GarbageCollection/GarbageCollection.hs:32:5
+[18 of 27] Compiling Optimization.Dataflow.LiveVariables ( src/Optimization/Dataflow/LiveVariables.hs, dist/build/compiler/compiler-tmp/Optimization/Dataflow/LiveVariables.o )
+
+src/Optimization/Dataflow/LiveVariables.hs:21:1: Warning:
+    The qualified import of `Interface.TAC' is redundant
+      except perhaps to import instances from `Interface.TAC'
+    To import instances alone, use: import Interface.TAC()
+
+src/Optimization/Dataflow/LiveVariables.hs:230:47: Warning:
+    This binding for `nodes' shadows the existing binding
+      bound at src/Optimization/Dataflow/LiveVariables.hs:223:5
+
+src/Optimization/Dataflow/LiveVariables.hs:239:28: Warning:
+    This binding for `m' shadows the existing binding
+      bound at src/Optimization/Dataflow/LiveVariables.hs:230:20
+
+src/Optimization/Dataflow/LiveVariables.hs:240:22: Warning:
+    This binding for `m' shadows the existing binding
+      bound at src/Optimization/Dataflow/LiveVariables.hs:230:20
+
+src/Optimization/Dataflow/LiveVariables.hs:248:19: Warning:
+    This binding for `m' shadows the existing binding
+      bound at src/Optimization/Dataflow/LiveVariables.hs:230:20
+[19 of 27] Compiling Optimization.BasicBlocks ( src/Optimization/BasicBlocks.hs, dist/build/compiler/compiler-tmp/Optimization/BasicBlocks.o )
+[20 of 27] Compiling Optimization.TAC ( src/Optimization/TAC.hs, dist/build/compiler/compiler-tmp/Optimization/TAC.o ) [Interface.TAC changed]
+[21 of 27] Compiling Optimization.AST.ConstantFolding ( src/Optimization/AST/ConstantFolding.hs, dist/build/compiler/compiler-tmp/Optimization/AST/ConstantFolding.o )
+[23 of 27] Compiling Nasm             ( src/Nasm.hs, dist/build/compiler/compiler-tmp/Nasm.o )
+
+src/Nasm.hs:102:3: Warning:
+    Pattern match(es) are non-exhaustive
+    In a case alternative: Patterns not matched: Nothing
+
+src/Nasm.hs:162:11: Warning:
+    Pattern match(es) are non-exhaustive
+    In a case alternative:
+        Patterns not matched:
+            TAC.ArrayCopy _ (TAC.ImmediateInteger _)
+            TAC.ArrayCopy _ (TAC.ImmediateDouble _)
+
+src/Nasm.hs:368:37: Warning:
+    Defaulting the following constraint(s) to type `integer-gmp:GHC.Integer.Type.Integer'
+      (GHC.Real.Integral t0) arising from a use of `round'
+    In the expression: round
+    In the expression: round $ logBase 2 (fromIntegral o3v)
+    In the expression: (o3v < 0, round $ logBase 2 (fromIntegral o3v))
+
+src/Nasm.hs:368:45: Warning:
+    Defaulting the following constraint(s) to type `ghc-prim:GHC.Types.Double'
+      (GHC.Float.Floating a0)
+        arising from a use of `logBase' at src/Nasm.hs:368:45-51
+      (GHC.Num.Num a0) arising from the literal `2' at src/Nasm.hs:368:53
+      (GHC.Real.RealFrac a0)
+        arising from a use of `round' at src/Nasm.hs:368:37-41
+    In the second argument of `($)', namely
+      `logBase 2 (fromIntegral o3v)'
+    In the expression: round $ logBase 2 (fromIntegral o3v)
+    In the expression: (o3v < 0, round $ logBase 2 (fromIntegral o3v))
+
+src/Nasm.hs:410:46: Warning:
+    Defaulting the following constraint(s) to type `ghc-prim:GHC.Types.Double'
+      (GHC.Float.Floating a0)
+        arising from a use of `logBase' at src/Nasm.hs:410:46-52
+      (GHC.Num.Num a0) arising from the literal `2' at src/Nasm.hs:410:54
+      (GHC.Real.RealFrac a0)
+        arising from a use of `round' at src/Nasm.hs:410:38-42
+    In the second argument of `($)', namely
+      `logBase 2 (fromIntegral $ abs o3v)'
+    In the expression: round $ logBase 2 (fromIntegral $ abs o3v)
+    In the expression:
+      (o3v < 0, round $ logBase 2 (fromIntegral $ abs o3v))
+
+src/Nasm.hs:718:5: Warning:
+    Pattern match(es) are non-exhaustive
+    In an equation for `getValue':
+        Patterns not matched:
+            Location _
+            Immediate (ImmediateDouble _)
+[24 of 27] Compiling IntermediateCode ( src/IntermediateCode.hs, dist/build/compiler/compiler-tmp/IntermediateCode.o )
+
+src/IntermediateCode.hs:101:12: Warning:
+    This binding for `i' shadows the existing binding
+      bound at src/IntermediateCode.hs:94:8
+
+src/IntermediateCode.hs:105:12: Warning:
+    This binding for `i' shadows the existing binding
+      bound at src/IntermediateCode.hs:94:8
+
+src/IntermediateCode.hs:109:1: Warning:
+    Pattern match(es) are non-exhaustive
+    In an equation for `insert': Patterns not matched: _ _ []
+
+src/IntermediateCode.hs:127:8: Warning:
+    This binding for `function' shadows the existing binding
+      defined at src/IntermediateCode.hs:429:1
+
+src/IntermediateCode.hs:147:10: Warning:
+    This binding for `function' shadows the existing binding
+      defined at src/IntermediateCode.hs:429:1
+
+src/IntermediateCode.hs:249:13: Warning:
+    This binding for `type_' shadows the existing binding
+      bound at src/IntermediateCode.hs:241:9
+
+src/IntermediateCode.hs:265:13: Warning:
+    Pattern match(es) are non-exhaustive
+    In a case alternative:
+        Patterns not matched:
+            AST.Output _
+            AST.Read _
+            AST.Return _
+            AST.Skip
+            ...
+
+src/IntermediateCode.hs:266:33: Warning:
+    This binding for `i' shadows the existing binding
+      bound at src/IntermediateCode.hs:265:9
+
+src/IntermediateCode.hs:267:31: Warning:
+    This binding for `i' shadows the existing binding
+      bound at src/IntermediateCode.hs:265:9
+
+src/IntermediateCode.hs:310:66: Warning:
+    Pattern match(es) are non-exhaustive
+    In a case alternative:
+        Patterns not matched:
+            ([], _)
+            ((ghc-prim:GHC.Types.C# #x) : _, _) with #x `notElem` ['d', 'i']
+            ([ghc-prim:GHC.Types.C# 'd'], _)
+            ((ghc-prim:GHC.Types.C# 'd') : ((ghc-prim:GHC.Types.C# #x) : _), _)
+            with
+            #x `notElem` ['o']
+            ...
+
+src/IntermediateCode.hs:429:1: Warning:
+    Pattern match(es) are non-exhaustive
+    In an equation for `function':
+        Patterns not matched: _ _ _ (_, _, _, _, [], _, _)
+
+src/IntermediateCode.hs:431:21: Warning:
+    Pattern match(es) are non-exhaustive
+    In a case alternative:
+        Patterns not matched:
+            AST.Output _
+            AST.Read _
+            AST.Return _
+            AST.Skip
+            ...
+
+src/IntermediateCode.hs:432:31: Warning:
+    This binding for `i' shadows the existing binding
+      bound at src/IntermediateCode.hs:431:16
+
+src/IntermediateCode.hs:433:29: Warning:
+    This binding for `i' shadows the existing binding
+      bound at src/IntermediateCode.hs:431:16
+
+src/IntermediateCode.hs:446:1: Warning:
+    Pattern match(es) are non-exhaustive
+    In an equation for `param':
+        Patterns not matched:
+            AST.Output _
+            AST.Read _
+            AST.Return _
+            AST.Skip
+            ...
+
+src/IntermediateCode.hs:451:20: Warning:
+    This binding for `params' shadows the existing binding
+      defined at src/IntermediateCode.hs:441:1
+
+src/IntermediateCode.hs:451:34: Warning:
+    Pattern match(es) are non-exhaustive
+    In a case alternative:
+        Patterns not matched:
+            AST.Output _
+            AST.Read _
+            AST.Return _
+            AST.Skip
+            ...
+[25 of 27] Compiling Parser.Functional ( src/Parser/Functional.hs, dist/build/compiler/compiler-tmp/Parser/Functional.o )
+
+src/Parser/Functional.hs:83:14: Warning:
+    Pattern match(es) are non-exhaustive
+    In a case alternative:
+        Patterns not matched:
+            []
+            _ : (_ : (_ : _))
+
+src/Parser/Functional.hs:157:1: Warning:
+    Defined but not used: `params'
+[26 of 27] Compiling Lexer            ( src/Lexer.hs, dist/build/compiler/compiler-tmp/Lexer.o )
+[27 of 27] Compiling Main             ( src/Main.hs, dist/build/compiler/compiler-tmp/Main.o )
+
+src/Main.hs:274:31:
+    Exception when trying to run compile-time code:
+      template.asm: openBinaryFile: does not exist (No such file or directory)
+      Code: embedFile "template.asm"
+    In the second argument of `($)', namely
+      `$(embedFile "template.asm")'
+    In the expression: unpack $ $(embedFile "template.asm")
+    In an equation for `template':
+        template = unpack $ $(embedFile "template.asm")
+tay@tay-MacBookPro:~/Downloads/ba-compiler40$
+
+
+
+

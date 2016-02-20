@@ -1,0 +1,147 @@
+{
+{-|
+  Module      : Parser.While
+  Description : A generated bottom-up LR parser for the WHILE language.
+  Copyright   : 2014, Jonas Cleve
+                2015, Tay Phuong Ho
+  License     : GPL-3
+-}
+module Parser.While (parse) where
+
+import Interface.Token
+import qualified Interface.AST as AST
+
+}
+
+%name       parse
+%tokentype  { PosToken }
+
+%tokens
+
+id      { PosToken _ (Id $$) }
+integer { PosToken _ (Integer $$) }  -- $ modified
+real    { PosToken _ (Real $$) }     -- $ added
+bool    { PosToken _ (Boolean $$) }
+and     { PosToken _ (LogOp And) }
+or      { PosToken _ (LogOp Or) }
+not     { PosToken _  Not }
+relop   { PosToken _ (RelOp $$) }
+'+'     { PosToken _ (MathOp Plus) }
+'-'     { PosToken _ (MathOp Minus) }
+'*'     { PosToken _ (MathOp Times) }
+'/'     { PosToken _ (MathOp DivBy) }
+mod     { PosToken _ (MathOp Mod) }
+':='    { PosToken _  Assign }
+eof     { PosToken _  Eof }
+read    { PosToken _  Read }
+output  { PosToken _  Output }
+return  { PosToken _  Return }       -- $ added
+if      { PosToken _  If }
+then    { PosToken _  Then }
+else    { PosToken _  Else }
+while   { PosToken _  While }
+do      { PosToken _  Do }
+int     { PosToken _ (Type Int) }    -- $ added
+double  { PosToken _ (Type Double) } -- $ added
+func    { PosToken _  Function }     -- $ added
+'('     { PosToken _ (Token '(') }
+')'     { PosToken _ (Token ')') }
+'{'     { PosToken _ (Token '{') }
+'}'     { PosToken _ (Token '}') }
+'['     { PosToken _ (Token '[') }   -- $ added
+']'     { PosToken _ (Token ']') }   -- $ added
+';'     { PosToken _ (Token ';') }
+
+%grammar
+
+Program :: { AST.AST }
+        : Cmds                          { $1 }
+
+Cmds    :: { AST.Command }
+        : Cmds ';' Instr                { AST.Sequence $1 $3 }
+        | Instr                         { $1 }
+
+Instr    :: { AST.Command }
+        : Cmd                           { $1 }
+        | Alloc                         { $1 }
+
+Cmd     :: { AST.Command }
+        : CmdO                          { $1 }
+        | CmdC                          { $1 }
+        |                               { AST.Skip }
+
+CmdO    :: { AST.Command }
+        : if Bexpr then Cmd             { AST.IfThen $2 $4 }
+        | if Bexpr then CmdC else CmdO  { AST.IfThenElse $2 $4 $6 }
+        | while Bexpr do CmdO           { AST.While $2 $4 }
+
+CmdC    :: { AST.Command }
+        : if Bexpr then CmdC else CmdC  { AST.IfThenElse $2 $4 $6 }
+        | while Bexpr do CmdC           { AST.While $2 $4 }
+        | read id                       { AST.Read $2 }
+        | output Expr                   { AST.Output $2 }
+        | return Expr                   { AST.Return $2 }
+        | id ':=' Expr                  { AST.Assign $1 $3 }
+        | id '[' Expr ']' ':=' Expr     { AST.ToArray $1 $3 $6 }
+        | '{' Cmds '}'                  { AST.Environment $2 }
+        | func Decl '(' Decls ')' '{' Cmds '}'  { AST.Function $2 $4 $7 }
+
+Expr    :: { AST.Expression }
+        : Expr '+' Term                 { AST.Calculation Plus $1 $3 }
+        | Expr '-' Term                 { AST.Calculation Minus $1 $3 }
+        | Term                          { $1 }
+
+Term    :: { AST.Expression }
+        : Term '*' Factor               { AST.Calculation Times $1 $3 }
+        | Term '/' Factor               { AST.Calculation DivBy $1 $3 }
+        | Term mod Factor               { AST.Calculation Mod $1 $3 }
+        | Factor                        { $1 }
+
+Factor  :: { AST.Expression }
+        : '(' Expr ')'                  { $2 }
+        | '-' Factor                    { AST.Negate $2 }
+        | id                            { AST.Identifier $1 }
+        | id '[' Expr ']'               { AST.FromArray $1 $3 }
+        | id '(' Params ')'             { AST.Func $1 $3 }
+        | integer                       { AST.Integer $1 }
+        | real                          { AST.Double $1 }
+
+Bexpr   :: { AST.BoolExpression }
+        : Bexpr or Bterm                { AST.LogOp Or $1 $3 }
+        | Bterm                         { $1 }
+
+Bterm   :: { AST.BoolExpression }
+        : Bterm and Bfactor             { AST.LogOp And $1 $3 }
+        | Bfactor                       { $1 }
+
+Bfactor :: { AST.BoolExpression }
+        : '(' Bexpr ')'                 { $2 }
+        | not Bfactor                   { AST.Not $2 }
+        | Expr relop Expr               { AST.Comparison $2 $1 $3 }
+        | bool                          { AST.Boolean $1 }
+        | eof                           { AST.Eof }
+
+Primitives :: { AST.Command }
+        : int id                        { AST.Declaration Int $2 }
+        | double id                     { AST.Declaration Double $2 }
+
+Alloc    :: { AST.Command }
+        : Primitives                    { $1 }
+        | int '[' Expr ']' id           { AST.ArrayAlloc Int $3 $5 }
+        | double '[' Expr ']' id        { AST.ArrayAlloc Double $3 $5 }
+
+Decl    :: { AST.Command }
+        : Primitives                    { $1 }
+        | int '[' ']' id                { AST.ArrayDecl Int $4 }
+        | double '[' ']' id             { AST.ArrayDecl Double $4 }
+
+Decls   :: { AST.Command }
+        : Decls ';' Decl                { AST.Sequence $1 $3 }
+        | Decl                          { $1 }
+
+Params  :: { AST.Expression }
+        : Params ';' Param              { AST.Parameters $1 $3 }
+        | Param                         { $1 }
+
+Param  :: { AST.Expression }
+        : Expr                          { AST.Parameter $1 }

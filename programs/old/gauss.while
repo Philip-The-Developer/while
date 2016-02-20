@@ -1,0 +1,12 @@
+# Calculates the gauss sum of the first input parameter
+int num;
+read num;
+int sum;
+sum := 0;
+int i;
+i := 0;
+while i <= num do {
+    i := i + 1;
+    sum := sum + i
+};
+output sum;

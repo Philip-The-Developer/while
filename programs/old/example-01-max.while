@@ -1,0 +1,9 @@
+# Output the bigger of the two number read from standard in
+int a;
+int b;
+read a;
+read b;
+if a > b then
+    output a
+else
+    output b;

@@ -1,0 +1,19 @@
+function int printarray (int[] a){
+  int i;
+  i := 0;
+  while i < length(a) do {
+    output a[i];
+    i := i + 1;
+  };
+  return 0;
+};
+function int fibonacci (int n){
+  if n < 3 then return 1 else return fibonacci(n-1)+fibonacci(n-2);
+};
+int [10] a;
+int i; i:= 0;
+while i < length(a) do {
+  a[i] := fibonacci(i);
+  i := i + 1;
+};
+i := printarray(a)

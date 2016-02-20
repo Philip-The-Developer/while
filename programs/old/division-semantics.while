@@ -1,0 +1,33 @@
+int x;
+int y;
+x := 25;
+y := -25;
+output x / 10; # 2
+output 25 / 10; # 2
+output 1111111111;
+output x / -10; # -2
+output 25 / -10; # -2
+output 1111111111;
+output 60 / x; # 2
+output 60 / 25; # 2
+output 1111111111;
+output -60 / x; # -2
+output -60 / 25; # -2
+output 1111111111;
+output -60 / y; # -2
+output -60 / -25; # -2
+output 2222222222;
+output x mod 10; # 2
+output 25 mod 10; # 2
+output 1111111111;
+output x mod -10; # -2
+output 25 mod -10; # -2
+output 1111111111;
+output 60 mod x; # 2
+output 60 mod 25; # 2
+output 1111111111;
+output -60 mod x; # -2
+output -60 mod 25; # -2
+output 1111111111;
+output -60 mod y; # -2
+output -60 mod -25; # -2
