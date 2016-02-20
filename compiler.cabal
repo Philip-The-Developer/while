@@ -27,14 +27,14 @@ license:             GPL-3
 license-file:        LICENSE
 
 -- The package author(s).
-author:              Jonas Cleve and Tay P. Ho
+author:              Jonas Cleve, Tay P. Ho and Philip Schmiel
 
 -- An email address to which users can send suggestions, bug reports, and
 -- patches.
-maintainer:          jonas.cleve@fu-berlin.de, tay.ho@hotmail.com
+maintainer:          jonas.cleve@fu-berlin.de, tay.ho@hotmail.com, philismile@t-online.de
 
 -- A copyright notice.
-copyright:           © 2014 Jonas Cleve, © 2015 Tay P. Ho
+copyright:           © 2014 Jonas Cleve, © 2015 Tay P. Ho, © 2016 Philip Schmiel
 
 stability:           alpha
 
@@ -43,11 +43,12 @@ category:            Language
 build-type:          Simple
 
 data-files:          src/template.asm, src/ParserGenerator/Template.hs,
-                     programs/*.while, src/Parser/While.parser
+                     programs/v1/*.while, programs/v2/*.while, src/Parser/While.parser
 
 -- Constraint on the version of Cabal needed to build this package.
 cabal-version:       >=1.10
 
+bindir /bin
 
 executable compiler
   -- .hs or .lhs file containing the Main module.
