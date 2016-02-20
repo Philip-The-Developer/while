@@ -13,13 +13,13 @@ module Interface.Token (
 ) where
 
 import Prelude (
-    String, Bool, Char,
+    String, Bool,
     Show, Eq, Integral, Num, Ord,
     (++), (==), (/=), (<), (<=), (>), (>=), (+), (-), (*),
     show, fmap, quot, rem
   )
 import qualified Prelude (
-    Double
+    Double, Char
   )
 
 import Data.Int (
@@ -53,7 +53,7 @@ data Token
   | Integer Int64          -- $ Integer number (@34@, @132@, @894@, …)
   | Real Prelude.Double    -- $ Double-precision floating-point number (@34.1@, @132.1@, @894.1@, …)
   | Boolean Bool           -- ^ Boolean values (@true@ and @false@)
-  | Character Char         --   Character (@'a'@, @'b'@, @'c'@)
+  | Character Prelude.Char --   Character (@'a'@, @'b'@, @'c'@)
   | LogOp LogOp            -- ^ Logical operators (@and@ and @or@)
   | Not                    -- ^ Boolean negation (@not@)
   | RelOp RelOp            -- ^ Relational operators (@=@, @<@, @<=@, @>@, @>=@ and @!=@)
@@ -69,7 +69,7 @@ data Token
   | While                  -- ^ While
   | Do                     -- ^ Do
   | Function               -- $ Function
-  | Token Char             -- ^ Single char tokens – used for parentheses, braces, …
+  | Token Prelude.Char             -- ^ Single char tokens – used for parentheses, braces, …
   | Type Type              -- $ Base types (@int@ and @float@)  
   deriving (Eq)
 

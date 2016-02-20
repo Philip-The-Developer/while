@@ -1,1 +1,2 @@
-char c := 'h'
+char c;
+c := 'h'

@@ -4,6 +4,7 @@
                 is already simplified from the parse tree.
   Copyright   : 2014, Jonas Cleve
                 2015, Tay Phuong Ho
+                2016, Philip Schmiel
   License     : GPL-3
 -}
 module Interface.AST (
@@ -19,7 +20,7 @@ import Prelude (
     (++)
   )
 import qualified Prelude (
-    Double
+    Double, Char
   )
 
 import Data.Int (
@@ -77,6 +78,7 @@ data Expression
   | Func String Expression                    -- $ Function call: @f(a; b; c)@, @g(x; y; z)@, …
   | Integer Int64                             -- $ Integer
   | Double Prelude.Double                     -- $ Double-precision floating-point number
+  | Character Prelude.Char                    --  Character
   deriving (Show, Eq)
 
 -- | A boolean expression.
@@ -166,6 +168,7 @@ instance ASTPart Expression where
   showASTPart (Func _ _) = "_(_)"            -- $ added
   showASTPart (Integer n) = show n           -- $ modified
   showASTPart (Double n) = show n            -- $ added
+  showASTPart (Character c) = "'"++(show c)++"'"
 
 -- | The AST boolean expression is output-able.
 instance ASTPart BoolExpression where
