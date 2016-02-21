@@ -373,9 +373,9 @@ generate' (hd:rst) = do
                                     operandIsRegister o2' then (o1, [], [])
                                  else (rax, [mov rax o1], [mov o1 rax])
           let o3v = getValue o3'
-          let (negS, _) = (o3v < 0, round $ logBase 2 (fromIntegral o3v))
+          let (negS, base) = (o3v < 0, round $ logBase 2 (fromIntegral o3v))
           returnCode $ pre ++ (if o2' == o1' then [] else [mov o1' o2']) ++
-                       [shl o1' o3'] ++ (if negS then [neg o1'] else []) ++ post
+                       [shl o1' $ Immediate $ ImmediateInt base] ++ (if negS then [neg o1'] else []) ++ post
 
         else if operandIsImmediate o2' then do
           -- This should never be reached (optimized away earlier)

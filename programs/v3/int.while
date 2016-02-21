@@ -1,5 +1,5 @@
 int i;
 int d;
 i := 3;
-d := i * 2;
+d := i * 4;
 output d;
