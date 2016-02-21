@@ -310,15 +310,23 @@ expressionInto varFunc expr = case expr of
                 T.DivBy -> TAC.Div
       var2 <- newTemp
       let var2' = var2 ++ ":double"
+      let varInt' = var2 ++ ":int"
       let (type_, tacCommand, coercion, data', data1', data2') = case (type1, type2) of
              ("int", "int")       -> ("int", tacCommand2, [], data1, data1, data2)
              ("double", "double") -> ("double", tacCommand1, [], data1, data1, data2)
+             ("char", "char") -> ("char",tacCommand2, [], data1, data1,data2)
              ("double", "int")        -> case data2 of
                TAC.Variable _ -> ("double", tacCommand1, [TAC.Convert var2' data'], data2, data1, TAC.Variable var2')
                _ -> ("double", tacCommand1, [], data1, data1, data2)
              ("int", "double")        -> case data1 of
                TAC.Variable _ -> ("double", tacCommand1, [TAC.Convert var2' data'], data1, TAC.Variable var2', data2)
                _ -> ("double", tacCommand1, [], data1, data1, data2)
+             ("int","char") -> case data2 of
+               TAC.Variable _ -> ("int", tacCommand2, [TAC.ConvertInt varInt' data'], data2, data1, TAC.Variable varInt')
+               _ -> ("int", tacCommand2, [], data1, data1, data2)
+             ("char","int") -> case data1 of
+               TAC.Variable _ -> ("int", tacCommand2, [TAC.ConvertInt varInt' data'], data1, TAC.Variable varInt', data2)
+               _ -> ("int", tacCommand2, [], data1, data1, data2)
       var1 <- varFunc
       type3 <- lookup var1 False
       let var1' = if isNothing type3 then var1 ++ ":" ++ type_ else fromJust type3

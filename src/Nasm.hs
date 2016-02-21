@@ -235,6 +235,11 @@ generate' (hd:rst) = do
       o2 <- dataToOperand d
       returnCode [instr $ "cvtsi2sd " ++ toCode o1 ++ ", " ++ toCode o2]
 
+    TAC.ConvertInt v d -> do
+      o1 <- variableToOperand v
+      o2 <- dataToOperand d
+      returnCode [instr $ "mov " ++ toCode o1 ++ "," ++ toCode o2]
+
     TAC.ArrayAlloc v (TAC.ImmediateInteger 0) -> do -- $ added
       o1 <- variableToOperand v
       returnCode [mov o1 (Immediate $ ImmediateInt 0)]

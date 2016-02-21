@@ -47,6 +47,7 @@ data Command
   | ArrayCopy Variable Data -- $ added
   | Copy Variable Data
   | Convert Variable Data   -- $ added
+  | ConvertInt Variable Data
   | Add Variable Data Data
   | Sub Variable Data Data
   | Mul Variable Data Data
@@ -83,6 +84,7 @@ instance Show Command where
                                         else v ++ " = " ++ show d -- $ added
   show (Copy v d) = v ++ " = " ++ show d
   show (Convert v d) = v ++ " = (double)" ++ show d               -- $ added
+  show (ConvertInt v d) = v ++ " = (int)" ++ show d
   show (Add v d1 d2) = v ++ " = " ++ show d1 ++ " + " ++ show d2
   show (Sub v d1 d2) = v ++ " = " ++ show d1 ++ " - " ++ show d2
   show (Mul v d1 d2) = v ++ " = " ++ show d1 ++ " * " ++ show d2
@@ -223,6 +225,7 @@ getDefVariables (FromArray v _ _) = [v]-- $ added
 getDefVariables (ArrayCopy v _) = [v]  -- $ added
 getDefVariables (Copy v _) = [v]
 getDefVariables (Convert v _) = [v]    -- $ added
+getDefVariables (ConvertInt v _ ) = [v]
 getDefVariables (Add v _ _) = [v]
 getDefVariables (Sub v _ _) = [v]
 getDefVariables (Mul v _ _) = [v]
@@ -250,6 +253,7 @@ getUseVariables (ToArray v d1 d2) = [v] ++ variablesFromData [d1, d2] -- $ added
 getUseVariables (ArrayCopy _ d1) = variablesFromData [d1]   -- $ added
 getUseVariables (Copy _ d1) = variablesFromData [d1]
 getUseVariables (Convert _ d1) = variablesFromData [d1]     -- $ added
+getUseVariables (ConvertInt _ d1) = variablesFromData [d1]
 getUseVariables (Add _ d1 d2) = variablesFromData [d1, d2]
 getUseVariables (Sub _ d1 d2) = variablesFromData [d1, d2]
 getUseVariables (Mul _ d1 d2) = variablesFromData [d1, d2]
@@ -314,6 +318,9 @@ renameVariables (Copy v d) vI vO =
 renameVariables (Convert v d) vI vO =                                 -- $ added
   let [Variable v', d'] = substitute [Variable v, d] vI vO
   in Convert v' d'
+renameVariables (ConvertInt v d) vI vO =
+  let [Variable v', d'] = substitute [Variable v, d] vI vO
+  in ConvertInt v' d'
 renameVariables (Add v d1 d2) vI vO =
   let [Variable v', d1', d2'] = substitute [Variable v, d1, d2] vI vO
   in Add v' d1' d2'

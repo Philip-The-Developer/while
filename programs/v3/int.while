@@ -1,2 +1,5 @@
 int i;
-i := 13;
+int d;
+i := 3;
+d := i * 2;
+output d;
