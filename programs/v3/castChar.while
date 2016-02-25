@@ -1,0 +1,5 @@
+char c;
+int i;
+c := 'j';
+i := c;
+output i;

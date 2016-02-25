@@ -191,6 +191,20 @@ generate' (hd:rst) = do
                                                       , push rax]
         _ -> returnCode [push o]
 
+    TAC.CRead v -> do
+      o <- variableToOperand v
+      return $ (Call "input_character") : case o of
+        Location (Register RAX) -> []
+        _ -> force [mov o rax]
+
+    TAC.COutput d -> do
+      o <- dataToOperand d
+      let preCode = case o of
+            Location (Register RAX) -> []
+            _ -> force [mov rax o]
+      return $ preCode ++ [(Call "output_character")]
+
+
     TAC.FRead v -> do -- $ added
       o <- variableToOperand v
       returnCode $ [push $ Immediate $ ImmediateInt 0

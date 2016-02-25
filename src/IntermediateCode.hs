@@ -142,7 +142,7 @@ command cmd next = case cmd of
         else if type_ == "double"
           then return (tac ++ [TAC.FOutput data_], [], "")
         else if type_ == "char"
-          then return (tac ++ [TAC.Output data_], [], "")
+          then return (tac ++ [TAC.COutput data_], [], "")
         else error "No native support for outputting arrays."
   AST.Return e -> do -- $ added
     (tac,data_,type_) <- expression e
@@ -163,6 +163,8 @@ command cmd next = case cmd of
           then return ([TAC.Read $ fromJust type_], [], "")
         else if endswith "double" $ fromJust type_
           then return ([TAC.FRead $ fromJust type_], [], "")
+        else if endswith "char" $ fromJust type_
+          then return ([TAC.CRead $ fromJust type_], [], "")
         else error $ "Variable " ++ i ++ " has not been declared."
   AST.Skip -> return ([], [], "")
   AST.Sequence c1 c2 -> do -- $ modified

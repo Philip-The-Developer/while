@@ -36,6 +36,8 @@ data Command
   | Output Data
   | FRead Variable          -- $ added
   | FOutput Data            -- $ added
+  | CRead Variable
+  | COutput Data
   | Return Data             -- $ added
   | FReturn Data            -- $ added
   | Pop Variable            -- $ added
@@ -72,6 +74,8 @@ instance Show Command where
   show (Output d) = "output " ++ show d
   show (FRead v) = "read " ++ v                                   -- $ added
   show (FOutput d) = "output " ++ show d                          -- $ added
+  show (CRead v) = "read " ++ v
+  show (COutput d) = "output " ++ show d
   show (Return d) = "return " ++ show d                           -- $ added
   show (FReturn d) = "return " ++ show d                          -- $ added
   show (Pop v) = "pop " ++ v                                      -- $ added
@@ -219,6 +223,7 @@ getLabelFromGoto c = error $ "Cannot get label from " ++ show c
 getDefVariables :: Command -> [Variable]
 getDefVariables (Read v) = [v]
 getDefVariables (FRead v) = [v]        -- $ added
+getDefVariables (CRead v) = [v]
 getDefVariables (Pop v) = [v]          -- $ added
 getDefVariables (ArrayAlloc v _) = [v] -- $ added
 getDefVariables (FromArray v _ _) = [v]-- $ added
@@ -245,6 +250,7 @@ getUseVariables (Output (Variable v)) = [v]
 getUseVariables (Return (Variable v)) = [v]               -- $ added
 getUseVariables (FReturn (Variable v)) = [v]              -- $ added
 getUseVariables (FOutput (Variable v)) = [v]                -- $ added
+getUseVariables (COutput (Variable v)) = [v]
 getUseVariables (Push (Variable v)) = [v]                   -- $ added
 getUseVariables (ArrayAlloc _ d1) = variablesFromData [d1]  -- $ added
 getUseVariables (ArrayDealloc v) = [v]                     -- $ added
@@ -279,6 +285,9 @@ renameVariables (Output d) vI vO =
 renameVariables (FOutput d) vI vO =                                   -- $ added
   let [d'] = substitute [d] vI vO
   in FOutput d'
+renameVariables (COutput d) vI vO =
+  let [d'] = substitute [d] vI vO
+  in COutput d'
 renameVariables (Return d) vI vO =                                    -- $ added
   let [d'] = substitute [d] vI vO
   in Return d'
@@ -291,6 +300,9 @@ renameVariables (Read v) vI vO =
 renameVariables (FRead v) vI vO =                                     -- $ added
   let [Variable v'] = substitute [Variable v] vI vO
   in FRead v'
+renameVariables (CRead v) vI vO =
+  let [Variable v'] = substitute [Variable v] vI vO
+  in CRead v'
 renameVariables (Push d) vI vO =                                      -- $ added
   let [d'] = substitute [d] vI vO
   in Push d'

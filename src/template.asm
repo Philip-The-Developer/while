@@ -25,12 +25,12 @@
 
 ; Debugging macro, outputs the current value of [rsi]
 %macro debug_rsi 0
-    ; push rax
-    ; xor rax, rax
-    ; mov al, BYTE [rsi]
-    ; add rax, 100000000
-    ; call output_number
-    ; pop rax
+     ;push rax
+     ;xor rax, rax
+     ;mov al, BYTE [rsi]
+     ;add rax, 100000000
+     ;call output_number
+     ;pop rax
 %endmacro
 
 ; Macros to push and pop multiple registers on the stack
@@ -78,6 +78,10 @@ section .data
     eof_error_message:  db  "Error: No more input to read from.", 10
     .len:               equ $ - eof_error_message
 
+    ;The error message to be shown when no eof or linebreak follows a char in STDIN
+    char_error_message: db "Error: Expects a linebreak or EOF after reading a character.",10
+    .len:               equ $ - char_error_message
+
     ; $ The error message to be shown when array memory allocation failed
     alloc_error_message:db  "Error: Array memory allocation failed.", 10
     .len:               equ $ - alloc_error_message
@@ -105,6 +109,11 @@ section .data
     ; $ Formats a floating-point number to a null-terminated string.
     float_formatout:    db "%g", 10, 0
 
+    ; Formats a character input
+    character_formatin: db "%c\n"
+    ; Formats a character output
+    character_formatout: db "%c"
+
 ;===============================================================================
 ; Uninitialized data
 ;===============================================================================
@@ -116,6 +125,9 @@ section .bss
     .current:   resb 8
     ; The remaining bytes in our buffer
     .remaining: resb 8
+
+    ; Reserve some space for the input character puffer
+    char_buffer: resb 4
 
 ;===============================================================================
 ; The code
@@ -358,6 +370,23 @@ input_eof_error:
     mov rdi, 2
     syscall
 
+;=================================================================================
+;Prints out the error on hitting no linebreak or eof while trying to read a character
+; from STDIN and exits with exit code 2
+;=================================================================================
+input_char_error:
+    ; Output eof error message
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, char_error_message
+    mov rdx, char_error_message.len
+    syscall
+
+    ; Exit with exit code 2 (rbx)
+    mov rax, 60
+    mov rdi, 2
+    syscall
+
 ;===============================================================================
 ; $ Prints out the error on failing memory allocation for an array.
 ;===============================================================================
@@ -538,6 +567,106 @@ input_float:
     multipop rcx, rdx, rsi, rdi, r8, r9, r10, r11
 
     ; End function
+    leave
+    ret
+
+
+;===============================================================================
+; $ Receives a character in the RAX register and prints it to stdout with 
+;trailing newline.
+;===============================================================================
+output_character:
+    debug_rsi
+    enter 21, 0
+        
+    ; Save all registers it modifies
+    multipush rbx, rcx, rdx, rsi, rdi, r8, r9, r10, r11
+
+    debug_rsi
+    mov [rsi], rax
+    debug_rsi
+        mov rax, 1
+        mov rdi, 1
+        mov rdx, 1
+        syscall
+    
+    mov [rsi], BYTE 10
+    debug_rsi
+        mov rax, 1
+        mov rdi, 1
+        mov rdx, 1
+        syscall
+
+    ; Restore all saved registers
+    multipop rbx, rcx, rdx, rsi, rdi, r8, r9, r10, r11
+
+    ; End function
+    leave
+    ret
+
+;===============================================================================
+; $ Reads a character from STDIN and returns it in RAX.
+;===============================================================================
+input_character:
+    enter 0, 0
+    ; Save all registers it modifies
+    multipush rbx, rcx, rdx, rsi, rdi, r8, r9, r10, r11
+
+    ; Save the current pointer into register
+    mov rsi, QWORD [buffer.current]
+
+    ; If there is nothing left in the input buffer then we need to get more data
+    cmp QWORD [buffer.remaining], 0
+    jne .buffer_not_empty
+
+      ;read from Input
+      read
+
+        ; If we read nothing then we are at EOF -- show error
+        cmp rax, 0
+        jne .read_no_eof
+
+            mov BYTE [input_eof], 1
+            jmp input_eof_error
+
+        .read_no_eof:
+
+    .buffer_not_empty:
+    
+    ;read Character
+    debug_rsi
+    mov bl, BYTE [rsi]
+    
+    ;increment rsi
+    inc_rsi
+    cmp QWORD [buffer.remaining],0
+    jne .buffer_not_empty2   
+    
+      ;read from Input
+      read
+
+      cmp rax, 0
+      jne .buffer_not_empty2
+        mov BYTE [input_eof], 1
+        jmp .read_exit
+
+    .buffer_not_empty2:
+      debug_rsi
+
+      ; If we read a newline then we increment and exit the loop
+      cmp BYTE [rsi], 10
+      je .read_new_line
+        
+        jmp input_char_error
+
+      .read_new_line:
+      inc_rsi
+
+  .read_exit:
+    mov rax, rbx
+    ; Restore all saved registers
+    multipop rbx, rcx, rdx, rsi, rdi, r8, r9, r10, r11
+    debug_rsi
     leave
     ret
 
