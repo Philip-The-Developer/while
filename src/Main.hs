@@ -264,7 +264,7 @@ main = do
     let finishedTACs = fmap (BB.graphToTac . -- $ modified
                                  LV.removeLiveVariableAnnotations) renamedLVGraphs
 
-    let (nasmCodes, frames) = unzip $ zipWith N.process finishedTACs liveRanges -- $ modified
+    let (nasmCodes, frames) = unzip $ zipWith N.process finishedTACs liveRanges   -- $ modified
     when debugMode $ putStrLn $ "*** NASM code:\n" ++ numberLinesAt 140 (head nasmCodes)
 
     let userDefined_functions = GC.returnSequence names nasmCodes frames -- $ added

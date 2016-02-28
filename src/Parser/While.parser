@@ -134,11 +134,13 @@ Alloc    :: { AST.Command }
         : Primitives                    { $1 }
         | int '[' Expr ']' id           { AST.ArrayAlloc Int $3 $5 }
         | double '[' Expr ']' id        { AST.ArrayAlloc Double $3 $5 }
+        | char '[' Expr ']' id          { AST.ArrayAlloc Char $3 $5}
 
 Decl    :: { AST.Command }
         : Primitives                    { $1 }
         | int '[' ']' id                { AST.ArrayDecl Int $4 }
         | double '[' ']' id             { AST.ArrayDecl Double $4 }
+        | char '[' ']' id               { AST.ArrayDecl Char $4}
 
 Decls   :: { AST.Command }
         : Decls ';' Decl                { AST.Sequence $1 $3 }

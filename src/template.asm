@@ -33,6 +33,23 @@
      ;pop rax
 %endmacro
 
+; Debugging macro, outputs the current value of [rsi]
+%macro debug_rbp 0
+     mov [macro_save], rax
+     xor rax, rax
+     mov rax, rbp
+     call output_number
+     mov rax, [macro_save]
+%endmacro
+
+%macro debug_rsp 0
+     mov [macro_save], rax
+     xor rax, rax
+     mov rax, rsp
+     call output_number
+     mov rax, [macro_save]
+%endmacro
+
 ; Macros to push and pop multiple registers on the stack
 ; You don't have to reverse the argument order for pop
 ; Taken from: http://www.nasm.us/doc/nasmdoc4.html
@@ -128,6 +145,8 @@ section .bss
 
     ; Reserve some space for the input character puffer
     char_buffer: resb 4
+
+    macro_save: resq 1
 
 ;===============================================================================
 ; The code
@@ -581,8 +600,7 @@ output_character:
         
     ; Save all registers it modifies
     multipush rbx, rcx, rdx, rsi, rdi, r8, r9, r10, r11
-
-    debug_rsi
+    mov rsi, rbp
     mov [rsi], rax
     debug_rsi
         mov rax, 1
@@ -591,7 +609,6 @@ output_character:
         syscall
     
     mov [rsi], BYTE 10
-    debug_rsi
         mov rax, 1
         mov rdi, 1
         mov rdx, 1

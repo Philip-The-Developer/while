@@ -264,14 +264,14 @@ main = do
     let finishedTACs = fmap (BB.graphToTac . -- $ modified
                                  LV.removeLiveVariableAnnotations) renamedLVGraphs
 
-    let (nasmCodes, frames) = unzip $ zipWith N.process finishedTACs liveRanges -- $ modified
+    let (nasmCodes, frames) = unzip $ zipWith (N.process finishedTACs liveRanges )  -- $ modified
     when debugMode $ putStrLn $ "*** NASM code:\n" ++ numberLinesAt 140 (head nasmCodes)
 
     let userDefined_functions = GC.returnSequence names nasmCodes frames -- $ added
 
     let nasmFile = addExtension outputFile "asm"
     -- template <- readFile "../src/template.asm"
-    let template = unpack $ $(embedFile "template.asm")
+    let template = unpack $ $(embedFile "src/template.asm")
     writeFile nasmFile $ (intercalate ((if (head frames) > 0 then "\nsub rsp, " ++ show (head frames) ++ "\n" else "\n") ++ (head nasmCodes)) $
                                           splitOn ";{-# MAIN CODE #-}" template) ++ (concat userDefined_functions) -- $ modified
 

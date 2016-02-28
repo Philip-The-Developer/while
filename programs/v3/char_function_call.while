@@ -1,0 +1,11 @@
+function int printchars(char a; char b; char c){
+  output a;
+  output b;
+  output c;
+  return 0;
+};
+
+char a; char b; char c;
+a := 'a'; b := 'b'; c := 'c';
+int mock;
+mock := printchars(a;b;c);

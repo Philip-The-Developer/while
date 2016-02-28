@@ -1,0 +1,42 @@
+function int printarray (char[] a) {
+  int i; i := 0;
+  while i < length(a) do {
+    output a[i];
+    i := i + 1;
+  };
+  return 0;
+};
+
+#source:http://www.java-uni.de/index.php?Seite=85
+function char[] bubblesort(char[] x) {
+  char temp; int unsorted; unsorted := 1;
+  while unsorted = 1 do {
+    unsorted := 0;
+    int i; i := 0;
+    while i < length(x)-1 do {
+      if x[i] > x[i+1] then {
+        temp := x[i];
+        x[i] := x[i+1];
+        x[i+1] := temp;
+        unsorted := 1;
+      };
+    i := i+1;
+    };
+  };
+  return x;
+};
+
+int mock;
+char[10] a;
+a[0] := 'H';
+a[1] := 'a';
+a[2] := 'l';
+a[3] := 'l';
+a[4] := 'o';
+a[5] := ' ';
+a[6] := 'W';
+a[7] := 'e';
+a[8] := 'l';
+a[9] := 't';
+a := bubblesort(a);
+mock := printarray(a);

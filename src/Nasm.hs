@@ -89,8 +89,8 @@ allFLocations = (FRegister <$> availableFRegisters) ++ (StackLocation <$> [1..])
 
 -- $| Takes three address code, converts it into NASM source code and determines the size of the stack frame.
 process :: TAC.TAC -> Map.Map TAC.Variable (Int, Int) -> (String, Int) -- $ modified
-process tac liveData = (\(a,b) -> (unlines a,b)) $
-  evalState (generate tac) (locMap, high, liveData, 1)
+process tac liveData  = (\(a,b) -> (unlines a,b)) $
+  evalState (generate tac False) (locMap, high, liveData, 1)
   where
     (locMap, high) = allocateRegisters liveData availableRegisters availableFRegisters
 
@@ -149,18 +149,18 @@ variableToOperand v = do
 
 -- $| Generates the assembly code from an AST using the helper function
 -- `generate'`, puts entry & exit code around and determines the size of the stack frame.
-generate :: TAC.TAC -> State StateContent ([String], Int) -- $ modified
-generate tac = do
-  code <- generate' tac
+generate :: TAC.TAC -> Bool -> State StateContent ([String], Int) -- $ modified
+generate tac isDebug = do
+  code <- generate' tac isDebug
   (_, high, _, _) <- get
   return $ case high of
     StackLocation int | int > 0 -> (code, (8*(int-1)))
     _ ->  (code, 0)
 
 -- | Generates the assembly code from an AST.
-generate' :: TAC.TAC -> State StateContent [String]
-generate' [] = return []
-generate' (hd:rst) = do
+generate' :: TAC.TAC -> Bool -> State StateContent [String]
+generate' [] isDebug = return []
+generate' (hd:rst) isDebug = do
   code <- case hd of
     TAC.Read v -> do
       o <- variableToOperand v
@@ -721,8 +721,8 @@ generate' (hd:rst) = do
 
   (m, high, liveData, line) <- get
   put (m, high, liveData, line+1)
-  rest <- generate' rst
-  return $ ("; " ++ show hd):(fmap toCode code ++ rest)
+  rest <- generate' rst isDebug
+  return $ ("; " ++ show hd){-:(debug hd line)-}:(fmap toCode code ++ rest)
   where
     rax, rdx, rdi, xmm0 :: Operand
     rax = (Location (Register RAX))
@@ -744,6 +744,9 @@ generate' (hd:rst) = do
       popCount   x  == 1 && x > 0 ||
       popCount (-x) == 1 && x < 0
     isPowerOf2 _ = False
+
+    debug ::  TAC.Command -> Int -> String
+    debug s i = "\njmp .overjump"++show i++"\n.msg"++show i++" db \"||"++show s++"||\",10\n.len"++show i++" equ $ - .msg"++show i++"\n.overjump"++show i++":\nmultipush rbx, rcx, rdx, rsi, rdi, r8, r9, r10, r11\nmov rax, 1\nmov rdi, 1\nmov rsi, .msg"++show i++"\nmov rdx, .len"++show i++"\nsyscall\nmultipop rbx, rcx, rdx, rsi, rdi, r8, r9, r10, r11"
 
     getOperands :: TAC.Variable -> TAC.Data -> TAC.Data
                 -> State StateContent (Operand, Operand, Operand)
