@@ -591,17 +591,17 @@ input_float:
 
 
 ;===============================================================================
-; $ Receives a character in the RAX register and prints it to stdout with 
+; $ Receives a character in the AL register and prints it to stdout with 
 ;trailing newline.
 ;===============================================================================
 output_character:
     debug_rsi
-    enter 21, 0
+    enter 1, 0
         
     ; Save all registers it modifies
     multipush rbx, rcx, rdx, rsi, rdi, r8, r9, r10, r11
     mov rsi, rbp
-    mov [rsi], rax
+    mov [rsi], al
     debug_rsi
         mov rax, 1
         mov rdi, 1
@@ -622,7 +622,7 @@ output_character:
     ret
 
 ;===============================================================================
-; $ Reads a character from STDIN and returns it in RAX.
+; $ Reads a character from STDIN and returns it in AL.
 ;===============================================================================
 input_character:
     enter 0, 0
@@ -680,10 +680,9 @@ input_character:
       inc_rsi
 
   .read_exit:
-    mov rax, rbx
+    mov al, bl
     ; Restore all saved registers
     multipop rbx, rcx, rdx, rsi, rdi, r8, r9, r10, r11
-    debug_rsi
     leave
     ret
 
