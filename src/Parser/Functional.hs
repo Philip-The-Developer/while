@@ -260,21 +260,21 @@ integer :: TokenParser Int64 -- $ modified
 integer = do
   t <- next
   case removePosition t of
-    Integer int64 -> return int64
+    DInt int64 -> return int64
     _             -> mzero
 
 real :: TokenParser Double -- $ added
 real = do
   t <- next
   case removePosition t of
-    Real double -> return double
+    DDouble double -> return double
     _           -> mzero
 
 boolean :: TokenParser Bool
 boolean = do
   t <- next
   case removePosition t of
-    Boolean bool -> return bool
+    DBool bool -> return bool
     _            -> mzero
 
 relop :: TokenParser RelOp

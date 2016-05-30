@@ -148,11 +148,11 @@ reduce 31 states (_ : StackElement_Expr v3 : _ : StackTerminal ( PosToken _ (Id 
   (reduceAndGoto 31 states, StackElement_Factor ( AST.FromArray v1 v3 ) : stack, input)
 reduce 32 states (_ : StackElement_Params v3 : _ : StackTerminal ( PosToken _ (Id v1) ) : stack) input =
   (reduceAndGoto 32 states, StackElement_Factor ( AST.Func v1 v3 ) : stack, input)
-reduce 33 states (StackTerminal ( PosToken _ (Integer v1) ) : stack) input =
+reduce 33 states (StackTerminal ( PosToken _ (DInt v1) ) : stack) input =
   (reduceAndGoto 33 states, StackElement_Factor ( AST.Integer v1 ) : stack, input)
-reduce 34 states (StackTerminal ( PosToken _ (Real v1) ) : stack) input =
+reduce 34 states (StackTerminal ( PosToken _ (DDouble v1) ) : stack) input =
   (reduceAndGoto 34 states, StackElement_Factor ( AST.Double v1 ) : stack, input)
-reduce 35 states (StackTerminal ( PosToken _ (Character v1) ) : stack) input =
+reduce 35 states (StackTerminal ( PosToken _ (DChar v1) ) : stack) input =
   (reduceAndGoto 35 states, StackElement_Factor ( AST.Character v1) : stack, input)
 reduce 36 states (StackElement_Bterm v3 : _ : StackElement_Bexpr v1 : stack) input =
   (reduceAndGoto 36 states, StackElement_Bexpr ( AST.LogOp Or v1 v3 ) : stack, input)
@@ -168,32 +168,32 @@ reduce 41 states (StackElement_Bfactor v2 : _ : stack) input =
   (reduceAndGoto 41 states, StackElement_Bfactor ( AST.Not v2 ) : stack, input)
 reduce 42 states (StackElement_Expr v3 : StackTerminal ( PosToken _ (RelOp v2) ) : StackElement_Expr v1 : stack) input =
   (reduceAndGoto 42 states, StackElement_Bfactor ( AST.Comparison v2 v1 v3 ) : stack, input)
-reduce 43 states (StackTerminal ( PosToken _ (Boolean v1) ) : stack) input =
+reduce 43 states (StackTerminal ( PosToken _ (DBool v1) ) : stack) input =
   (reduceAndGoto 43 states, StackElement_Bfactor ( AST.Boolean v1 ) : stack, input)
 reduce 44 states (_ : stack) input =
   (reduceAndGoto 44 states, StackElement_Bfactor ( AST.Eof ) : stack, input)
 reduce 45 states (StackTerminal ( PosToken _ (Id v2) ) : _ : stack) input =
-  (reduceAndGoto 45 states, StackElement_Primitives ( AST.Declaration Int v2 ) : stack, input)
+  (reduceAndGoto 45 states, StackElement_Primitives ( AST.Declaration TInt v2 ) : stack, input)
 reduce 46 states (StackTerminal ( PosToken _ (Id v2) ) : _ : stack) input =
-  (reduceAndGoto 46 states, StackElement_Primitives ( AST.Declaration Double v2 ) : stack, input)
+  (reduceAndGoto 46 states, StackElement_Primitives ( AST.Declaration TDouble v2 ) : stack, input)
 reduce 47 states (StackTerminal ( PosToken _ (Id v2) ) : _ : stack) input =
-  (reduceAndGoto 47 states, StackElement_Primitives ( AST.Declaration Char v2) : stack, input)
+  (reduceAndGoto 47 states, StackElement_Primitives ( AST.Declaration TChar v2) : stack, input)
 reduce 48 states (StackElement_Primitives v1 : stack) input =
   (reduceAndGoto 48 states, StackElement_Alloc ( v1 ) : stack, input)
 reduce 49 states (StackTerminal ( PosToken _ (Id v5) ) : _ : StackElement_Expr v3 : _ : _ : stack) input =
-  (reduceAndGoto 49 states, StackElement_Alloc ( AST.ArrayAlloc Int v3 v5 ) : stack, input)
+  (reduceAndGoto 49 states, StackElement_Alloc ( AST.ArrayAlloc TInt v3 v5 ) : stack, input)
 reduce 50 states (StackTerminal ( PosToken _ (Id v5) ) : _ : StackElement_Expr v3 : _ : _ : stack) input =
-  (reduceAndGoto 50 states, StackElement_Alloc ( AST.ArrayAlloc Double v3 v5 ) : stack, input)
+  (reduceAndGoto 50 states, StackElement_Alloc ( AST.ArrayAlloc TDouble v3 v5 ) : stack, input)
 reduce 51 states (StackTerminal ( PosToken _ (Id v5) ) : _ : StackElement_Expr v3 : _ : _ : stack) input =
-  (reduceAndGoto 51 states, StackElement_Alloc ( AST.ArrayAlloc Char v3 v5) : stack, input)
+  (reduceAndGoto 51 states, StackElement_Alloc ( AST.ArrayAlloc TChar v3 v5) : stack, input)
 reduce 52 states (StackElement_Primitives v1 : stack) input =
   (reduceAndGoto 52 states, StackElement_Decl ( v1 ) : stack, input)
 reduce 53 states (StackTerminal ( PosToken _ (Id v4) ) : _ : _ : _ : stack) input =
-  (reduceAndGoto 53 states, StackElement_Decl ( AST.ArrayDecl Int v4 ) : stack, input)
+  (reduceAndGoto 53 states, StackElement_Decl ( AST.ArrayDecl TInt v4 ) : stack, input)
 reduce 54 states (StackTerminal ( PosToken _ (Id v4) ) : _ : _ : _ : stack) input =
-  (reduceAndGoto 54 states, StackElement_Decl ( AST.ArrayDecl Double v4 ) : stack, input)
+  (reduceAndGoto 54 states, StackElement_Decl ( AST.ArrayDecl TDouble v4 ) : stack, input)
 reduce 55 states (StackTerminal ( PosToken _ (Id v4) ) : _ : _ : _ : stack) input =
-  (reduceAndGoto 55 states, StackElement_Decl ( AST.ArrayDecl Char v4) : stack, input)
+  (reduceAndGoto 55 states, StackElement_Decl ( AST.ArrayDecl TChar v4) : stack, input)
 reduce 56 states (StackElement_Decl v3 : _ : StackElement_Decls v1 : stack) input =
   (reduceAndGoto 56 states, StackElement_Decls ( AST.Sequence v1 v3 ) : stack, input)
 reduce 57 states (StackElement_Decl v1 : stack) input =
@@ -410,9 +410,9 @@ state states@(0:_) stack input = case headMay input of
   Just ( PosToken _  Return ) -> shift 4 states stack input
   Just ( PosToken _  If ) -> shift 5 states stack input
   Just ( PosToken _  While ) -> shift 6 states stack input
-  Just ( PosToken _ (Type Int) ) -> shift 7 states stack input
-  Just ( PosToken _ (Type Double) ) -> shift 8 states stack input
-  Just ( PosToken _ (Type Char) ) -> shift 9 states stack input
+  Just ( PosToken _ (Type TInt) ) -> shift 7 states stack input
+  Just ( PosToken _ (Type TDouble) ) -> shift 8 states stack input
+  Just ( PosToken _ (Type TChar) ) -> shift 9 states stack input
   Just ( PosToken _  Function ) -> shift 10 states stack input
   Just ( PosToken _ (Token '{') ) -> shift 11 states stack input
   Nothing -> reduce 8 states stack input
@@ -434,9 +434,9 @@ state states@(2:_) stack input = case headMay input of
                ++ "\nexpecting id"
 state states@(3:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -444,9 +444,9 @@ state states@(3:_) stack input = case headMay input of
                ++ "\nexpecting id, integer, real, character, '-', '('"
 state states@(4:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -454,10 +454,10 @@ state states@(4:_) stack input = case headMay input of
                ++ "\nexpecting id, integer, real, character, '-', '('"
 state states@(5:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Boolean _) ) -> shift 33 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DBool _) ) -> shift 33 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _  Not ) -> shift 34 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _  Eof ) -> shift 35 states stack input
@@ -467,10 +467,10 @@ state states@(5:_) stack input = case headMay input of
                ++ "\nexpecting id, integer, real, bool, character, not, '-', eof, '('"
 state states@(6:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Boolean _) ) -> shift 33 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DBool _) ) -> shift 33 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _  Not ) -> shift 34 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _  Eof ) -> shift 35 states stack input
@@ -497,9 +497,9 @@ state states@(9:_) stack input = case headMay input of
                if null input then "end of file" else show (head input)
                ++ "\nexpecting id, '['"
 state states@(10:_) stack input = case headMay input of
-  Just ( PosToken _ (Type Int) ) -> shift 48 states stack input
-  Just ( PosToken _ (Type Double) ) -> shift 49 states stack input
-  Just ( PosToken _ (Type Char) ) -> shift 50 states stack input
+  Just ( PosToken _ (Type TInt) ) -> shift 48 states stack input
+  Just ( PosToken _ (Type TDouble) ) -> shift 49 states stack input
+  Just ( PosToken _ (Type TChar) ) -> shift 50 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting int, double, char"
@@ -510,9 +510,9 @@ state states@(11:_) stack input = case headMay input of
   Just ( PosToken _  Return ) -> shift 4 states stack input
   Just ( PosToken _  If ) -> shift 5 states stack input
   Just ( PosToken _  While ) -> shift 6 states stack input
-  Just ( PosToken _ (Type Int) ) -> shift 7 states stack input
-  Just ( PosToken _ (Type Double) ) -> shift 8 states stack input
-  Just ( PosToken _ (Type Char) ) -> shift 9 states stack input
+  Just ( PosToken _ (Type TInt) ) -> shift 7 states stack input
+  Just ( PosToken _ (Type TDouble) ) -> shift 8 states stack input
+  Just ( PosToken _ (Type TChar) ) -> shift 9 states stack input
   Just ( PosToken _  Function ) -> shift 10 states stack input
   Just ( PosToken _ (Token '{') ) -> shift 11 states stack input
   Nothing -> reduce 8 states stack input
@@ -576,9 +576,9 @@ state states@(19:_) stack input = case headMay input of
                ++ "\nexpecting 'eof', ';', '}'"
 state states@(20:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -586,9 +586,9 @@ state states@(20:_) stack input = case headMay input of
                ++ "\nexpecting id, integer, real, character, '-', '('"
 state states@(21:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -686,9 +686,9 @@ state states@(26:_) stack input = case headMay input of
                ++ "\nexpecting 'eof', ')', '*', '+', '-', '/', ';', ']', '}', and, do, else, mod, or, relop, then"
 state states@(27:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -696,9 +696,9 @@ state states@(27:_) stack input = case headMay input of
                ++ "\nexpecting id, integer, real, character, '-', '('"
 state states@(28:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -775,10 +775,10 @@ state states@(33:_) stack input = case headMay input of
                ++ "\nexpecting ')', and, do, or, then"
 state states@(34:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Boolean _) ) -> shift 33 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DBool _) ) -> shift 33 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _  Not ) -> shift 34 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _  Eof ) -> shift 35 states stack input
@@ -797,10 +797,10 @@ state states@(35:_) stack input = case headMay input of
                ++ "\nexpecting ')', and, do, or, then"
 state states@(36:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Boolean _) ) -> shift 33 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DBool _) ) -> shift 33 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _  Not ) -> shift 34 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _  Eof ) -> shift 35 states stack input
@@ -856,9 +856,9 @@ state states@(42:_) stack input = case headMay input of
                ++ "\nexpecting 'eof', '(', ')', ';', '}'"
 state states@(43:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -875,9 +875,9 @@ state states@(44:_) stack input = case headMay input of
                ++ "\nexpecting 'eof', '(', ')', ';', '}'"
 state states@(45:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -894,9 +894,9 @@ state states@(46:_) stack input = case headMay input of
                ++ "\nexpecting 'eof', '(', ')', ';', '}'"
 state states@(47:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -945,9 +945,9 @@ state states@(54:_) stack input = case headMay input of
   Just ( PosToken _  Return ) -> shift 4 states stack input
   Just ( PosToken _  If ) -> shift 5 states stack input
   Just ( PosToken _  While ) -> shift 6 states stack input
-  Just ( PosToken _ (Type Int) ) -> shift 7 states stack input
-  Just ( PosToken _ (Type Double) ) -> shift 8 states stack input
-  Just ( PosToken _ (Type Char) ) -> shift 9 states stack input
+  Just ( PosToken _ (Type TInt) ) -> shift 7 states stack input
+  Just ( PosToken _ (Type TDouble) ) -> shift 8 states stack input
+  Just ( PosToken _ (Type TChar) ) -> shift 9 states stack input
   Just ( PosToken _  Function ) -> shift 10 states stack input
   Just ( PosToken _ (Token '{') ) -> shift 11 states stack input
   Nothing -> reduce 8 states stack input
@@ -975,9 +975,9 @@ state states@(56:_) stack input = case headMay input of
                ++ "\nexpecting '+', '-', ']'"
 state states@(57:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -985,9 +985,9 @@ state states@(57:_) stack input = case headMay input of
                ++ "\nexpecting id, integer, real, character, '-', '('"
 state states@(58:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -1022,9 +1022,9 @@ state states@(60:_) stack input = case headMay input of
                ++ "\nexpecting '+', '-', ')'"
 state states@(61:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -1032,9 +1032,9 @@ state states@(61:_) stack input = case headMay input of
                ++ "\nexpecting id, integer, real, character, '-', '('"
 state states@(62:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -1042,9 +1042,9 @@ state states@(62:_) stack input = case headMay input of
                ++ "\nexpecting id, integer, real, character, '-', '('"
 state states@(63:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -1052,9 +1052,9 @@ state states@(63:_) stack input = case headMay input of
                ++ "\nexpecting id, integer, real, character, '-', '('"
 state states@(64:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -1062,9 +1062,9 @@ state states@(64:_) stack input = case headMay input of
                ++ "\nexpecting id, integer, real, character, '-', '('"
 state states@(65:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -1095,9 +1095,9 @@ state states@(68:_) stack input = case headMay input of
                ++ "\nexpecting or, ')'"
 state states@(69:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -1105,10 +1105,10 @@ state states@(69:_) stack input = case headMay input of
                ++ "\nexpecting id, integer, real, character, '-', '('"
 state states@(70:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Boolean _) ) -> shift 33 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DBool _) ) -> shift 33 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _  Not ) -> shift 34 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _  Eof ) -> shift 35 states stack input
@@ -1133,10 +1133,10 @@ state states@(71:_) stack input = case headMay input of
                ++ "\nexpecting id, read, output, return, if, while, func, '{', 'eof', ';', '}'"
 state states@(72:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Boolean _) ) -> shift 33 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DBool _) ) -> shift 33 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _  Not ) -> shift 34 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _  Eof ) -> shift 35 states stack input
@@ -1193,9 +1193,9 @@ state states@(79:_) stack input = case headMay input of
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ']'"
 state states@(80:_) stack input = case headMay input of
-  Just ( PosToken _ (Type Int) ) -> shift 48 states stack input
-  Just ( PosToken _ (Type Double) ) -> shift 49 states stack input
-  Just ( PosToken _ (Type Char) ) -> shift 50 states stack input
+  Just ( PosToken _ (Type TInt) ) -> shift 48 states stack input
+  Just ( PosToken _ (Type TDouble) ) -> shift 49 states stack input
+  Just ( PosToken _ (Type TChar) ) -> shift 50 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting int, double, char"
@@ -1478,9 +1478,9 @@ state states@(109:_) stack input = case headMay input of
                ++ "\nexpecting ')', ';'"
 state states@(110:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -1508,9 +1508,9 @@ state states@(111:_) stack input = case headMay input of
                ++ "\nexpecting 'eof', ')', '*', '+', '-', '/', ';', ']', '}', and, do, else, mod, or, relop, then"
 state states@(112:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 23 states stack input
-  Just ( PosToken _ (Integer _) ) -> shift 24 states stack input
-  Just ( PosToken _ (Real _) ) -> shift 25 states stack input
-  Just ( PosToken _ (Character _) ) -> shift 26 states stack input
+  Just ( PosToken _ (DInt _) ) -> shift 24 states stack input
+  Just ( PosToken _ (DDouble _) ) -> shift 25 states stack input
+  Just ( PosToken _ (DChar _) ) -> shift 26 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 27 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 28 states stack input
   _ -> error $ "unexpected " ++
@@ -1596,9 +1596,9 @@ state states@(121:_) stack input = case headMay input of
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '{'"
 state states@(122:_) stack input = case headMay input of
-  Just ( PosToken _ (Type Int) ) -> shift 48 states stack input
-  Just ( PosToken _ (Type Double) ) -> shift 49 states stack input
-  Just ( PosToken _ (Type Char) ) -> shift 50 states stack input
+  Just ( PosToken _ (Type TInt) ) -> shift 48 states stack input
+  Just ( PosToken _ (Type TDouble) ) -> shift 49 states stack input
+  Just ( PosToken _ (Type TChar) ) -> shift 50 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting int, double, char"
@@ -1640,9 +1640,9 @@ state states@(127:_) stack input = case headMay input of
   Just ( PosToken _  Return ) -> shift 4 states stack input
   Just ( PosToken _  If ) -> shift 5 states stack input
   Just ( PosToken _  While ) -> shift 6 states stack input
-  Just ( PosToken _ (Type Int) ) -> shift 7 states stack input
-  Just ( PosToken _ (Type Double) ) -> shift 8 states stack input
-  Just ( PosToken _ (Type Char) ) -> shift 9 states stack input
+  Just ( PosToken _ (Type TInt) ) -> shift 7 states stack input
+  Just ( PosToken _ (Type TDouble) ) -> shift 8 states stack input
+  Just ( PosToken _ (Type TChar) ) -> shift 9 states stack input
   Just ( PosToken _  Function ) -> shift 10 states stack input
   Just ( PosToken _ (Token '{') ) -> shift 11 states stack input
   Nothing -> reduce 8 states stack input

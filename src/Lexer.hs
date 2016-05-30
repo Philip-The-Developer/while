@@ -126,8 +126,8 @@ process (cur:source) pos
       (name, source') = span isAlphaNumeric source
       l = length (cur:name)
       token = case cur:name of
-        "true"   -> Boolean True
-        "false"  -> Boolean False
+        "true"   -> DBool True
+        "false"  -> DBool False
         "not"    -> Not
         "and"    -> LogOp And
         "or"     -> LogOp Or
@@ -141,9 +141,9 @@ process (cur:source) pos
         "else"   -> Else
         "while"  -> While
         "do"     -> Do
-        "int"    -> Type Int      -- $ added
-        "double" -> Type Double   -- $ added
-        "char"   -> Type Char
+        "int"    -> Type TInt      -- $ added
+        "double" -> Type TDouble   -- $ added
+        "char"   -> Type TChar
         "function"->Function      -- $ added
         _        -> Id (cur:name)
 
@@ -153,18 +153,18 @@ process (cur:source) pos
     where
       (rest1, s:source1) = span isDigit source
       (rest2, source') = if s == '.' then span isDigit (source1) else ([], s:source1)
-      (rest, token) = if s == '.' then (rest1 ++ [s] ++ if rest2 /= [] then rest2 else "0", Real (read (cur:rest) :: Prelude.Double))
-                      else (rest1, Integer (read (cur:rest) :: Int64))
+      (rest, token) = if s == '.' then (rest1 ++ [s] ++ if rest2 /= [] then rest2 else "0", DDouble (read (cur:rest) :: Prelude.Double))
+                      else (rest1, DInt (read (cur:rest) :: Int64))
       l = length (cur:rest)
 process (cur:source) pos
   | cur == '.' && isDigit (head source)= PosToken pos token : process source' (incrColumn pos l)
     where
       (rest, source') = span isDigit source
       l = length (cur:rest)
-      token = Real (read ("0." ++ rest) :: Prelude.Double)
+      token = DDouble (read ("0." ++ rest) :: Prelude.Double)
 
 -- Character
-process ('\'':c:'\'':source) pos = PosToken pos (Character (c)):process source (incrColumn pos 3)
+process ('\'':c:'\'':source) pos = PosToken pos (DChar (c)):process source (incrColumn pos 3)
 
 -- Single char tokens
 process (cur:source) pos

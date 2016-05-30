@@ -50,10 +50,10 @@ instance Eq PosToken where
 -- | A data type for the tokens generated during the lexing phase.
 data Token
   = Id String              -- ^ All possible variable names (@stuff@, @foo@, @bar@, …)
-  | Integer Int64          -- $ Integer number (@34@, @132@, @894@, …)
-  | Real Prelude.Double    -- $ Double-precision floating-point number (@34.1@, @132.1@, @894.1@, …)
-  | Boolean Bool           -- ^ Boolean values (@true@ and @false@)
-  | Character Prelude.Char --   Character (@'a'@, @'b'@, @'c'@)
+  | DInt Int64          -- $ Integer number (@34@, @132@, @894@, …)
+  | DDouble Prelude.Double    -- $ Double-precision floating-point number (@34.1@, @132.1@, @894.1@, …)
+  | DBool Bool           -- ^ Boolean values (@true@ and @false@)
+  | DChar Prelude.Char --   Character (@'a'@, @'b'@, @'c'@)
   | LogOp LogOp            -- ^ Logical operators (@and@ and @or@)
   | Not                    -- ^ Boolean negation (@not@)
   | RelOp RelOp            -- ^ Relational operators (@=@, @<@, @<=@, @>@, @>=@ and @!=@)
@@ -76,10 +76,10 @@ data Token
 -- | Display tokens in the form @\<token[,attribute]\>@.
 instance Show Token where
   show (Id i)         = "<id,\"" ++ i ++ "\">"
-  show (Integer n)    = "<integer," ++ show n ++ ">"  -- $ modified
-  show (Real n)       = "<real," ++ show n ++ ">"     -- $ added
-  show (Boolean b)    = "<boolean," ++ show b ++ ">"
-  show (Character c)  = "character," ++ show c ++ ">"
+  show (DInt n)       = "<integer," ++ show n ++ ">"  -- $ modified
+  show (DDouble n)    = "<real," ++ show n ++ ">"     -- $ added
+  show (DBool b)      = "<boolean," ++ show b ++ ">"
+  show (DChar c)      = "character," ++ show c ++ ">"
   show (LogOp lo)     = "<logop," ++ show lo ++ ">"
   show Not            = "<not>"
   show (RelOp ro)     = "<relop," ++ show ro ++ ">"
@@ -147,16 +147,16 @@ instance Show MathOp where
 
 -- $| Basic type declarations.
 data Type
-  = Int         -- $ Integer declaration (@int@)
-  | Double      -- $ Double-precision floating-point number declaration (@double@)
-  | Char        --   Character declaration (@char@)
+  = TInt         -- $ Integer declaration (@int@)
+  | TDouble      -- $ Double-precision floating-point number declaration (@double@)
+  | TChar        --   Character declaration (@char@)
   deriving (Eq)
 
 -- $| Display as @int@ or @double@.
 instance Show Type where
-  show Int    = "int"
-  show Double = "double"
-  show Char   = "char"
+  show TInt    = "int"
+  show TDouble = "double"
+  show TChar   = "char"
 
 -- | Gets the position from a token.
 getPosition :: PosToken -> SourcePos
