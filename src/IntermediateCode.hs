@@ -12,13 +12,12 @@
 module IntermediateCode (
   IntermediateCode.process
 ) where
-
 import Prelude (
     Int,
     show,
     (+), ($), (++), (==),
     (||), (/=), (!!), (&&), (>), not,
-    String, Bool (..), Maybe (..), error,
+    String, Bool (..), Maybe (..), error, putStrLn,
     fst, head, last, length, takeWhile
   )
 import Control.Monad.State (
@@ -278,6 +277,8 @@ command cmd next = case cmd of
       let (f',u',udf) = function d p c state
       put (t,l,s,r,f',u',a)
       return ([], udf, "")
+  AST.LabelEnvironment i c -> do
+    return ([],[],"")
 
 -- $| Generates three address code for one expression in the AST (possibly
 -- generating code for subexpressions first) and determines its type.

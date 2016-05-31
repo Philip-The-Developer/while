@@ -1,0 +1,8 @@
+labels hallo {
+  int i;
+  int i2;
+  char c;
+  char[] chars};
+int c;
+read c;
+output c;

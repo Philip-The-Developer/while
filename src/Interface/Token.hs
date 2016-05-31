@@ -50,10 +50,10 @@ instance Eq PosToken where
 -- | A data type for the tokens generated during the lexing phase.
 data Token
   = Id String              -- ^ All possible variable names (@stuff@, @foo@, @bar@, …)
-  | DInt Int64          -- $ Integer number (@34@, @132@, @894@, …)
-  | DDouble Prelude.Double    -- $ Double-precision floating-point number (@34.1@, @132.1@, @894.1@, …)
-  | DBool Bool           -- ^ Boolean values (@true@ and @false@)
-  | DChar Prelude.Char --   Character (@'a'@, @'b'@, @'c'@)
+  | DInt Int64             -- $ Integer number (@34@, @132@, @894@, …)
+  | DDouble Prelude.Double -- $ Double-precision floating-point number (@34.1@, @132.1@, @894.1@, …)
+  | DBool Bool             -- ^ Boolean values (@true@ and @false@)
+  | DChar Prelude.Char     --   Character (@'a'@, @'b'@, @'c'@)
   | LogOp LogOp            -- ^ Logical operators (@and@ and @or@)
   | Not                    -- ^ Boolean negation (@not@)
   | RelOp RelOp            -- ^ Relational operators (@=@, @<@, @<=@, @>@, @>=@ and @!=@)
@@ -69,6 +69,7 @@ data Token
   | While                  -- ^ While
   | Do                     -- ^ Do
   | Function               -- $ Function
+  | LabelSpec              --   Label environment
   | Token Prelude.Char             -- ^ Single char tokens – used for parentheses, braces, …
   | Type Type              -- $ Base types (@int@ and @float@)  
   deriving (Eq)
@@ -96,6 +97,7 @@ instance Show Token where
   show Do             = "<do>"
   show (Type t)       = "<type,\"" ++ show t ++ "\">" -- $ added
   show Function       = "<function>"                  -- $ added
+  show LabelSpec      = "<label enviroment>"
   show (Token c)      = "<" ++ [c] ++ ">"
 
 -- | Operations on boolean values.

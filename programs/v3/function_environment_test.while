@@ -1,0 +1,8 @@
+char c;
+c := 'c';
+function int printC(char d){
+  output d;
+  return 0;
+};
+int mock;
+mock := printC('d');

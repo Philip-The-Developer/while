@@ -63,6 +63,7 @@ data Command
                                               -- expression to an array element
   | Environment Command                       -- $ push and pop environment
   | Function Command Command Command          -- $ Type signature and code
+  | LabelEnvironment String Command
   deriving (Show, Eq)
 
 -- | An arithmetic expression.
@@ -117,6 +118,7 @@ walkAST tc te tb = walkC
     walkC (ToArray i e1 e2) = tc (ToArray i (walkE e1) (walkE e2))               -- $ added
     walkC (Environment c) = tc (Environment (walkC c))                           -- $ added
     walkC (Function t p c) = tc (Function (walkC t) (walkC p) (walkC c))         -- $ added
+    walkC (LabelEnvironment i p) = tc (LabelEnvironment i (walkC p))
 
     walkE :: Expression -> Expression
     walkE (Calculation op e1 e2) = te (Calculation op (walkE e1) (walkE e2))

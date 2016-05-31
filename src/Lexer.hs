@@ -144,6 +144,7 @@ process (cur:source) pos
         "int"    -> Type TInt      -- $ added
         "double" -> Type TDouble   -- $ added
         "char"   -> Type TChar
+        "labels" -> LabelSpec
         "function"->Function      -- $ added
         _        -> Id (cur:name)
 
