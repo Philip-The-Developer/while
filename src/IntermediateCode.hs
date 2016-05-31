@@ -483,25 +483,16 @@ allocateParameters params alts = case params of
 labelenvironment :: String -> AST.Command -> GenState -> (DataLabelScopes, TAC.TAC)
 labelenvironment name labels (_,_,_,_,_,_,_,labelMap) = (labelMap', tac')
   where
-    (labelMap', tac') = getLabels name labels labelMap
+    (labelMap', tac', _) = getLabels name labels 0 labelMap
 
 -- TODO documentation
-getLabels :: String -> AST.Command -> DataLabelScopes -> (DataLabelScopes, TAC.TAC)
-getLabels labelSpec labels labelMap = case labels of
-  AST.Sequence c1 c2 -> (labelMap2, tac1++tac2)
+getLabels :: String -> AST.Command -> Int64 -> DataLabelScopes -> (DataLabelScopes, TAC.TAC, Int64)
+getLabels labelSpec labels index labelMap = case labels of
+  AST.Sequence c1 c2 -> (labelMap2, tac1++tac2, index2)
     where
-      (labelMap1, tac1) = getLabels labelSpec c1 labelMap
-      (labelMap2, tac2) = getLabels labelSpec c2 labelMap1
-  AST.Declaration _type name -> (labelMap',tac)
-    where
-      labelMap' = 
-        if isNothing $ Map.lookup labelName labelMap 
-        then Map.insert labelName labelID labelMap 
-        else error $ "Label "++labelName++" defined twice."
-      labelID = "label_"++labelSpec++"_"++name
-      labelName = (labelSpec++":"++name)
-      tac = [TAC.DatLabel labelID (mapType _type False) labelName]
-  AST.ArrayDecl _type name ->(labelMap',tac)
+      (labelMap1, tac1, index1) = getLabels labelSpec c1 (index) labelMap
+      (labelMap2, tac2, index2) = getLabels labelSpec c2 (index1) labelMap1
+  AST.Declaration _type name -> (labelMap',tac, index+1)
     where
       labelMap' = 
         if isNothing $ Map.lookup labelName labelMap 
@@ -509,7 +500,16 @@ getLabels labelSpec labels labelMap = case labels of
         else error $ "Label "++labelName++" defined twice."
       labelID = "label_"++labelSpec++"_"++name
       labelName = (labelSpec++":"++name)
-      tac = [TAC.DatLabel labelID (mapType _type True) labelName]
+      tac = [TAC.DatLabel labelID index (mapType _type False) labelName]
+  AST.ArrayDecl _type name ->(labelMap',tac, index+1)
+    where
+      labelMap' = 
+        if isNothing $ Map.lookup labelName labelMap 
+        then Map.insert labelName labelID labelMap 
+        else error $ "Label "++labelName++" defined twice."
+      labelID = "label_"++labelSpec++"_"++name
+      labelName = (labelSpec++":"++name)
+      tac = [TAC.DatLabel labelID index (mapType _type True) labelName]
 
 mapType :: T.Type -> Bool -> Int64
 mapType T.TDouble False = 1
