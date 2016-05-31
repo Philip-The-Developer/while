@@ -218,7 +218,11 @@ main = do
     when outputDotFiles $ astToDotFile optimizedAST
                           (addExtension outputFile "ast-optimized.dot")
 
-    let (names, intermediateCodes) = unzip $ IC.process optimizedAST -- $ modified
+    let ((directiveName:names), (directives:intermediateCodes)) = unzip $ IC.process optimizedAST -- $ modified
+    
+    when debugMode $ putStrLn $ "*** directives:\n"++
+                     numberLines (unlines $ fmap show directives) ++ "\n"
+    
     when debugMode $ putStrLn $ "*** intermediate code:\n" ++
                      numberLines (unlines $ fmap show $ head intermediateCodes) ++ "\n"
 
