@@ -33,6 +33,10 @@ import Data.String.Utils (
     split, endswith
   )
 
+import Data.Int (
+    Int64
+  )
+
 import qualified Interface.Token as T
 import qualified Interface.AST as AST
 import qualified Interface.TAC as TAC
@@ -43,7 +47,7 @@ import GarbageCollection.GarbageCollection (
 -- variables and one for the labels, the mapping from variable to data type,
 -- return type. Function signatures, function labels and variable location names,
 -- for each is a map required too.
-type GenState = (TempCounter, LabelCounter, Environment, ReturnType, FunctionScopes, UDFLabels, Locations)
+type GenState = (TempCounter, LabelCounter, Environment, ReturnType, FunctionScopes, UDFLabels, Locations, DataLabelScopes)
 -- | This is just a number.
 type TempCounter = Int
 -- | This is just a number.
@@ -56,6 +60,7 @@ type Type = String
 type ReturnType = String
 -- $| This is a list of maps representing scopes of user-defined functions.
 type FunctionScopes = [Map String String]
+type DataLabelScopes = Map String String
 -- $| This is a map of reserved labels for user-defined functions.
 type UDFLabels = Map String [String]
 -- $| This is a list of UDF names and TACs.
@@ -68,21 +73,21 @@ type Locations = Map String [String]
 process :: AST.AST -> TACstream -- $ modified
 process ast = ("",intermediateCode):appendix
   where
-    ((intermediateCode,appendix), _) = runState (program ast) (0,0,[Map.empty], "void", [Map.singleton "length" "length_:int:any[]"], Map.empty, Map.singleton "length" ["length_"])
+    ((intermediateCode,appendix), _) = runState (program ast) (0,0,[Map.empty], "void", [Map.singleton "length" "length_:int:any[]"], Map.empty, Map.singleton "length" ["length_"],Map.empty)
 
 -- | Generates a new label and increments the internal label counter.
 newLabel :: State GenState TAC.Label
 newLabel = do
-  (t,l,s,r,f,u,a) <- get         -- $ modified
-  put (t,l+1,s,r,f,u,a)          -- $ modified
+  (t,l,s,r,f,u,a,d) <- get         -- $ modified
+  put (t,l+1,s,r,f,u,a,d)          -- $ modified
   return $ "label" ++ show (l+1)
 
 -- | Generates a new temporary variable and increments the internal variable
 -- counter.
 newTemp :: State GenState TAC.Variable
 newTemp = do
-  (t,l,s,r,f,u,a) <- get     -- $ modified
-  put (t+1,l,s,r,f,u,a)      -- $ modified
+  (t,l,s,r,f,u,a,d) <- get     -- $ modified
+  put (t+1,l,s,r,f,u,a,d)      -- $ modified
   return $ "#" ++ show (t+1)
 
 -- | Returns the variable given as parameter. To be used in 'expressionInto'.
@@ -92,7 +97,7 @@ fixedVar = return
 -- $| Looks up type of variable.
 lookup :: String -> Bool -> State GenState (Maybe String)
 lookup i u = do
-  (_,_,s,_,f,_,_) <- get
+  (_,_,s,_,f,_,_,_) <- get
   let type_ = if u then scopes i f else scopes i s
   return type_
   where
@@ -123,7 +128,7 @@ program :: AST.AST -> State GenState (TAC.TAC, TACstream) -- $ modified
 program prog = do
   next <- newLabel
   (tac, udf, rt1) <- command prog next
-  (_,_,_,r,_,_,_) <- get
+  (_,_,_,r,_,_,_,_) <- get
   let (function, rt2) = let list = split ":" r in (head list, last list)
   if r == "void" || rt1 == rt2
     then return (tac ++ [TAC.Label next], udf)
@@ -145,7 +150,7 @@ command cmd next = case cmd of
         else error "No native support for outputting arrays."
   AST.Return e -> do -- $ added
     (tac,data_,type_) <- expression e
-    (_,_,_,r,_,_,_) <- get
+    (_,_,_,r,_,_,_,_) <- get
     let (function, rt) = let list = split ":" r in (head list, last list)
     if r == "void"
           then return ([], [], "")
@@ -200,9 +205,9 @@ command cmd next = case cmd of
     else if not $ endswith "[]" (fromJust type1)
       then return (tac ++ if data_ == TAC.Variable (fromJust type1) then [] else [TAC.Copy (fromJust type1) data_], [], "")
     else do
-      (t,l,env@(s:_),r,f,u,a) <- get
+      (t,l,env@(s:_),r,f,u,a,dataLabel) <- get
       let env' = insert i (show data_) env
-      put (t,l,env',r,f,u,a)
+      put (t,l,env',r,f,u,a,dataLabel)
       if isNothing $ Map.lookup i s
         then return (tac ++ [TAC.ArrayCopy (show data_) data_], [], "")
       else return (tac ++ if data_ == TAC.Variable (fromJust type1) || r /= "void" then [] else [TAC.ArrayCopy (fromJust type1) data_], [], "")
@@ -223,25 +228,25 @@ command cmd next = case cmd of
           then error $ "Assignment of an expression to array " ++ i ++ " not possible due to type conflict."
         else return (tac1 ++ tac2 ++ [TAC.ToArray (fromJust type_) data1 data2], [], "")
   AST.Declaration _type i -> do -- $$ added
-    (t,l,s:ss,r,f,u,a) <- get
+    (t,l,s:ss,r,f,u,a,dataLabel) <- get
     let type_ = Map.lookup i s
     if isJust type_
       then error $ "Name " ++ i ++ " is already used."
     else do
       let (name, a') = newAlt i a
-      put (t,l,(Map.insert i (name ++ ":" ++ show _type) s):ss,r,f,u,a')
+      put (t,l,(Map.insert i (name ++ ":" ++ show _type) s):ss,r,f,u,a',dataLabel)
       return ([], [], "")
   AST.ArrayDecl _type i -> do -- $$ added
-    (t,l,s:ss,r,f,u,a) <- get
+    (t,l,s:ss,r,f,u,a,dataLabel) <- get
     let type_ = Map.lookup i s
     if isJust type_
       then error $ "Name " ++ i ++ " is already used."
     else do
       let (name, a') = newAlt i a
-      put (t,l,(Map.insert i (name ++ ":" ++ show _type ++ "[]") s):ss,r,f,u,a')
+      put (t,l,(Map.insert i (name ++ ":" ++ show _type ++ "[]") s):ss,r,f,u,a',dataLabel)
       return ([], [], "")
   AST.ArrayAlloc _type e i -> do -- $$ added
-    (t,l,s:ss,r,f,u,a) <- get
+    (t,l,s:ss,r,f,u,a,dataLabel) <- get
     let type_ = Map.lookup i s
     if isJust type_
       then error $ "Name " ++ i ++ " is already used."
@@ -256,16 +261,16 @@ command cmd next = case cmd of
               _ -> error $ "Array " ++ i ++ "must be declared with int size >= 0."
         let (name, a') = newAlt i a
         let signature = name ++ ":" ++ type_
-        put (t,l,(Map.insert i signature s):ss,r,f,u,a')
+        put (t,l,(Map.insert i signature s):ss,r,f,u,a',dataLabel)
         return (tac ++ [TAC.ArrayAlloc signature data_] ++ [TAC.Push $ TAC.Variable signature], [], "")
   AST.Environment c -> do -- $$ added
-    (t,l,s,r,f,u,a) <- get
-    put (t,l,Map.empty:s,r,Map.empty:f,u,a)
+    (t,l,s,r,f,u,a,dataLabel) <- get
+    put (t,l,Map.empty:s,r,Map.empty:f,u,a,dataLabel)
     (tac,udf,rt) <- command c next
-    put (t,l,s,r,f,u,a)
+    put (t,l,s,r,f,u,a,dataLabel)
     return (tac ++ (dealloc tac), udf, rt)
   AST.Function d p c -> do -- $$ added
-    (t,l,s,r,f:ff,u,a) <- get
+    (t,l,s,r,f:ff,u,a,dataLabel) <- get
     let i = case d of
           AST.Declaration _type i -> i
           AST.ArrayDecl _type i -> i
@@ -273,12 +278,15 @@ command cmd next = case cmd of
     if isJust signature
           then error $ "User-defined function " ++ i ++ " already defined."
     else do
-      let state = (0,0,[Map.empty],"",f:ff,u,Map.empty)
+      let state = (0,0,[Map.empty],"",f:ff,u,Map.empty,dataLabel)
       let (f',u',udf) = function d p c state
-      put (t,l,s,r,f',u',a)
+      put (t,l,s,r,f',u',Map.empty,dataLabel)
       return ([], udf, "")
-  AST.LabelEnvironment i c -> do
-    return ([],[],"")
+  AST.LabelEnvironment name labels -> do
+    (t,l,s,r,f:ff,u,a,dataLabel) <- get
+    let (dataLabel',tac) = labelenvironment name labels (t,l,s,r,f:ff,u,a,dataLabel) 
+    put (t,l,s,r,f:ff,u,a,dataLabel')
+    return (tac,[],"")
 
 -- $| Generates three address code for one expression in the AST (possibly
 -- generating code for subexpressions first) and determines its type.
@@ -441,14 +449,14 @@ boolExpression bexpr lTrue lFalse = case bexpr of
 
 -- $| Given an abstract syntax tree for parameters and code each it generates an appendix with user-defined functions for later use.
 function :: AST.Command -> AST.Command -> AST.AST -> GenState -> (FunctionScopes, UDFLabels, TACstream)
-function d p c (t,l,s,_,f:ff,u,a) = (f':ff, u'', (name, intermediateCode'):_TACstream)
+function d p c (t,l,s,_,f:ff,u,a,dataLabel) = (f':ff, u'', (name, intermediateCode'):_TACstream)
   where
       (f', r', i) = case d of
         AST.Declaration _type i -> (Map.insert i (r' ++ ":" ++ params p) f, name ++ ":" ++ show _type, i)
         AST.ArrayDecl _type i -> (Map.insert i (r' ++ ":" ++ params p) f, name ++ ":" ++ show _type ++ "[]", i)
       names = Map.lookup i u
       (name, u') = if isNothing names then (i ++ "_", Map.insert i [name] u) else (i ++ "_" ++ (show $ length $ fromJust names), Map.insert i ((fromJust names) ++ [name]) u)
-      ((intermediateCode,_TACstream), (_,_,_,_,_,u'',_)) = runState (program $ AST.Sequence p c) (t,l,s,r',f':ff,u',a)          
+      ((intermediateCode,_TACstream), (_,_,_,_,_,u'',_,dataLabel')) = runState (program $ AST.Sequence p c) (t,l,s,r',f':ff,u',a,dataLabel)          
       intermediateCode' = fst (allocateParameters p a) ++ [TAC.Call "dummy:double" "dummy"] ++ intermediateCode
 
 -- $| Given a list of parameters it generates a string representing the signature.
@@ -471,4 +479,43 @@ allocateParameters params alts = case params of
   AST.Declaration _type i -> let (name, alts') = newAlt i alts in ([TAC.Pop $ name ++ ":" ++ show _type], alts')
   AST.ArrayDecl _type i -> let (name, alts') = newAlt i alts in ([TAC.Pop $ name ++ ":" ++ show _type ++ "[]"], alts')
 
+-- TODO documentation
+labelenvironment :: String -> AST.Command -> GenState -> (DataLabelScopes, TAC.TAC)
+labelenvironment name labels (_,_,_,_,_,_,_,labelMap) = (labelMap', tac')
+  where
+    (labelMap', tac') = getLabels name labels labelMap
+
+-- TODO documentation
+getLabels :: String -> AST.Command -> DataLabelScopes -> (DataLabelScopes, TAC.TAC)
+getLabels labelSpec labels labelMap = case labels of
+  AST.Sequence c1 c2 -> (labelMap2, tac1++tac2)
+    where
+      (labelMap1, tac1) = getLabels labelSpec c1 labelMap
+      (labelMap2, tac2) = getLabels labelSpec c2 labelMap1
+  AST.Declaration _type name -> (labelMap',tac)
+    where
+      labelMap' = 
+        if isNothing $ Map.lookup labelName labelMap 
+        then Map.insert labelName labelID labelMap 
+        else error $ "Label "++labelName++" defined twice."
+      labelID = "label_"++labelSpec++"_"++name
+      labelName = (labelSpec++":"++name)
+      tac = [TAC.DatLabel labelID (mapType _type False) labelName]
+  AST.ArrayDecl _type name ->(labelMap',tac)
+    where
+      labelMap' = 
+        if isNothing $ Map.lookup labelName labelMap 
+        then Map.insert labelName labelID labelMap 
+        else error $ "Label "++labelName++" defined twice."
+      labelID = "label_"++labelSpec++"_"++name
+      labelName = (labelSpec++":"++name)
+      tac = [TAC.DatLabel labelID (mapType _type True) labelName]
+
+mapType :: T.Type -> Bool -> Int64
+mapType T.TDouble False = 1
+mapType T.TDouble True = 254
+mapType T.TInt False = 2
+mapType T.TInt True = 253
+mapType T.TChar False = 3
+mapType T.TChar True = 252
 

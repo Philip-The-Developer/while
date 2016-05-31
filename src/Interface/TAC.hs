@@ -108,7 +108,7 @@ instance Show Command where
   show (GotoCond2 l cond d1 d2) = "goto " ++ l ++ " if " ++ show d1 ++ " " ++
                                   show cond ++ " " ++ show d2
   show (Label l) = l ++ ":"
-  show (DatLabel l i s) = s++" at "++l++": "++ show i
+  show (DatLabel l i s) = ".CREATE label ("++l++": '"++s++"' ["++ show i++"])"
 
 -- | The different conditions for a goto statement with one parameter.
 data GotoCondition1
