@@ -15,8 +15,8 @@ import Prelude (
     IO, Maybe (..), Bool (..), FilePath, String, Int,
     putStrLn, show, readFile, unlines, fmap, writeFile, return, foldl, flip, id,
     concat, not, null, unwords,
-    ($), (.), (++), (||),
-    (>), head, zipWith, unzip, concat
+    ($), (.), (++), (||),(!!),
+    (>), head, zipWith, unzip, concat, tail
   )
 import System.IO (
     hPutStrLn, stderr
@@ -226,9 +226,9 @@ main = do
     when debugMode $ putStrLn $ "*** intermediate code:\n" ++
                      numberLines (unlines $ fmap show $ head intermediateCodes) ++ "\n"
 
-    let optimizedIntermediateCodes = fmap OT.optimize intermediateCodes -- $ modified
+    let optimizedIntermediateCodes = fmap OT.optimize (directives:intermediateCodes) -- $ modified
     when debugMode $ putStrLn $ "*** optimized intermediate code:\n" ++
-                     numberLines (unlines $ fmap show $ head optimizedIntermediateCodes)
+                     numberLines (unlines $ fmap show $ optimizedIntermediateCodes!!1)
                      ++ "\n"
 
     let basicBlockGraphs = fmap BB.tacToGraph optimizedIntermediateCodes -- $ modified
@@ -269,15 +269,16 @@ main = do
                                  LV.removeLiveVariableAnnotations) renamedLVGraphs
 
     let (nasmCodes, frames) = unzip $ zipWith N.process finishedTACs liveRanges   -- $ modified
-    when debugMode $ putStrLn $ "*** NASM code:\n" ++ numberLinesAt 140 (head nasmCodes)
+    when debugMode $ putStrLn $ "*** NASM code:\n" ++ numberLinesAt 140 (nasmCodes !! 2)
 
-    let userDefined_functions = GC.returnSequence names nasmCodes frames -- $ added
+    let userDefined_functions = GC.returnSequence names (tail nasmCodes) frames -- $ added
 
     let nasmFile = addExtension outputFile "asm"
     -- template <- readFile "../src/template.asm"
     let template = unpack $ $(embedFile "src/template.asm")
-    writeFile nasmFile $ (intercalate ((if (head frames) > 0 then "\nsub rsp, " ++ show (head frames) ++ "\n" else "\n") ++ (head nasmCodes)) $
-                                          splitOn ";{-# MAIN CODE #-}" template) ++ (concat userDefined_functions) -- $ modified
+    writeFile nasmFile $ (intercalate (head nasmCodes) $ 
+                            splitOn ";{-# GENERATED #-}" (intercalate ((if (head frames) > 0 then "\nsub rsp, " ++ show (head frames) ++ "\n" else "\n") ++ (nasmCodes !! 1)) $
+                                          splitOn ";{-# MAIN CODE #-}" template)) ++ (concat userDefined_functions) -- $ modified
 
     let objectFile = addExtension outputFile "o"
     (_, _, _, pNasm) <- createProcess

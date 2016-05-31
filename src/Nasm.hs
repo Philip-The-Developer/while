@@ -719,6 +719,8 @@ generate' (hd:rst) isDebug = do
           [instr $ "call " ++ l
           , if endswith ":double" v then mov o1 xmm0 else mov o1 rax]
 
+    TAC.DatLabel label _type name -> returnCode[instr $ label++":\tdb "++(show _type)]  
+
   (m, high, liveData, line) <- get
   put (m, high, liveData, line+1)
   rest <- generate' rst isDebug
