@@ -81,6 +81,7 @@ data Expression
   | Double Prelude.Double                     -- $ Double-precision floating-point number
   | Character Prelude.Char                    --  Character
   | Reference String String                   --  Reference
+  | ToClass String                            --  wrap a label environment to a class
   deriving (Show, Eq)
 
 -- | A boolean expression.

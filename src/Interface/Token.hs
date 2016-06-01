@@ -66,6 +66,7 @@ data Token
   | Output                 -- ^ The output token (@output@)
   | Return                 -- $ The return token (@return@)
   | If                     -- ^ If
+  | ToClass                --   The to class operator (@toClass env@)
   | Then                   -- ^ Then
   | Else                   -- ^ Else
   | While                  -- ^ While
@@ -90,6 +91,7 @@ instance Show Token where
   show Assign         = "<:=>"
   show NameSpace      = "<:>"
   show Dot            = "<.>"
+  show ToClass        = "<toClass>"
   show Eof            = "<eof>"
   show Read           = "<read>"
   show Output         = "<output>"

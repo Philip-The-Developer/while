@@ -7,6 +7,6 @@ labels default {
   int c
 };
 ref reference;
-reference := hallo:i;
+reference := toClass hallo;
 ref reference2;
 reference2 := :c;

@@ -140,6 +140,7 @@ process (cur:source) pos
         "then"   -> Then
         "else"   -> Else
         "while"  -> While
+        "toClass"-> ToClass
         "do"     -> Do
         "int"    -> Type TInt      -- $ added
         "double" -> Type TDouble   -- $ added
