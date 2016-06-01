@@ -42,8 +42,9 @@ category:            Language
 
 build-type:          Simple
 
-data-files:          src/template.asm, src/ParserGenerator/Template.hs,
-                     programs/v1/*.while, programs/v2/*.while, src/Parser/While.parser
+data-files:          src/template.asm, src/environment.asm, src/ParserGenerator/Template.hs,
+                     programs/v1/*.while, programs/v2/*.while, programs/v3/*.while,
+                     src/Parser/While.parser
 
 -- Constraint on the version of Cabal needed to build this package.
 cabal-version:       >=1.10

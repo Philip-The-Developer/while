@@ -285,11 +285,23 @@ main = do
                           (proc "nasm" ["-felf64", "-o", objectFile, nasmFile])
     _ <- waitForProcess pNasm
 
-    (_, _, _, pLd) <- createProcess (proc "gcc" ["-o", outputFile, objectFile]) -- $ modified
+    -- load and assembly environment.asm
+    let environment_nasmFile = addExtension outputFile "environment.asm"
+    let environment_template = unpack $ $(embedFile "src/environment.asm")
+    writeFile environment_nasmFile environment_template
+
+    let environment_objectFile = addExtension outputFile "environment.o"
+    (_,_,_, pEnvNasm) <- createProcess
+                          (proc "nasm" ["-felf64", "-o", environment_objectFile,environment_nasmFile])
+    _ <- waitForProcess pEnvNasm
+
+    (_, _, _, pLd) <- createProcess (proc "gcc" ["-o", outputFile, objectFile, environment_objectFile]) -- $ modified
     _ <- waitForProcess pLd
 
     when cleanUp $ do
       removeFile nasmFile
       removeFile objectFile
+      removeFile environment_nasmFile
+      removeFile environment_objectFile
 
     return ()
