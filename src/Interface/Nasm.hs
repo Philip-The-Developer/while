@@ -107,6 +107,7 @@ data Immediate
   = ImmediateInt Int64     -- $ modified
   | ImmediateDouble Double -- $ added
   | ImmediateChar Char
+  | ImmediateReference String
   deriving (Eq, Ord, Show)
 
 -- $| Show the immediate.
@@ -114,6 +115,7 @@ instance NasmCode Immediate where
   toCode (ImmediateInt i) = show i     -- $ modified
   toCode (ImmediateDouble i) = show i  -- $ added
   toCode (ImmediateChar c) = show c
+  toCode (ImmediateReference s) = s
 
 -- | General operands for assembly instructions.
 data Operand

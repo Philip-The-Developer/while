@@ -34,6 +34,8 @@ relop       { PosToken _ (RelOp $$) }
 '/'         { PosToken _ (MathOp DivBy) }
 mod         { PosToken _ (MathOp Mod) }
 ':='        { PosToken _  Assign }
+':'         { PosToken _ NameSpace}
+'.'         { PosToken _ Dot}
 eof         { PosToken _  Eof }
 read        { PosToken _  Read }
 output      { PosToken _  Output }
@@ -46,6 +48,7 @@ do          { PosToken _  Do }
 int         { PosToken _ (Type TInt) }    -- $ added
 double      { PosToken _ (Type TDouble) } -- $ added
 char        { PosToken _ (Type TChar) }
+ref         { PosToken _ (Type TRef)}
 func        { PosToken _  Function }     -- $ added
 labelspec   { PosToken _ LabelSpec}
 '('         { PosToken _ (Token '(') }
@@ -108,6 +111,8 @@ Factor  :: { AST.Expression }
         | id                            { AST.Identifier $1 }
         | id '[' Expr ']'               { AST.FromArray $1 $3 }
         | id '(' Params ')'             { AST.Func $1 $3 }
+        | id ':' id                     { AST.Reference $1 $3}
+        | ':' id                        { AST.Reference "default" $2}
         | integer                       { AST.Integer $1 }
         | real                          { AST.Double $1 }
         | character                     { AST.Character $1}
@@ -131,12 +136,14 @@ Primitives :: { AST.Command }
         : int id                        { AST.Declaration TInt $2 }
         | double id                     { AST.Declaration TDouble $2 }
         | char id                       { AST.Declaration TChar $2}
+        | ref id                        { AST.Declaration TRef $2}
 
 Alloc    :: { AST.Command }
         : Primitives                    { $1 }
         | int '[' Expr ']' id           { AST.ArrayAlloc TInt $3 $5 }
         | double '[' Expr ']' id        { AST.ArrayAlloc TDouble $3 $5 }
         | char '[' Expr ']' id          { AST.ArrayAlloc TChar $3 $5}
+        | ref '[' Expr ']' id           { AST.ArrayAlloc TRef $3 $5}
 
 Decl    :: { AST.Command }
         : Primitives                    { $1 }

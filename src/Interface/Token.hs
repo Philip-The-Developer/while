@@ -59,6 +59,8 @@ data Token
   | RelOp RelOp            -- ^ Relational operators (@=@, @<@, @<=@, @>@, @>=@ and @!=@)
   | MathOp MathOp          -- ^ Arithmetic operators (@mod@, @+@, @-@, @*@, @/@)
   | Assign                 -- ^ The assignment operator (@:=@)
+  | NameSpace              --   The name space operator (@:@)
+  | Dot                    --   The dot operator (@.@)
   | Eof                    -- ^ The eof predicate (@eof@)
   | Read                   -- ^ The read token (@read@)
   | Output                 -- ^ The output token (@output@)
@@ -80,12 +82,14 @@ instance Show Token where
   show (DInt n)       = "<integer," ++ show n ++ ">"  -- $ modified
   show (DDouble n)    = "<real," ++ show n ++ ">"     -- $ added
   show (DBool b)      = "<boolean," ++ show b ++ ">"
-  show (DChar c)      = "character," ++ show c ++ ">"
+  show (DChar c)      = "<character," ++ show c ++ ">"
   show (LogOp lo)     = "<logop," ++ show lo ++ ">"
   show Not            = "<not>"
   show (RelOp ro)     = "<relop," ++ show ro ++ ">"
   show (MathOp mo)    = "<mathop," ++ show mo ++ ">"
   show Assign         = "<:=>"
+  show NameSpace      = "<:>"
+  show Dot            = "<.>"
   show Eof            = "<eof>"
   show Read           = "<read>"
   show Output         = "<output>"
@@ -152,6 +156,7 @@ data Type
   = TInt         -- $ Integer declaration (@int@)
   | TDouble      -- $ Double-precision floating-point number declaration (@double@)
   | TChar        --   Character declaration (@char@)
+  | TRef         --   Reference declaration (@ref@)
   deriving (Eq)
 
 -- $| Display as @int@ or @double@.
@@ -159,6 +164,7 @@ instance Show Type where
   show TInt    = "int"
   show TDouble = "double"
   show TChar   = "char"
+  show TRef    = "ref"
 
 -- | Gets the position from a token.
 getPosition :: PosToken -> SourcePos

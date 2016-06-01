@@ -3,6 +3,10 @@ labels hallo {
   int i2;
   char c;
   char[] chars};
-char c;
-read c;
-output c;
+labels default {
+  int c
+};
+ref reference;
+reference := hallo:i;
+ref reference2;
+reference2 := :c;

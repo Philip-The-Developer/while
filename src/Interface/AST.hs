@@ -80,6 +80,7 @@ data Expression
   | Integer Int64                             -- $ Integer
   | Double Prelude.Double                     -- $ Double-precision floating-point number
   | Character Prelude.Char                    --  Character
+  | Reference String String                   --  Reference
   deriving (Show, Eq)
 
 -- | A boolean expression.

@@ -140,6 +140,7 @@ dataToOperand (TAC.Variable v) = variableToOperand v
 dataToOperand (TAC.ImmediateInteger i) = return $ Immediate $ ImmediateInt i   -- $ modified
 dataToOperand (TAC.ImmediateDouble i) = return $ Immediate $ ImmediateDouble i -- $ added
 dataToOperand (TAC.ImmediateChar c) = return $ Immediate $ ImmediateChar c
+dataToOperand (TAC.ImmediateReference ns ls) = return $ Immediate $ ImmediateReference ("label_"++ns++"_"++ls)
 
 -- | Converts a IC variable to an assembly operand.
 variableToOperand :: TAC.Variable -> State StateContent Operand

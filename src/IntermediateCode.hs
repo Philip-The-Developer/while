@@ -109,6 +109,11 @@ lookup i u = do
           _type = Map.lookup i m
     scopes i (_:mm) = scopes i mm
 
+lookupLabel :: String -> State GenState (Maybe String)
+lookupLabel str = do
+  (_,_,_,_,_,_,_,labelMap) <- get
+  return $ Map.lookup str labelMap
+
 -- $| Changes the unique ID of a variable which correspond to a machine location.
 insert :: String -> String -> Environment -> Environment
 insert i v (m:mm)
@@ -402,6 +407,12 @@ expressionInto varFunc expr = case expr of
   AST.Integer n -> return ([], TAC.ImmediateInteger n, "int")  -- $ modified
   AST.Double n -> return ([], TAC.ImmediateDouble n, "double") -- $ added
   AST.Character c -> return ([], TAC.ImmediateChar c, "char")
+  AST.Reference n l -> do
+    type_ <- lookupLabel (n++":"++l)
+    if isNothing type_
+          then error $ "Label " ++n++":"++l++ " has not been declared."
+        else do
+          return ([], TAC.ImmediateReference n l, "ref")
 
 -- | Generates three address code for one boolean expression in the AST
 -- (possibly generating code for boolean subexpressions first).

@@ -181,6 +181,7 @@ data Data
   | ImmediateInteger ImmediateInteger -- $ modified
   | ImmediateDouble ImmediateDouble   -- $ added
   | ImmediateChar ImmediateChar
+  | ImmediateReference String String
   deriving (Eq)
 
 -- | Returns variable names as they are and applies `show` to immediate values.
@@ -188,7 +189,8 @@ instance Show Data where
   show (Variable v) = v
   show (ImmediateInteger i) = show i                             -- $ modified
   show (ImmediateDouble i) = show i                              -- $ added
-  show (ImmediateChar c) = show c                              
+  show (ImmediateChar c) = show c 
+  show (ImmediateReference ns l) = "label_"++ns++"_"++l                             
 
 -- | Variable names are just strings.
 type Variable = String

@@ -144,6 +144,7 @@ process (cur:source) pos
         "int"    -> Type TInt      -- $ added
         "double" -> Type TDouble   -- $ added
         "char"   -> Type TChar
+        "ref"    -> Type TRef
         "labels" -> LabelSpec
         "function"->Function      -- $ added
         _        -> Id (cur:name)
@@ -163,6 +164,12 @@ process (cur:source) pos
       (rest, source') = span isDigit source
       l = length (cur:rest)
       token = DDouble (read ("0." ++ rest) :: Prelude.Double)
+
+-- dot operator
+process ('.':source) pos = PosToken pos (Dot):process source (incrColumn pos 1)
+
+-- Namespace Operator
+process (':':source) pos = PosToken pos (NameSpace):process source (incrColumn pos 1)
 
 -- Character
 process ('\'':c:'\'':source) pos = PosToken pos (DChar (c)):process source (incrColumn pos 3)
