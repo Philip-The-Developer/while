@@ -112,18 +112,10 @@ extern output_character
 extern buffer.remaining
 extern buffer.current
 extern buffer
+extern exit_program
 
-global main
-main:
-
-    ; Initialize the memory we need for input stuff
-    mov QWORD [buffer.remaining], 0
-    mov QWORD [buffer.current], buffer
-
-    ; $ Prepare new stack frame
-    push rbp
-    mov rbp, rsp
-
+global main_code
+main_code:
 ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ; MAIN CODE STARTS HERE
 ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -131,14 +123,7 @@ main:
 ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ; MAIN CODE ENDS HERE
 ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-    ; $ Release stack frame
-    leave
-
-    ; Exit with exit code 0 (rbx)
-    mov rax, 60
-    mov rdi, 0
-    syscall
+jmp exit_program
 
 ;===============================================================================
 ; $ User-defined functions.

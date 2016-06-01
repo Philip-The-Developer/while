@@ -15,9 +15,13 @@ global output_character
 global buffer.current
 global buffer.remaining
 global buffer
+global exit_program
+global main
 
 extern printf
 extern scanf
+extern malloc
+extern main_code
 ;===============================================================================
 ; Macros and Defines
 ;===============================================================================
@@ -68,6 +72,31 @@ extern scanf
      mov rax, rsp
      call output_number
      mov rax, [macro_save]
+%endmacro
+
+;Macro to generate labels
+%macro create_label 3-*
+  mov QWORD [%1], env_label_class
+  mov QWORD [%1+8], %2
+  mov QWORD [%1+16], %3
+  ;allociate character array for name
+    mov rdx, %0-3
+    multipush rcx, rsi, rdi, r8, r9, r10, r11
+    push rdx
+    imul rdi, rdx, 8
+    add rdi, 8
+    call malloc
+    test rax, rax
+    jz alloc_error
+    pop QWORD [rax]
+    multipop rcx, rsi, rdi, r8, r9, r10, r11
+  mov QWORD [%1+24], rax
+  %assign i 0
+  %rep %0-3
+    mov QWORD[rax+8+8*i], %4
+    %rotate 1
+    %assign i i+1
+  %endrep
 %endmacro
 
 ; Macros to push and pop multiple registers on the stack
@@ -167,10 +196,134 @@ section .bss
     char_buffer: resb 4
 
     macro_save: resq 1
+
 ;===============================================================================
-; Environment Code
+; Default Objects provided by environment
+;===============================================================================
+
+    env_class_class: resb 24
+    env_label_class: resb 24
+    label_env_parent: resb 32
+    label_env_labels: resb 32
+    label_env_offsets: resb 32
+    label_env_type: resb 32
+    label_env_index: resb 32
+    label_env_name: resb 32
+;===============================================================================
+; Environment code
 ;===============================================================================
 section .text
+
+
+main:
+
+    ; Initialize the memory we need for input stuff
+    mov QWORD [buffer.remaining], 0
+    mov QWORD [buffer.current], buffer
+
+    ; $ Prepare new stack frame
+    push rbp
+    mov rbp, rsp
+
+    ;=================================;
+    ; Start object initialization     ;
+    ;=================================;
+
+      ;label ------------------------------------
+      create_label label_env_parent, 4, 0, 'e', 'n', 'v', ':', 'p', 'a', 'r', 'e', 'n', 't'
+      create_label label_env_labels, 251, 1, 'e', 'n', 'v', ':', 'l', 'a', 'b', 'e', 'l', 's'
+      create_label label_env_offsets, 253, 2, 'e', 'n', 'v', ':', 'o', 'f', 'f', 's', 'e', 't', 's'
+      create_label label_env_type, 2, 1, 'e', 'n', 'v', ':', 't', 'y', 'p', 'e'
+      create_label label_env_index, 2, 2, 'e', 'n', 'v', ':', 'i', 'n', 'd', 'e', 'x'
+      create_label label_env_name, 252, 3, 'e', 'n', 'v', ':', 'n', 'a', 'm', 'e'
+      ;set parent class to itselfe
+      
+      
+      ;class class--------------------------------
+      mov QWORD [env_class_class], env_class_class
+      ;allociate reference array
+      mov rdx, 3
+      multipush rcx, rsi, rdi, r8, r9, r10, r11
+      push rdx
+      imul rdi, rdx, 8
+      add rdi, 8
+      call malloc
+      test rax, rax
+      jz alloc_error
+      pop QWORD [rax]
+      multipop rcx, rsi, rdi, r8, r9, r10, r11
+      mov QWORD [env_class_class+8], rax
+      mov QWORD [rax+8], label_env_parent
+      mov QWORD [rax+16],label_env_labels
+      mov QWORD [rax+24], label_env_offsets
+      
+      ;allociate offset array
+      mov rdx, 3
+      multipush rcx, rsi, rdi, r8, r9, r10, r11
+      push rdx
+      imul rdi, rdx, 8
+      add rdi, 8
+      call malloc
+      test rax, rax
+      jz alloc_error
+      pop QWORD [rax]
+      multipop rcx, rsi, rdi, r8, r9, r10, r11
+      mov QWORD [env_class_class+16], rax
+      mov QWORD [rax+8], 0
+      mov QWORD [rax+16], 8
+      mov QWORD [rax+24], 16
+
+      ;label class--------------------------------
+      mov QWORD [env_label_class], env_class_class
+      ;allociate reference array
+      mov rdx, 3
+      multipush rcx, rsi, rdi, r8, r9, r10, r11
+      push rdx
+      imul rdi, rdx, 8
+      add rdi, 8
+      call malloc
+      test rax, rax
+      jz alloc_error
+      pop QWORD [rax]
+      multipop rcx, rsi, rdi, r8, r9, r10, r11
+      mov QWORD [env_label_class+8], rax
+      mov QWORD [rax+8], label_env_parent
+      mov QWORD [rax+16],label_env_type
+      mov QWORD [rax+24], label_env_index
+      mov QWORD [rax+32], label_env_name
+      
+      ;allociate offset array
+      mov rdx, 3
+      multipush rcx, rsi, rdi, r8, r9, r10, r11
+      push rdx
+      imul rdi, rdx, 8
+      add rdi, 8
+      call malloc
+      test rax, rax
+      jz alloc_error
+      pop QWORD [rax]
+      multipop rcx, rsi, rdi, r8, r9, r10, r11
+      mov QWORD [env_label_class+16], rax
+      mov QWORD [rax+8], 0
+      mov QWORD [rax+16], 8
+      mov QWORD [rax+24], 16
+      mov QWORD [rax+32], 24
+    ;=================================;
+    ; End object initialization       ;
+    ;=================================;
+    ;execute main code
+    jmp main_code
+
+
+exit_program:
+
+    ; $ Release stack frame
+    leave
+
+    ; Exit with exit code 0 (rbx)
+    mov rax, 60
+    mov rdi, 0
+    syscall
 ;===============================================================================
 ; Reads a number from STDIN and returns it in RAX.
 ;===============================================================================
