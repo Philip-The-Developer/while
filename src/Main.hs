@@ -29,7 +29,7 @@ import Data.List.Split (
     splitOn
   )
 import Data.List (
-    intercalate
+    intercalate, length
   )
 import System.Process (
     createProcess, waitForProcess, proc
@@ -269,7 +269,7 @@ main = do
                                  LV.removeLiveVariableAnnotations) renamedLVGraphs
 
     let (nasmCodes, frames) = unzip $ zipWith N.process finishedTACs liveRanges   -- $ modified
-    when debugMode $ putStrLn $ "*** NASM code:\n" ++ numberLinesAt 140 (nasmCodes !! 2)
+    when debugMode $ putStrLn $ "*** NASM code:\n" ++ numberLinesAt 140 (if length nasmCodes > 1 then nasmCodes !! 1 else "")
 
     let userDefined_functions = GC.returnSequence names (tail nasmCodes) frames -- $ added
 

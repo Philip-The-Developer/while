@@ -16,6 +16,14 @@ global buffer.current
 global buffer.remaining
 global buffer
 global exit_program
+global env_class_class
+global env_label_class
+global label_env_parent
+global label_env_labels
+global label_env_offsets
+global label_env_type
+global label_env_index
+global label_env_name
 global main
 
 extern printf

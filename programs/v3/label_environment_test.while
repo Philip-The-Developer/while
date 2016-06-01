@@ -3,6 +3,6 @@ labels hallo {
   int i2;
   char c;
   char[] chars};
-int c;
+char c;
 read c;
 output c;

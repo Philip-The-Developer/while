@@ -112,6 +112,8 @@ extern output_character
 extern buffer.remaining
 extern buffer.current
 extern buffer
+extern env_class_class
+extern env_label_class
 extern exit_program
 
 global main_code

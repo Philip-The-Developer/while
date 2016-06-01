@@ -51,7 +51,7 @@ import Data.Int (
     Int64
   )
 import Data.List (
-    filter, head, dropWhile, elem
+    filter, head, dropWhile, elem, length, head, tail
   )
 import Control.Monad (
     when
@@ -720,14 +720,15 @@ generate' (hd:rst) isDebug = do
           , if endswith ":double" v then mov o1 xmm0 else mov o1 rax]
 
     TAC.DatLabel label index _type name -> 
-      returnCode[instr $ 
-        label++"_name:\tdb '"++name++"'\n"++
-        label++"_size:\tequ $ - "++label++"_name\n"++        
+      returnCode[instr $        
         label++":\n"++
-        "db "++(show _type)++"\n"++
-        "dw "++(show index)++"\n"++
-        "dq "++label++"_name\n"++
-        "dq "++label++"_size"]  
+        "dq env_label_class\n"++
+        "dq "++(show _type)++"\n"++
+        "dq "++(show index)++"\n"++
+        "dq "++label++"_namearray\n"++
+        label++"_namearray:\n"++
+        "dq "++(show (length name))++"\n"++
+        (toArraySequence name)]  
 
   (m, high, liveData, line) <- get
   put (m, high, liveData, line+1)
@@ -808,3 +809,11 @@ generate' (hd:rst) isDebug = do
             if | operandIsImmediate o3 -> return ([ mov' o3, mov (Location temp) rax ], (Location temp))
                | otherwise -> return ([], o3)
       return (pre ++ pre', o2', o3')
+
+
+
+toArraySequence :: String -> String
+toArraySequence (a:str) 
+  | str == [] = "dq "++show a++"\n"
+  | otherwise = "dq "++show a++"\n"++(toArraySequence str)
+toArraySequence _ = []
