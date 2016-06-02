@@ -193,6 +193,7 @@ data Instruction
   | Sar Operand Operand
   | Instr String
   | Call String
+  | DATA Operand
 
 instance NasmCode Instruction where
   toCode (Mov o1 o2)
@@ -234,6 +235,7 @@ instance NasmCode Instruction where
     | otherwise = format "sar" [o1, o2]
   toCode (Instr s) = s
   toCode (Call s) = "call " ++ s
+  toCode (DATA o) = "dq "++ toCode o
 
 format :: String -> [Operand] -> String
 format ins ops = ins ++ " " ++ intercalate ", " (toCode <$> ops)

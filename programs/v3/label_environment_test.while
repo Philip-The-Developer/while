@@ -3,10 +3,5 @@ labels hallo {
   int i2;
   char c;
   char[] chars};
-labels default {
-  int c
-};
 ref reference;
 reference := toClass hallo;
-ref reference2;
-reference2 := :c;

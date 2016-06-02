@@ -66,7 +66,10 @@ data Command
   | GotoCond1 Label GotoCondition1 Data
   | GotoCond2 Label GotoCondition2 Data Data
   | Label Label
+  | CustomLabel Label
+  | ToClass Data
   | DatLabel Label Int64 Int64 String -- label index type name
+  | DATA Data
   deriving (Eq)
 
 -- | Gives a neat output for three address commands.
@@ -109,6 +112,9 @@ instance Show Command where
                                   show cond ++ " " ++ show d2
   show (Label l) = l ++ ":"
   show (DatLabel l i t s) = ".CREATE label "++l++" ( name='"++s++"' type='"++show t++"' index='"++ show i++"')"
+  show (ToClass l) = "toClass "++show l 
+  show (DATA d) = ".DATA "++ show d
+  show (CustomLabel l) = show l++":"
 
 -- | The different conditions for a goto statement with one parameter.
 data GotoCondition1

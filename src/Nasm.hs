@@ -140,7 +140,9 @@ dataToOperand (TAC.Variable v) = variableToOperand v
 dataToOperand (TAC.ImmediateInteger i) = return $ Immediate $ ImmediateInt i   -- $ modified
 dataToOperand (TAC.ImmediateDouble i) = return $ Immediate $ ImmediateDouble i -- $ added
 dataToOperand (TAC.ImmediateChar c) = return $ Immediate $ ImmediateChar c
-dataToOperand (TAC.ImmediateReference ns ls) = return $ Immediate $ ImmediateReference ("label_"++ns++"_"++ls)
+dataToOperand (TAC.ImmediateReference ns ls)
+  | ns == [] = return $ Immediate $ ImmediateReference (ls)
+  | otherwise = return $ Immediate $ ImmediateReference ("label_"++ns++"_"++ls)
 
 -- | Converts a IC variable to an assembly operand.
 variableToOperand :: TAC.Variable -> State StateContent Operand
@@ -710,6 +712,8 @@ generate' (hd:rst) isDebug = do
 
     TAC.Label l -> returnCode [instr $ "." ++ l ++ ":"]
 
+    TAC.CustomLabel l -> returnCode [instr $ l++ ":"]
+
     TAC.Call v l -> do                             -- $ added
       o1 <- variableToOperand v
       returnCode $ if l == "length_" then
@@ -729,7 +733,11 @@ generate' (hd:rst) isDebug = do
         "dq "++label++"_namearray\n"++
         label++"_namearray:\n"++
         "dq "++(show (length name))++"\n"++
-        (toArraySequence name)]  
+        (toArraySequence name)]
+
+    TAC.DATA d -> do
+      o <- dataToOperand d
+      returnCode [Just (DATA o)]
 
   (m, high, liveData, line) <- get
   put (m, high, liveData, line+1)

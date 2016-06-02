@@ -60,7 +60,8 @@ type Type = String
 type ReturnType = String
 -- $| This is a list of maps representing scopes of user-defined functions.
 type FunctionScopes = [Map String String]
-type DataLabelScopes = Map String String
+-- TODO docu| This is a Map of frontend label names to a tupel of
+type DataLabelScopes = Map String [AST.Command]
 -- $| This is a map of reserved labels for user-defined functions.
 type UDFLabels = Map String [String]
 -- $| This is a list of UDF names and TACs.
@@ -109,7 +110,7 @@ lookup i u = do
           _type = Map.lookup i m
     scopes i (_:mm) = scopes i mm
 
-lookupLabel :: String -> State GenState (Maybe String)
+lookupLabel :: String -> State GenState (Maybe [AST.Command])
 lookupLabel str = do
   (_,_,_,_,_,_,_,labelMap) <- get
   return $ Map.lookup str labelMap
@@ -145,25 +146,25 @@ program prog = do
 command :: AST.Command -> TAC.Label -> State GenState (TAC.TAC, TAC.TAC, TACstream, ReturnType) -- $ modified
 command cmd next = case cmd of
   AST.Output e -> do -- $ modified
-    (tac,data_,type_) <- expression e
+    (directive,tac,data_,type_) <- expression e
     if type_ == "int"
-          then return ([],tac ++ [TAC.Output data_], [], "")
+          then return (directive,tac ++ [TAC.Output data_], [], "")
         else if type_ == "double"
-          then return ([],tac ++ [TAC.FOutput data_], [], "")
+          then return (directive,tac ++ [TAC.FOutput data_], [], "")
         else if type_ == "char"
-          then return ([],tac ++ [TAC.COutput data_], [], "")
+          then return (directive,tac ++ [TAC.COutput data_], [], "")
         else error "No native support for outputting arrays."
   AST.Return e -> do -- $ added
-    (tac,data_,type_) <- expression e
+    (directive,tac,data_,type_) <- expression e
     (_,_,_,r,_,_,_,_) <- get
     let (function, rt) = let list = split ":" r in (head list, last list)
     if r == "void"
-          then return ([],[], [], "")
+          then return (directive,[], [], "")
     else if type_ /= rt
           then error $ "A return instruction in UDF " ++ function ++ " delivers a value of wrong type."
     else if type_ == "double"
-          then return ([],tac ++ [TAC.FReturn data_], [], type_)
-        else return ([],tac ++ [TAC.Return data_], [], type_)
+          then return (directive,tac ++ [TAC.FReturn data_], [], type_)
+        else return (directive,tac ++ [TAC.Return data_], [], type_)
   AST.Read i -> do -- $ modified
     type_ <- lookup i False
     if endswith "]" $ fromJust type_
@@ -183,39 +184,39 @@ command cmd next = case cmd of
     return (directives1++directives2, tac1 ++ [TAC.Label next1] ++ tac2, udf1 ++ udf2, if rt1 /= "" then rt1 else rt2)
   AST.IfThen b c -> do
     true <- newLabel
-    btac <- boolExpression b true next
+    (direxp, btac) <- boolExpression b true next
     (directive,tac,udf,rt) <- command c next -- $ modified
-    return (directive,btac ++ [TAC.Label true] ++ tac, udf, rt) -- $ modified
+    return (direxp++directive,btac ++ [TAC.Label true] ++ tac, udf, rt) -- $ modified
   AST.IfThenElse b c1 c2 ->do
     true <- newLabel
     false <- newLabel
-    btac <- boolExpression b true false
+    (direxp, btac) <- boolExpression b true false
     (directive1, tac1,udf1,rt1) <- command c1 next -- $ modified
     (directive2, tac2,udf2,rt2) <- command c2 next -- $ modified
-    return (directive1 ++ directive2, btac ++ [TAC.Label true] ++ tac1 ++ [TAC.Goto next, TAC.Label false] ++ tac2, udf1 ++ udf2, if rt1 /= "" then rt1 else rt2) -- $ modified
+    return (direxp++directive1 ++ directive2, btac ++ [TAC.Label true] ++ tac1 ++ [TAC.Goto next, TAC.Label false] ++ tac2, udf1 ++ udf2, if rt1 /= "" then rt1 else rt2) -- $ modified
   AST.While b c -> do
     true <- newLabel
-    btac <- boolExpression b true next
+    (direxp,btac) <- boolExpression b true next
     begin <- newLabel
     (directive, tac,udf,rt) <- command c begin -- $ modified
-    return (directive,[TAC.Label begin] ++ btac ++ [TAC.Label true] ++ tac ++ [TAC.Goto begin], udf, rt) -- $ modified
+    return (direxp++directive,[TAC.Label begin] ++ btac ++ [TAC.Label true] ++ tac ++ [TAC.Goto begin], udf, rt) -- $ modified
   AST.Assign i e -> do -- $ modified
     type1 <- lookup i False
-    (tac,data_,type2) <- expressionInto (fixedVar i) e
+    (directive,tac,data_,type2) <- expressionInto (fixedVar i) e
     if isNothing type1
       then error $ "Variable " ++ i ++ " has not been declared."
     else if not $ endswith type2 (fromJust type1)
           then error $ "Assignment of an expression to Variable " ++ i
         ++ " not possible due to type conflict."
     else if not $ endswith "[]" (fromJust type1)
-      then return ([], tac ++ if data_ == TAC.Variable (fromJust type1) then [] else [TAC.Copy (fromJust type1) data_], [], "")
+      then return (directive, tac ++ if data_ == TAC.Variable (fromJust type1) then [] else [TAC.Copy (fromJust type1) data_], [], "")
     else do
       (t,l,env@(s:_),r,f,u,a,dataLabel) <- get
       let env' = insert i (show data_) env
       put (t,l,env',r,f,u,a,dataLabel)
       if isNothing $ Map.lookup i s
-        then return ([], tac ++ [TAC.ArrayCopy (show data_) data_], [], "")
-      else return ([], tac ++ if data_ == TAC.Variable (fromJust type1) || r /= "void" then [] else [TAC.ArrayCopy (fromJust type1) data_], [], "")
+        then return (directive, tac ++ [TAC.ArrayCopy (show data_) data_], [], "")
+      else return (directive, tac ++ if data_ == TAC.Variable (fromJust type1) || r /= "void" then [] else [TAC.ArrayCopy (fromJust type1) data_], [], "")
   AST.ToArray i e1 e2 -> do -- $ added
     type_ <- lookup i False
     if isNothing type_
@@ -223,15 +224,15 @@ command cmd next = case cmd of
     else if not $ endswith "]" $ fromJust type_
           then error $ "Name " ++ i ++ " does not denote an array."
         else do
-      (tac1,data1,type1) <- expression e1
+      (directive1,tac1,data1,type1) <- expression e1
       if type1 /= "int"
         then error $ "Elements of array " ++ i ++ " only accessible via int indices."
       else do
         let signature = split ":" $ fromJust type_
-        (tac2,data2,type2) <- expression e2
+        (directive2, tac2,data2,type2) <- expression e2
         if type2 /= (takeWhile (/= '[') $ last signature)
           then error $ "Assignment of an expression to array " ++ i ++ " not possible due to type conflict."
-        else return ([],tac1 ++ tac2 ++ [TAC.ToArray (fromJust type_) data1 data2], [], "")
+        else return (directive1++directive2,tac1 ++ tac2 ++ [TAC.ToArray (fromJust type_) data1 data2], [], "")
   AST.Declaration _type i -> do -- $$ added
     (t,l,s:ss,r,f,u,a,dataLabel) <- get
     let type_ = Map.lookup i s
@@ -256,7 +257,7 @@ command cmd next = case cmd of
     if isJust type_
       then error $ "Name " ++ i ++ " is already used."
     else do
-      (tac,data_,type1) <- expression e
+      (directive, tac,data_,type1) <- expression e
       if type1 /= "int"
         then error $ "Array " ++ i ++ "must be declared with int size."
       else do
@@ -267,7 +268,7 @@ command cmd next = case cmd of
         let (name, a') = newAlt i a
         let signature = name ++ ":" ++ type_
         put (t,l,(Map.insert i signature s):ss,r,f,u,a',dataLabel)
-        return ([], tac ++ [TAC.ArrayAlloc signature data_] ++ [TAC.Push $ TAC.Variable signature], [], "")
+        return (directive, tac ++ [TAC.ArrayAlloc signature data_] ++ [TAC.Push $ TAC.Variable signature], [], "")
   AST.Environment c -> do -- $$ added
     (t,l,s,r,f,u,a,dataLabel) <- get
     put (t,l,Map.empty:s,r,Map.empty:f,u,a,dataLabel)
@@ -289,13 +290,16 @@ command cmd next = case cmd of
       return (directive, [], udf, "")
   AST.LabelEnvironment name labels -> do
     (t,l,s,r,f:ff,u,a,dataLabel) <- get
-    let (dataLabel',tac) = labelenvironment name labels (t,l,s,r,f:ff,u,a,dataLabel) 
-    put (t,l,s,r,f:ff,u,a,dataLabel')
+    let cmdList = Map.lookup (name++":") dataLabel
+    let cmdList' = if isNothing cmdList then [] else (fromJust cmdList)
+    let dataLabel' = Map.insert (name++":") (labels:cmdList') dataLabel
+    let (dataLabel'',tac) = labelenvironment name labels (t,l,s,r,f:ff,u,a,dataLabel') 
+    put (t,l,s,r,f:ff,u,a,dataLabel'')
     return (tac,[],[],"")
-
+  
 -- $| Generates three address code for one expression in the AST (possibly
 -- generating code for subexpressions first) and determines its type.
-expression :: AST.Expression -> State GenState (TAC.TAC,TAC.Data,Type)
+expression :: AST.Expression -> State GenState (TAC.TAC,TAC.TAC,TAC.Data,Type)
 expression = expressionInto newTemp
 
 -- | Generates three address code for one expression in the AST (possibly
@@ -304,11 +308,11 @@ expression = expressionInto newTemp
 -- and the returned variable will be used for the result.
 -- $ Determines also its type.
 expressionInto :: State GenState TAC.Variable -> AST.Expression
-               -> State GenState (TAC.TAC,TAC.Data,Type) -- $ modified
+               -> State GenState (TAC.TAC,TAC.TAC,TAC.Data,Type) -- $ modified
 expressionInto varFunc expr = case expr of
   AST.Calculation op e1 e2 -> do -- $ modified
-    (tac1,data1,type1) <- expression e1
-    (tac2,data2,type2) <- expression e2
+    (dir1, tac1,data1,type1) <- expression e1
+    (dir2, tac2,data2,type2) <- expression e2
     if endswith "]" type1 || endswith "]" type2
       then error "Cannot use an array as a whole in a calculation."
     else do
@@ -346,23 +350,23 @@ expressionInto varFunc expr = case expr of
       var1 <- varFunc
       type3 <- lookup var1 False
       let var1' = if isNothing type3 then var1 ++ ":" ++ type_ else fromJust type3
-      return (tac1 ++ tac2 ++ coercion ++ [tacCommand var1' data1' data2'], TAC.Variable var1', type_)
+      return (dir1++dir2,tac1 ++ tac2 ++ coercion ++ [tacCommand var1' data1' data2'], TAC.Variable var1', type_)
   AST.Negate e -> do
-    (tac,data_,type1) <- expression e -- $ modified
+    (directive, tac,data_,type1) <- expression e -- $ modified
     if endswith "]" type1 -- $ added
       then error "Cannot use an array as a whole in a negation."
     else do
       var <- varFunc
       type2 <- lookup var False
       let var' = if isNothing type2 then var ++ ":" ++ type1 else fromJust type2
-      return (tac ++ [if type1 == "double" then TAC.FNeg var' data_ else TAC.Neg var' data_], TAC.Variable var', type1) -- $ modified
+      return (directive, tac ++ [if type1 == "double" then TAC.FNeg var' data_ else TAC.Neg var' data_], TAC.Variable var', type1) -- $ modified
   AST.Identifier i -> do -- $ modified
     type_ <- lookup i False
     if isNothing type_
           then error $ "Variable " ++ i ++ " has not been declared."
         else do
           let returnType = last $ split ":" $ fromJust type_
-          return ([], TAC.Variable $ fromJust type_, returnType)
+          return ([],[], TAC.Variable $ fromJust type_, returnType)
   AST.FromArray i e -> do -- $ added
     type1 <- lookup i False
     if isNothing type1
@@ -370,7 +374,7 @@ expressionInto varFunc expr = case expr of
     else if not $ endswith "]" $ fromJust type1
           then error $ "Name " ++ i ++ " does not denote an array."
         else do
-      (tac,data_,type2) <- expression e
+      (directive, tac,data_,type2) <- expression e
       if type2 /= "int"
         then error $ "Elements of array " ++ i ++ " only accessible via int indices."
       else do
@@ -379,20 +383,20 @@ expressionInto varFunc expr = case expr of
         type3 <- lookup var False
         let returnType = (takeWhile (/= '[') $ last signature)
         let var' = if isNothing type3 then var ++ ":" ++ returnType else fromJust type3
-        return (tac ++ [TAC.FromArray var' (fromJust type1) data_], TAC.Variable var', returnType)
+        return (directive, tac ++ [TAC.FromArray var' (fromJust type1) data_], TAC.Variable var', returnType)
   AST.Parameter e -> do -- $ added
-    (tac,data_,type_) <- expression e
-    return (tac ++ [TAC.Push data_], data_, type_)
+    (directive, tac,data_,type_) <- expression e
+    return (directive, tac ++ [TAC.Push data_], data_, type_)
   AST.Parameters e1 e2 -> do -- $ added
-    (tac1,_,type1) <- expression e1
-    (tac2,data_,type2) <- expression e2
-    return (tac1 ++ tac2, data_, type1 ++ type2)
+    (directive1, tac1,_,type1) <- expression e1
+    (directive2, tac2,data_,type2) <- expression e2
+    return (directive1++directive2,tac1 ++ tac2, data_, type1 ++ type2)
   AST.Func i p -> do -- $ added
     type_ <- lookup i True
     if isNothing type_
       then error $ "User-defined function " ++ i ++ " not in scope."
     else do
-      (tac,_,params1) <- expression p
+      (directive, tac,_,params1) <- expression p
       let signature = split ":" $ fromJust type_
       let name = head signature
       let params2 = last signature
@@ -403,36 +407,41 @@ expressionInto varFunc expr = case expr of
           type3 <- lookup var False
           let returnType = signature!!1
           let var' = if isNothing type3 || (endswith "]" $ fromJust type3) then var ++ ":" ++ returnType else fromJust type3
-          return (tac ++ [TAC.Call var' $ head signature], TAC.Variable var', returnType)
-  AST.Integer n -> return ([], TAC.ImmediateInteger n, "int")  -- $ modified
-  AST.Double n -> return ([], TAC.ImmediateDouble n, "double") -- $ added
-  AST.Character c -> return ([], TAC.ImmediateChar c, "char")
+          return (directive, tac ++ [TAC.Call var' $ head signature], TAC.Variable var', returnType)
+  AST.ToClass labelspec -> do
+    (t,l,s,r,f:ff,u,a,dataLabel) <- get
+    let (dataLabel', directives) = toClassDirective labelspec dataLabel
+    put (t,l,s,r,f:ff,u,a,dataLabel')
+    return (directives, [], (TAC.ImmediateReference [] ("class_from_label_envionment_"++labelspec)),"")
+  AST.Integer n -> return ([],[], TAC.ImmediateInteger n, "int")  -- $ modified
+  AST.Double n -> return ([],[], TAC.ImmediateDouble n, "double") -- $ added
+  AST.Character c -> return ([],[], TAC.ImmediateChar c, "char")
   AST.Reference n l -> do
     type_ <- lookupLabel (n++":"++l)
     if isNothing type_
           then error $ "Label " ++n++":"++l++ " has not been declared."
         else do
-          return ([], TAC.ImmediateReference n l, "ref")
+          return ([],[], TAC.ImmediateReference n l, "ref")
 
 -- | Generates three address code for one boolean expression in the AST
 -- (possibly generating code for boolean subexpressions first).
 boolExpression :: AST.BoolExpression -> TAC.Label -> TAC.Label
-               -> State GenState TAC.TAC
+               -> State GenState (TAC.TAC, TAC.TAC)
 boolExpression bexpr lTrue lFalse = case bexpr of
   AST.LogOp op b1 b2 -> case op of
     T.And -> do
       b1True <- newLabel
-      tac1 <- boolExpression b1 b1True lFalse
-      tac2 <- boolExpression b2 lTrue lFalse
-      return $ tac1 ++ [TAC.Label b1True] ++ tac2
+      (dir1,tac1) <- boolExpression b1 b1True lFalse
+      (dir2,tac2) <- boolExpression b2 lTrue lFalse
+      return $ (dir1++dir2,tac1 ++ [TAC.Label b1True] ++ tac2)
     T.Or -> do
       b1False <- newLabel
-      tac1 <- boolExpression b1 lTrue b1False
-      tac2 <- boolExpression b2 lTrue lFalse
-      return $ tac1 ++ [TAC.Label b1False] ++ tac2
+      (dir1,tac1) <- boolExpression b1 lTrue b1False
+      (dir2, tac2) <- boolExpression b2 lTrue lFalse
+      return $ (dir1++dir2, tac1 ++ [TAC.Label b1False] ++ tac2)
   AST.Comparison op e1 e2 -> do
-    (tac1,data1,type1) <- expression e1  -- $ modified
-    (tac2,data2,type2) <- expression e2  -- $ modified
+    (dir1, tac1,data1,type1) <- expression e1  -- $ modified
+    (dir2, tac2,data2,type2) <- expression e2  -- $ modified
     if endswith "]" type1 || endswith "]" type2 -- $ added
       then error "Cannot use an array in a comparison."
     else do
@@ -451,12 +460,12 @@ boolExpression bexpr lTrue lFalse = case bexpr of
             T.Gt -> \l -> TAC.GotoCond2 l TAC.Greater data1 data2
             T.Gte -> \l -> TAC.GotoCond2 l TAC.GreaterEqual data1 data2
       let jump = if type1 == "double" || type2 == "double" then jump1 else jump2
-      return $ tac1 ++ tac2 ++ [jump lTrue] ++ [TAC.Goto lFalse]
+      return $ (dir1++dir2, tac1 ++ tac2 ++ [jump lTrue] ++ [TAC.Goto lFalse])
   AST.Not b -> boolExpression b lFalse lTrue
-  AST.Boolean b -> return [TAC.Goto (if b then lTrue else lFalse)]
-  AST.Eof -> return [ TAC.GotoCond1 lTrue TAC.IsTrue (TAC.Variable "%eof%")
+  AST.Boolean b -> return ([],[TAC.Goto (if b then lTrue else lFalse)])
+  AST.Eof -> return ([],[ TAC.GotoCond1 lTrue TAC.IsTrue (TAC.Variable "%eof%")
                     , TAC.Goto lFalse
-                    ]
+                    ])
 
 -- $| Given an abstract syntax tree for parameters and code each it generates an appendix with user-defined functions for later use.
 function :: AST.Command -> AST.Command -> AST.AST -> GenState -> (TAC.TAC, FunctionScopes, UDFLabels, TACstream)
@@ -507,7 +516,7 @@ getLabels labelSpec labels index labelMap = case labels of
     where
       labelMap' = 
         if isNothing $ Map.lookup labelName labelMap 
-        then Map.insert labelName labelID labelMap 
+        then Map.insert labelName [] labelMap 
         else error $ "Label "++labelName++" defined twice."
       labelID = "label_"++labelSpec++"_"++name
       labelName = (labelSpec++":"++name)
@@ -516,7 +525,7 @@ getLabels labelSpec labels index labelMap = case labels of
     where
       labelMap' = 
         if isNothing $ Map.lookup labelName labelMap 
-        then Map.insert labelName labelID labelMap 
+        then Map.insert labelName [] labelMap 
         else error $ "Label "++labelName++" defined twice."
       labelID = "label_"++labelSpec++"_"++name
       labelName = (labelSpec++":"++name)
@@ -530,3 +539,28 @@ mapType T.TInt True = 253
 mapType T.TChar False = 3
 mapType T.TChar True = 252
 
+-- TODO
+toClassDirective :: String -> DataLabelScopes -> (DataLabelScopes, TAC.TAC)
+toClassDirective name labelMap = if isNothing $ Map.lookup labelName labelMap 
+                then (labelMap', tac')
+                else (labelMap, [])
+  where
+    labelName = "class_from_label_envionment_"++name
+    refArrayName = labelName++"_references"
+    offsetArrayName = labelName++"_offsets"
+    labelMap' = Map.insert labelName [] labelMap
+    cmds = Map.lookup (name++":") labelMap
+    tac' = if isNothing cmds 
+           then error ("Label envionment "++name++" has not been declared.")
+           else (TAC.CustomLabel labelName): 
+                (TAC.DATA $ TAC.ImmediateReference [] "env_class_class"):
+                (TAC.DATA $ TAC.ImmediateReference [] refArrayName):
+                (TAC.DATA $ TAC.ImmediateReference [] offsetArrayName):
+                (TAC.CustomLabel refArrayName):[] ++
+                (references $ fromJust cmds) ++
+                (TAC.CustomLabel offsetArrayName):[]++
+                (offsets $ fromJust cmds)
+    references :: [AST.Command] -> TAC.TAC
+    references c = [] -- TODO
+    offsets :: [AST.Command] -> TAC.TAC
+    offsets c = [] --TODO
