@@ -196,6 +196,7 @@ instance Show Data where
   show (ImmediateInteger i) = show i                             -- $ modified
   show (ImmediateDouble i) = show i                              -- $ added
   show (ImmediateChar c) = show c 
+  show (ImmediateReference [] l) = l
   show (ImmediateReference ns l) = "label_"++ns++"_"++l                             
 
 -- | Variable names are just strings.

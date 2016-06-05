@@ -503,7 +503,7 @@ allocateParameters params alts = case params of
 labelenvironment :: String -> AST.Command -> GenState -> (DataLabelScopes, TAC.TAC)
 labelenvironment name labels (_,_,_,_,_,_,_,labelMap) = (labelMap', tac')
   where
-    (labelMap', tac', _) = getLabels name labels 0 labelMap
+    (labelMap', tac', _) = getLabels name labels 1 labelMap
 
 -- TODO documentation
 getLabels :: String -> AST.Command -> Int64 -> DataLabelScopes -> (DataLabelScopes, TAC.TAC, Int64)
@@ -556,11 +556,34 @@ toClassDirective name labelMap = if isNothing $ Map.lookup labelName labelMap
                 (TAC.DATA $ TAC.ImmediateReference [] "env_class_class"):
                 (TAC.DATA $ TAC.ImmediateReference [] refArrayName):
                 (TAC.DATA $ TAC.ImmediateReference [] offsetArrayName):
-                (TAC.CustomLabel refArrayName):[] ++
+                (TAC.CustomLabel refArrayName):
+                (TAC.DATA $ TAC.ImmediateReference [] "label_env_parent"):[] ++
                 (references $ fromJust cmds) ++
-                (TAC.CustomLabel offsetArrayName):[]++
+                (TAC.CustomLabel offsetArrayName):
+                (TAC.DATA $ TAC.ImmediateInteger 0):[]++
                 (offsets $ fromJust cmds)
     references :: [AST.Command] -> TAC.TAC
-    references c = [] -- TODO
+    references [] = []
+    references (c:rest) = references' c ++ references rest 
+      where 
+        references' c = case c of
+          AST.Sequence c1 c2 -> references' c1 ++ references' c2
+          AST.Declaration decType decName -> [TAC.DATA $ TAC.ImmediateReference [] ("label_"++name++"_"++decName)]
+          AST.ArrayDecl decType decName -> [TAC.DATA $ TAC.ImmediateReference [] ("label_"++name++"_"++decName)]
     offsets :: [AST.Command] -> TAC.TAC
-    offsets c = [] --TODO
+    offsets c = offsetsCount c 8
+      where
+        offsetsCount :: [AST.Command] -> Int64 -> TAC.TAC 
+        offsetsCount [] _ = []
+        offsetsCount (c:rest) index =  tac1 ++ tac2
+          where        
+            (index', tac1) = offsets' c index
+            (tac2) = offsetsCount rest index'
+        offsets' :: AST.Command -> Int64 -> (Int64, TAC.TAC)
+        offsets' c index = case c of
+          AST.Sequence c1 c2 -> (index2, tac1++tac2)
+            where
+              (index1,tac1) = offsets' c1 index
+              (index2, tac2 ) = offsets' c2 index1
+          AST.Declaration decType decName -> (index+8, [TAC.DATA $ TAC.ImmediateInteger index])
+          AST.ArrayDecl decType decName -> (index+8, [TAC.DATA $ TAC.ImmediateInteger index]) 

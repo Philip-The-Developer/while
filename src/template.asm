@@ -114,6 +114,7 @@ extern buffer.current
 extern buffer
 extern env_class_class
 extern env_label_class
+extern label_env_parent
 extern exit_program
 
 global main_code
