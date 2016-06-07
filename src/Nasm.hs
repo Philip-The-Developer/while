@@ -34,7 +34,7 @@ import Control.Monad.State (
 import Prelude (
     Monad,
     String, Maybe (..), Int, Bool (..),
-    unlines, show, not, otherwise, round, logBase, fromIntegral, abs, flip, fst,
+    unlines, show, not, otherwise, round, logBase, fromIntegral, abs, flip, fst, error,
     ($), (++), (==), (/=), (-), (>), (||), (&&), (*), (.), (<), (>=), (<=), (+), snd, filter
   )
 import Data.Functor (
@@ -102,6 +102,7 @@ getLocation v = do
   let loc = Map.lookup v m
   case loc of
     Just l -> return l
+    otherwise -> error ( "Variable not allociated: "++ show v)
 
 -- | Returns a free register which is only to be used for one generated
 -- IC instruction and therefore not removed from the list.
@@ -738,6 +739,11 @@ generate' (hd:rst) isDebug = do
     TAC.DATA d -> do
       o <- dataToOperand d
       returnCode [Just (DATA o)]
+
+    TAC.Solve varto varFrom label ->do
+      o1 <- variableToOperand varto
+      o2 <- dataToOperand varFrom
+      returnCode []
 
   (m, high, liveData, line) <- get
   put (m, high, liveData, line+1)

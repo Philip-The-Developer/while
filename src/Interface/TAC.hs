@@ -68,6 +68,7 @@ data Command
   | Label Label
   | CustomLabel Label
   | ToClass Data
+  | Solve Variable Data String  -- Solve a Variable with a Label
   | DatLabel Label Int64 Int64 String -- label index type name
   | DATA Data
   deriving (Eq)
@@ -115,6 +116,7 @@ instance Show Command where
   show (ToClass l) = "toClass "++show l 
   show (DATA d) = ".DATA "++ show d
   show (CustomLabel l) = show l++":"
+  show (Solve var id label) = var ++" = "++show id++" -> "++ label
 
 -- | The different conditions for a goto statement with one parameter.
 data GotoCondition1
@@ -254,6 +256,7 @@ getDefVariables (FSub v _ _) = [v]     -- $ added
 getDefVariables (FMul v _ _) = [v]     -- $ added
 getDefVariables (FDiv v _ _) = [v]     -- $ added
 getDefVariables (FNeg v _) = [v]       -- $ added
+getDefVariables (Solve v _ _) = [v]
 getDefVariables _ = []
 
 getUseVariables :: Command -> [Variable]
@@ -284,6 +287,7 @@ getUseVariables (FDiv _ d1 d2) = variablesFromData [d1, d2] -- $ added
 getUseVariables (FNeg _ d1) = variablesFromData [d1]        -- $ added
 getUseVariables (GotoCond1 _ _ d1) = variablesFromData [d1]
 getUseVariables (GotoCond2 _ _ d1 d2) = variablesFromData [d1, d2]
+getUseVariables (Solve _ v _) = variablesFromData [v]
 getUseVariables _ = []
 
 getVariables :: Command -> [Variable]
@@ -386,6 +390,9 @@ renameVariables (GotoCond1 l c d) vI vO =
 renameVariables (GotoCond2 l c d1 d2) vI vO =
   let [d1', d2'] = substitute [d1, d2] vI vO
   in GotoCond2 l c d1' d2'
+renameVariables (Solve v1 v2 s) vI vO = 
+  let [Variable v1', v2'] = substitute [Variable v1, v2] vI vO 
+  in Solve v1' v2' s
 renameVariables c _ _ = c
 
 substitute :: [Data] -> Variable -> Variable -> [Data]

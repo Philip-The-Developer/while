@@ -82,6 +82,7 @@ data Expression
   | Character Prelude.Char                    --  Character
   | Reference String String                   --  Reference
   | ToClass String                            --  wrap a label environment to a class
+  | SolveReference Expression Expression      -- solve references (@varA.env:parent@)
   deriving (Show, Eq)
 
 -- | A boolean expression.
@@ -128,7 +129,9 @@ walkAST tc te tb = walkC
     walkE (FromArray i e) = te (FromArray i (walkE e))                           -- $ added
     walkE (Parameter p) = te (Parameter (walkE p))                               -- $ added
     walkE (Parameters p1 p2) = te (Parameters (walkE p1) (walkE p2))             -- $ added
-    walkE (Func f p) = te (Func f (walkE p))                                     -- $ added
+    walkE (Func f p) = te (Func f (walkE p))   
+    walkE (ToClass s) = te (ToClass s)
+    walkE (SolveReference e1 e2) = te (SolveReference (walkE e1) (walkE e2))                                  -- $ added
     walkE e = te e
 
     walkB :: BoolExpression -> BoolExpression
@@ -160,6 +163,7 @@ instance ASTPart Command where
   showASTPart (ArrayAlloc t _ _) = show t ++ "[_] _"                          -- $ added
   showASTPart (Environment _) = "push scope"                                  -- $ added
   showASTPart (Function _ _ _) = "function _ (_) {_}"                             -- $ added
+  showASTPart (LabelEnvironment i _) = "labels "++i++"{_}"
 
 -- | The AST expression is output-able.
 instance ASTPart Expression where
@@ -173,6 +177,8 @@ instance ASTPart Expression where
   showASTPart (Integer n) = show n           -- $ modified
   showASTPart (Double n) = show n            -- $ added
   showASTPart (Character c) = "'"++(show c)++"'"
+  showASTPart (ToClass _) = "toClass _"
+  showASTPart (SolveReference _ _ ) = "_->_"
 
 -- | The AST boolean expression is output-able.
 instance ASTPart BoolExpression where

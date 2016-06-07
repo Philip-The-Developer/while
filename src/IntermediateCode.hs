@@ -69,6 +69,10 @@ type TACstream = [(TAC.Label, TAC.TAC)]
 -- $| This is a map of reserved locations.
 type Locations = Map String [String]
 
+--TODO docu
+getType:: AST.Command -> String
+getType (AST.Declaration t n) = show t
+
 -- $| Given an abstract syntax tree it generates and intermediate representation
 -- in three address code and an appendix with user-defined functions for later use.
 process :: AST.AST -> TACstream -- $ modified
@@ -422,6 +426,28 @@ expressionInto varFunc expr = case expr of
           then error $ "Label " ++n++":"++l++ " has not been declared."
         else do
           return ([],[], TAC.ImmediateReference n l, "ref")
+  AST.SolveReference (AST.Identifier i) (AST.Reference ns l) -> do
+    (directives,tac,type1,retType) <- expression (AST.Identifier i)
+    type2 <- lookupLabel $ ns ++ ":" ++ l
+    let labelName = if ns == [] then "label_default_"++l else "label_"++ns++"_"++l
+    if not $ endswith "ref" (retType ) 
+    then error $ "Dot operator is only supported for references. Actual type: "++(retType)
+    else if isNothing type2
+    then error $ "Label "++ns++":"++l++" has not been declared."
+    else do
+      let resultType = getType $ head $ fromJust type2
+      var <- newTemp
+      let var' = var ++ ":"++resultType
+      return (directives,tac++[TAC.Solve var' (type1) (labelName)],TAC.Variable var',resultType)
+  AST.SolveReference (AST.Reference ns1 l1) (AST.Reference ns2 l2) -> do
+    type1 <- lookupLabel $ ns1++":"++l1
+    type2 <- lookupLabel $ ns2++":"++l2
+    if (isNothing type1)  || (isNothing type2)
+    then error $ "Label "++ns1++":"++l1++" and/or "++ns2++":"++l2++" has not been declared."
+    else do
+      return ([],[],TAC.ImmediateReference ns1 l2,"")  --TODO this is wrong CHANGE!!!!!
+
+
 
 -- | Generates three address code for one boolean expression in the AST
 -- (possibly generating code for boolean subexpressions first).
@@ -516,7 +542,7 @@ getLabels labelSpec labels index labelMap = case labels of
     where
       labelMap' = 
         if isNothing $ Map.lookup labelName labelMap 
-        then Map.insert labelName [] labelMap 
+        then Map.insert labelName [AST.Declaration _type name] labelMap 
         else error $ "Label "++labelName++" defined twice."
       labelID = "label_"++labelSpec++"_"++name
       labelName = (labelSpec++":"++name)
@@ -525,7 +551,7 @@ getLabels labelSpec labels index labelMap = case labels of
     where
       labelMap' = 
         if isNothing $ Map.lookup labelName labelMap 
-        then Map.insert labelName [] labelMap 
+        then Map.insert labelName [AST.ArrayDecl _type name] labelMap 
         else error $ "Label "++labelName++" defined twice."
       labelID = "label_"++labelSpec++"_"++name
       labelName = (labelSpec++":"++name)

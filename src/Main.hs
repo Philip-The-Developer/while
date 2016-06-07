@@ -219,7 +219,7 @@ main = do
                           (addExtension outputFile "ast-optimized.dot")
 
     let ((directiveName:names), (directives:intermediateCodes)) = unzip $ IC.process optimizedAST -- $ modified
-    
+
     when debugMode $ putStrLn $ "*** directives:\n"++
                      numberLines (unlines $ fmap show directives) ++ "\n"
     
@@ -234,26 +234,26 @@ main = do
     let basicBlockGraphs = fmap BB.tacToGraph optimizedIntermediateCodes -- $ modified
     when outputGraphs $ BB.renderGraph
                         (addExtension outputFile "basic-blocks.pdf")
-                        $ head basicBlockGraphs
+                        $ basicBlockGraphs !! 1
     when outputDotFiles $ BB.dotGraph
                           (addExtension outputFile "basic-blocks.dot")
-                          $ head basicBlockGraphs
+                          $ basicBlockGraphs !! 1
 
     let liveVariablesGraphs = fmap LV.liveVariables basicBlockGraphs -- $ modified
     when outputGraphs $ LV.renderLiveVariablesGraph
                         (addExtension outputFile "live-variables.pdf")
-                        $ head liveVariablesGraphs
+                        $ liveVariablesGraphs !! 1
     when outputDotFiles $ LV.dotLiveVariablesGraph
                           (addExtension outputFile "live-variables.dot")
-                          $ head liveVariablesGraphs
+                          $ liveVariablesGraphs !! 1
 
     let renamedLVGraphs = fmap LV.renameBlockLocalVariables liveVariablesGraphs -- $ modified
     when outputGraphs $ LV.renderLiveVariablesGraph
                         (addExtension outputFile "live-variables-renamed.pdf")
-                        $ head renamedLVGraphs
+                        $ renamedLVGraphs !!1
     when outputDotFiles $ LV.dotLiveVariablesGraph
                           (addExtension outputFile "live-variables-renamed.dot")
-                          $ head renamedLVGraphs
+                          $ renamedLVGraphs !! 1
 
     -- let blockDAG = LV.blockDAG liveVariablesGraph
 

@@ -5,3 +5,5 @@ labels hallo {
   char[] chars};
 ref reference;
 reference := toClass hallo;
+char character;
+character := reference.hallo:c;
