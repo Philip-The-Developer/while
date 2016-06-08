@@ -743,7 +743,7 @@ generate' (hd:rst) isDebug = do
     TAC.Solve varto varFrom label ->do
       o1 <- variableToOperand varto
       o2 <- dataToOperand varFrom
-      returnCode []
+      returnCode [Just (Solve o1 o2 label)]
 
   (m, high, liveData, line) <- get
   put (m, high, liveData, line+1)

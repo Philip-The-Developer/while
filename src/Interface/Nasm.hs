@@ -237,13 +237,18 @@ instance NasmCode Instruction where
   toCode (Instr s) = s
   toCode (Call s) = "call " ++ s
   toCode (DATA o) = "dq "++ toCode o
-  toCode (Solve oTo oFrom label) = "multipush R8, R9\n"++
+  toCode (Solve oTo oFrom label) = "multipush rbx, r8, r9, r10, r11\n"++
                                    ";get Index\n"++
-                                   "mov R8, [QWORD ("++label++"+16)]\n"++
-                                   ";get Class\n"++
-                                   "mov R9, [QWORD "++toCode oFrom++"]\n"++
-                                   "mov RAX, R9\n"++
-                                   "multiflush R8, R9\n"++
+                                   "mov RBX, "++toCode oFrom++"\n"++
+                                   "mov R8, [RBX]\n"++
+                                   "mov R9, [R8 +8]\n"++
+                                   "mov R10, ["++label++" + 16]\n"++
+                                   "mov R11, [R9 +8 + R10*8]\n"++
+                                   "; TODO check R11 == "++label++"\n"++
+                                   "mov R9, [R8 + 16]\n"++
+                                   "mov R11, [R9+8+R10 *8]\n"++
+                                   "mov RAX, [RBX + R11]\n"++
+                                   "multipop rbx, r8, r9, r10, r11\n"++
                                    "mov "++toCode oTo++", RAX\n"
                                    
 
