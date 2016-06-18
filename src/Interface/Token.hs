@@ -159,6 +159,7 @@ data Type
   | TDouble      -- $ Double-precision floating-point number declaration (@double@)
   | TChar        --   Character declaration (@char@)
   | TRef         --   Reference declaration (@ref@)
+  | TypeSequence Type Type -- Sequence of types (@int;char;double;int@)
   deriving (Eq)
 
 -- $| Display as @int@ or @double@.
@@ -167,6 +168,7 @@ instance Show Type where
   show TDouble = "double"
   show TChar   = "char"
   show TRef    = "ref"
+  show (TypeSequence t1 t2) = (show t1)++";"++(show t2)
 
 -- | Gets the position from a token.
 getPosition :: PosToken -> SourcePos

@@ -136,23 +136,15 @@ Bfactor :: { AST.BoolExpression }
         | eof                           { AST.Eof }
 
 Primitives :: { AST.Command }
-        : int id                        { AST.Declaration TInt $2 }
-        | double id                     { AST.Declaration TDouble $2 }
-        | char id                       { AST.Declaration TChar $2}
-        | ref id                        { AST.Declaration TRef $2}
+        : Type id                        { AST.Declaration $1 $2 }
 
 Alloc    :: { AST.Command }
         : Primitives                    { $1 }
-        | int '[' Expr ']' id           { AST.ArrayAlloc TInt $3 $5 }
-        | double '[' Expr ']' id        { AST.ArrayAlloc TDouble $3 $5 }
-        | char '[' Expr ']' id          { AST.ArrayAlloc TChar $3 $5}
-        | ref '[' Expr ']' id           { AST.ArrayAlloc TRef $3 $5}
+        | Type '[' Expr ']' id           { AST.ArrayAlloc $1 $3 $5 }
 
 Decl    :: { AST.Command }
         : Primitives                    { $1 }
-        | int '[' ']' id                { AST.ArrayDecl TInt $4 }
-        | double '[' ']' id             { AST.ArrayDecl TDouble $4 }
-        | char '[' ']' id               { AST.ArrayDecl TChar $4}
+        | Type '[' ']' id                { AST.ArrayDecl $1 $4 }
 
 Decls   :: { AST.Command }
         : Decls ';' Decl                { AST.Sequence $1 $3 }
@@ -164,3 +156,13 @@ Params  :: { AST.Expression }
 
 Param  :: { AST.Expression }
         : Expr                          { AST.Parameter $1 }
+
+Types :: { Type }
+       : Types ';' Type                 { TypeSequence $1 $3 }
+       | Type                           { $1 }
+
+Type :: { Type }
+      : int                             { TInt }
+      | double                          { TDouble }
+      | char                            { TChar }
+      | ref                             { TRef }
