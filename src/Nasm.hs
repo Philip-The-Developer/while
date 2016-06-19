@@ -725,6 +725,12 @@ generate' (hd:rst) isDebug = do
           [instr $ "call " ++ l
           , if endswith ":double" v then mov o1 xmm0 else mov o1 rax]
 
+    TAC.VCall v1 v2 -> do
+      o1 <- variableToOperand v1
+      o2 <- variableToOperand v2
+      returnCode [instr $ "call "++ toCode o2, 
+        if endswith ":double" v1 then mov o1 xmm0 else mov o1 rax]
+
     TAC.DatLabel label index _type name -> 
       returnCode[instr $        
         label++":\n"++

@@ -1,9 +1,24 @@
-function int a(double b; char c;int r){
-  int (double;char;ref) aFunction;
-return 0;
+function int print1(int l){
+  output 1;
+  return 0;
 };
 
-int(double;char;int) aFunc;
-aFunc := a;
+function int print2(int l){
+  output 2;
+  return 0;
+};
+
+function int(int) get(int id){
+  if id = 1 then
+    return print1
+  else
+    return print2;  
+};
+
+int(int)  printFunction;
 int mock;
-mock := aFunc(0.0;'a';5);
+
+printFunction := get(1);
+mock := printFunction(0);
+printFunction := get(2);
+mock := printFunction(0);

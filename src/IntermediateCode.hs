@@ -403,24 +403,33 @@ expressionInto varFunc expr = case expr of
   AST.Parameters e1 e2 -> do -- $ added
     (directive1, tac1,_,type1) <- expression e1
     (directive2, tac2,data_,type2) <- expression e2
-    return (directive1++directive2,tac1 ++ tac2, data_, type1 ++ type2)
+    return (directive1++directive2,tac1 ++ tac2, data_, type1 ++";"++ type2)
   AST.Func i p -> do -- $ added
-    type_ <- lookup i True
+    ftype <- lookup i True
+    vtype <- lookup i False
+    let type_ = if isNothing ftype then vtype else ftype
     if isNothing type_
       then error $ "User-defined function " ++ i ++ " not in scope."
     else do
-      (directive, tac,_,params1) <- expression p
+      (directive, tac,_,params1') <- expression p
+      let params1 = "("++params1'++")"
       let signature = split ":" $ fromJust type_
       let name = head signature
       let params2 = last signature
-      if (name == "length_" && not(endswith "]" params2)) || (params1 /= params2 && name /= "length_")
-          then error $ "User-defined function " ++ i ++ " call incompatible with given parameters."
+      if (name == "length_" && not(endswith "]" params2)) || (not(endswith params1 params2) && name /= "length_")
+          then error $ "User-defined function " ++ i ++ " call incompatible with given parameters. "++params1++"/"++params2 --TODO remove debug
       else do
           var <- varFunc
           type3 <- lookup var False
-          let returnType = signature!!1
-          let var' = if isNothing type3 || (endswith "]" $ fromJust type3) then var ++ ":" ++ returnType else fromJust type3
-          return (directive, tac ++ [TAC.Call var' $ head signature], TAC.Variable var', returnType)
+          if isNothing ftype
+            then do
+              let returnType = head $ split "(" $ signature!!1
+              let var' = if isNothing type3 || (endswith "]" $ fromJust type3) then var ++ ":" ++ returnType else fromJust type3
+              return (directive, tac ++ [TAC.VCall var' $ fromJust type_], TAC.Variable var', returnType)
+            else do
+              let returnType = signature!!1
+              let var' = if isNothing type3 || (endswith "]" $ fromJust type3) then var ++ ":" ++ returnType else fromJust type3
+              return (directive, tac ++ [TAC.Call var' $ head signature], TAC.Variable var', returnType)
   AST.ToClass labelspec -> do
     (t,l,s,r,f:ff,u,a,dataLabel) <- get
     let (dataLabel', directives) = toClassDirective labelspec dataLabel
