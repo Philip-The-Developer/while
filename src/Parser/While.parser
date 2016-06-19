@@ -166,3 +166,4 @@ Type :: { Type }
       | double                          { TDouble }
       | char                            { TChar }
       | ref                             { TRef }
+      | Type '(' Types ')'         { TFunction $1 $3 }

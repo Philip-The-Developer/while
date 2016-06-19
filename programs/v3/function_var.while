@@ -1,0 +1,4 @@
+function int a(double b; char c;ref r){
+  int (double;char;ref) aFunction;
+return 0;
+}
