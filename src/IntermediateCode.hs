@@ -18,7 +18,7 @@ import Prelude (
     (+), ($), (++), (==),
     (||), (/=), (!!), (&&), (>), not,
     String, Bool (..), Maybe (..), error, putStrLn,
-    fst, head, last, length, takeWhile
+    fst, head, last, length, takeWhile, drop, concat
   )
 import Control.Monad.State (
     State,
@@ -211,7 +211,7 @@ command cmd next = case cmd of
       then error $ "Variable " ++ i ++ " has not been declared."
     else if not $ endswith type2 (fromJust type1)
           then error $ "Assignment of an expression to Variable " ++ i
-        ++ " not possible due to type conflict."
+        ++ " not possible due to type conflict."++(type2)++"/"++(show $ fromJust type1) --TODO remove debug
     else if not $ endswith "[]" (fromJust type1)
       then return (directive, tac ++ if data_ == TAC.Variable (fromJust type1) then [] else [TAC.Copy (fromJust type1) data_], [], "")
     else do
@@ -367,8 +367,17 @@ expressionInto varFunc expr = case expr of
   AST.Identifier i -> do -- $ modified
     type_ <- lookup i False
     if isNothing type_
-          then error $ "Variable " ++ i ++ " has not been declared."
+        then do
+            funcType <- lookup i True
+            if isNothing funcType
+              then error $ "Variable " ++ i ++ " has not been declared."
+            else do
+              --Identifier is a function
+              let returnType = concat $ drop 1 $ split ":" $ fromJust funcType
+              let funcName = head $ split ":" $ fromJust funcType
+              return ([],[], TAC.ImmediateReference [] funcName, returnType)
         else do
+          --Identifier is a variable
           let returnType = last $ split ":" $ fromJust type_
           return ([],[], TAC.Variable $ fromJust type_, returnType)
   AST.FromArray i e -> do -- $ added
@@ -498,8 +507,8 @@ function :: AST.Command -> AST.Command -> AST.AST -> GenState -> (TAC.TAC, Funct
 function d p c (t,l,s,_,f:ff,u,a,dataLabel) = (directive,f':ff, u'', (name, intermediateCode'):_TACstream)
   where
       (f', r', i) = case d of
-        AST.Declaration _type i -> (Map.insert i (r' ++ ":" ++ params p) f, name ++ ":" ++ show _type, i)
-        AST.ArrayDecl _type i -> (Map.insert i (r' ++ ":" ++ params p) f, name ++ ":" ++ show _type ++ "[]", i)
+        AST.Declaration _type i -> (Map.insert i (r' ++ ":(" ++ params p++")") f, name ++ ":" ++ show _type, i)
+        AST.ArrayDecl _type i -> (Map.insert i (r' ++ ":(" ++ params p++")") f, name ++ ":" ++ show _type ++ "[]", i)
       names = Map.lookup i u
       (name, u') = if isNothing names then (i ++ "_", Map.insert i [name] u) else (i ++ "_" ++ (show $ length $ fromJust names), Map.insert i ((fromJust names) ++ [name]) u)
       ((directive,intermediateCode,_TACstream), (_,_,_,_,_,u'',_,dataLabel')) = runState (program $ AST.Sequence p c) (t,l,s,r',f':ff,u',a,dataLabel)          
@@ -507,7 +516,7 @@ function d p c (t,l,s,_,f:ff,u,a,dataLabel) = (directive,f':ff, u'', (name, inte
 
 -- $| Given a list of parameters it generates a string representing the signature.
 params :: AST.Command -> String
-params (AST.Sequence decls decl) = params decls ++ param decl
+params (AST.Sequence decls decl) = params decls ++";"++ param decl
 params decl = param decl
 
 -- $| Given a parameter it generates a string representing the signature.

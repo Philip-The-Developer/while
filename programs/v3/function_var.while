@@ -1,4 +1,9 @@
-function int a(double b; char c;ref r){
+function int a(double b; char c;int r){
   int (double;char;ref) aFunction;
 return 0;
-}
+};
+
+int(double;char;int) aFunc;
+aFunc := a;
+int mock;
+mock := aFunc(0.0;'a';5);

@@ -169,7 +169,7 @@ instance Show Type where
   show TDouble = "double"
   show TChar   = "char"
   show TRef    = "ref"
-  show (TFunction result signature) = "function "++(show result)++" ("++(show signature)++" )"
+  show (TFunction result signature) = (show result)++"("++(show signature)++")"
   show (TypeSequence t1 t2) = (show t1)++";"++(show t2)
 
 -- | Gets the position from a token.
