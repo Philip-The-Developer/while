@@ -115,6 +115,14 @@ extern buffer
 extern env_class_class
 extern env_label_class
 extern label_env_parent
+extern type_int
+extern type_double
+extern type_char
+extern type_ref  
+extern type_array_int
+extern type_array_double
+extern type_array_char
+extern type_array_ref
 extern exit_program
 
 global main_code

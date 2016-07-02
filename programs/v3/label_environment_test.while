@@ -2,7 +2,10 @@ labels hallo {
   int i;
   int i2;
   char c;
-  char[] chars};
+  char[] chars;
+  int(char;int;double;ref) aFunction;
+  int(char;int;double;ref) bFunction
+};
 ref reference;
 reference := toClass hallo;
 char character;

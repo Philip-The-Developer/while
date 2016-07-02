@@ -39,7 +39,8 @@ type AST = Command
 
 -- | A Command consists of either of the following:
 data Command
-  = Output Expression                         -- ^ output something
+  = NONE
+  | Output Expression                         -- ^ output something
   | Read String                               -- ^ read something into a
                                               -- variable
   | Return Expression                         -- $ return something
@@ -122,6 +123,7 @@ walkAST tc te tb = walkC
     walkC (Environment c) = tc (Environment (walkC c))                           -- $ added
     walkC (Function t p c) = tc (Function (walkC t) (walkC p) (walkC c))         -- $ added
     walkC (LabelEnvironment i p) = tc (LabelEnvironment i (walkC p))
+    walkC (NONE) = NONE
 
     walkE :: Expression -> Expression
     walkE (Calculation op e1 e2) = te (Calculation op (walkE e1) (walkE e2))

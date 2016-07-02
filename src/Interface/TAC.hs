@@ -70,7 +70,7 @@ data Command
   | CustomLabel Label
   | ToClass Data
   | Solve Variable Data String  -- Solve a Variable with a Label
-  | DatLabel Label Int64 Int64 String -- label index type name
+  | DatLabel Label Int64 Data String -- label index type name
   | DATA Data
   deriving (Eq)
 
@@ -201,7 +201,8 @@ instance Show Data where
   show (ImmediateDouble i) = show i                              -- $ added
   show (ImmediateChar c) = show c 
   show (ImmediateReference [] l) = l
-  show (ImmediateReference ns l) = "label_"++ns++"_"++l                             
+  show (ImmediateReference ns l) = "label_"++ns++"_"++l    
+                         
 
 -- | Variable names are just strings.
 type Variable = String

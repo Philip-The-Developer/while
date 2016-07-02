@@ -24,6 +24,14 @@ global label_env_offsets
 global label_env_type
 global label_env_index
 global label_env_name
+global type_int
+global type_double
+global type_char
+global type_ref  
+global type_array_int
+global type_array_double
+global type_array_char
+global type_array_ref
 global main
 
 extern printf
@@ -187,6 +195,17 @@ section .data
     character_formatin: db "%c\n"
     ; Formats a character output
     character_formatout: db "%c"
+    
+    ;primitive types
+    type_int: dq 0, 0
+    type_double: dq 0, 0
+    type_char: dq 0, 0
+    type_ref: dq 0, 0
+    
+    type_array_int: dq 1, 0
+    type_array_double: dq 1, 0
+    type_array_char: dq 1, 0
+    type_array_ref: dq 1, 0
 
 ;===============================================================================
 ; Uninitialized data
@@ -238,13 +257,12 @@ main:
     ;=================================;
 
       ;label ------------------------------------
-      create_label label_env_parent, 4, 0, 'e', 'n', 'v', ':', 'p', 'a', 'r', 'e', 'n', 't'
-      create_label label_env_labels, 251, 1, 'e', 'n', 'v', ':', 'l', 'a', 'b', 'e', 'l', 's'
-      create_label label_env_offsets, 253, 2, 'e', 'n', 'v', ':', 'o', 'f', 'f', 's', 'e', 't', 's'
-      create_label label_env_type, 2, 1, 'e', 'n', 'v', ':', 't', 'y', 'p', 'e'
-      create_label label_env_index, 2, 2, 'e', 'n', 'v', ':', 'i', 'n', 'd', 'e', 'x'
-      create_label label_env_name, 252, 3, 'e', 'n', 'v', ':', 'n', 'a', 'm', 'e'
-      ;set parent class to itselfe
+      create_label label_env_parent, type_ref, 0, 'e', 'n', 'v', ':', 'p', 'a', 'r', 'e', 'n', 't'
+      create_label label_env_labels, type_array_ref, 1, 'e', 'n', 'v', ':', 'l', 'a', 'b', 'e', 'l', 's'
+      create_label label_env_offsets, type_array_int, 2, 'e', 'n', 'v', ':', 'o', 'f', 'f', 's', 'e', 't', 's'
+      create_label label_env_type, type_ref, 1, 'e', 'n', 'v', ':', 't', 'y', 'p', 'e'
+      create_label label_env_index, type_int, 2, 'e', 'n', 'v', ':', 'i', 'n', 'd', 'e', 'x'
+      create_label label_env_name, type_array_char, 3, 'e', 'n', 'v', ':', 'n', 'a', 'm', 'e'
       
       
       ;class class--------------------------------

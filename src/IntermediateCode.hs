@@ -18,7 +18,7 @@ import Prelude (
     (+), ($), (++), (==),
     (||), (/=), (!!), (&&), (>), not,
     String, Bool (..), Maybe (..), error, putStrLn,
-    fst, head, last, length, takeWhile, drop, concat
+    fst, head, last, length, takeWhile, drop, concat, fromIntegral
   )
 import Control.Monad.State (
     State,
@@ -556,7 +556,7 @@ getLabels labelSpec labels index labelMap = case labels of
     where
       (labelMap1, tac1, index1) = getLabels labelSpec c1 (index) labelMap
       (labelMap2, tac2, index2) = getLabels labelSpec c2 (index1) labelMap1
-  AST.Declaration _type name -> (labelMap',tac, index+1)
+  AST.Declaration _type name -> (labelMap'',tac, index+1)
     where
       labelMap' = 
         if isNothing $ Map.lookup labelName labelMap 
@@ -564,8 +564,9 @@ getLabels labelSpec labels index labelMap = case labels of
         else error $ "Label "++labelName++" defined twice."
       labelID = "label_"++labelSpec++"_"++name
       labelName = (labelSpec++":"++name)
-      tac = [TAC.DatLabel labelID index (mapType _type False) labelName]
-  AST.ArrayDecl _type name ->(labelMap',tac, index+1)
+      (dataType, labelMap'', directive) = mapType _type False labelMap'
+      tac = directive++[TAC.DatLabel labelID index dataType labelName]
+  AST.ArrayDecl _type name ->(labelMap'',tac, index+1)
     where
       labelMap' = 
         if isNothing $ Map.lookup labelName labelMap 
@@ -573,15 +574,40 @@ getLabels labelSpec labels index labelMap = case labels of
         else error $ "Label "++labelName++" defined twice."
       labelID = "label_"++labelSpec++"_"++name
       labelName = (labelSpec++":"++name)
-      tac = [TAC.DatLabel labelID index (mapType _type True) labelName]
+      (dataType, labelMap'', directive) = mapType _type True labelMap'
+      tac = directive ++ [TAC.DatLabel labelID index dataType labelName]
 
-mapType :: T.Type -> Bool -> Int64
-mapType T.TDouble False = 1
-mapType T.TDouble True = 254
-mapType T.TInt False = 2
-mapType T.TInt True = 253
-mapType T.TChar False = 3
-mapType T.TChar True = 252
+mapType :: T.Type -> Bool -> DataLabelScopes -> (TAC.Data, DataLabelScopes, TAC.TAC)
+mapType (T.TFunction type1 type2) isArray labelMap = (label', labelMap', directives')
+  where
+    labelName = T.getLabel False (T.TFunction type1 type2)
+    label' = TAC.ImmediateReference [] labelName
+    rolledOut = T.rollout (T.TFunction type1 type2)
+    (datas, labelMapR, dirR) = functionType2Directive rolledOut labelMap
+    directives' = if isNothing $Map.lookup labelName labelMapR
+                    then dirR++[TAC.CustomLabel labelName,
+                          TAC.DATA $ TAC.ImmediateInteger (if isArray then 1 else 0),
+                          TAC.DATA $ TAC.ImmediateInteger $ fromIntegral $ length rolledOut]++datas
+                    else []
+    labelMap' = Map.insert labelName [AST.NONE] labelMapR
+mapType _type isArray labelMap = (TAC.ImmediateReference [] $ T.getLabel isArray _type, labelMap, [])
+
+functionType2Directive:: [T.Type]-> DataLabelScopes -> (TAC.TAC, DataLabelScopes, TAC.TAC) -- data type, label map, directive
+functionType2Directive [] labelMap = ([],labelMap, [])
+functionType2Directive (t:tt) labelMap = case t of
+                                    (T.TFunction type1 type2) -> ([TAC.DATA data1]++dataR, labelMapR, dir1++dirR)
+                                      where
+                                        (data1,labelMap1, dir1) = mapType (T.TFunction type1 type2) False labelMap
+                                        (dataR, labelMapR, dirR) = functionType2Directive tt labelMap1
+                                    (T.TypeSequence type1 type2) -> ([TAC.DATA data1]++dataR, labelMapR, dir1++dirR)
+                                      where
+                                        (data1,labelMap1, dir1) = mapType (T.TFunction type1 type2) False labelMap
+                                        (dataR, labelMapR, dirR) = functionType2Directive tt labelMap1
+                                    (_) -> ([TAC.DATA $ TAC.ImmediateReference [] $ T.getLabel False t]++dataR, labelMapR, []++dirR)
+                                      where
+                                        (dataR, labelMapR, dirR) = functionType2Directive tt labelMap
+    
+                    
 
 -- TODO
 toClassDirective :: String -> DataLabelScopes -> (DataLabelScopes, TAC.TAC)

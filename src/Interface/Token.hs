@@ -9,11 +9,11 @@
 module Interface.Token (
   PosToken (..), Token (..), LogOp (..), RelOp (..), MathOp (..), Type (..),
   getPosition, removePosition, removePositions, getMathOpFunction,
-  getRelOpFunction
+  getRelOpFunction,getLabel, rollout
 ) where
 
 import Prelude (
-    String, Bool,
+    String, Bool(..),
     Show, Eq, Integral, Num, Ord,
     (++), (==), (/=), (<), (<=), (>), (>=), (+), (-), (*),
     show, fmap, quot, rem
@@ -171,6 +171,27 @@ instance Show Type where
   show TRef    = "ref"
   show (TFunction result signature) = (show result)++"("++(show signature)++")"
   show (TypeSequence t1 t2) = (show t1)++";"++(show t2)
+
+getLabel:: Bool -> Type -> String
+getLabel False TInt = "type_int"
+getLabel True TInt = "type_array_int"
+getLabel False TDouble = "type_double"
+getLabel True TDouble = "type_array_double"
+getLabel False TChar = "type_char"
+getLabel True TChar = "type_array_char"
+getLabel False TRef = "type_ref"
+getLabel True TRef = "type_array_char"
+getLabel False (TFunction result signature) = "type_function_"++(getLabel False result)++"_"++(getLabel False signature)
+getLabel True (TFunction result signature) = "type_array_function"++(getLabel False result)++"_"++(getLabel False signature)
+getLabel False (TypeSequence t1 t2) = (getLabel False t1)++"_"++(getLabel False t2)
+getLabel True (TypeSequence t1 t2) = getLabel False (TypeSequence t1 t2)
+
+rollout:: Type -> [Type]
+rollout (TFunction t1 t2) =  (rollout' t1) ++ (rollout' t2)
+rollout t = [t]
+rollout' (TypeSequence t1 t2) = (rollout' t1) ++ (rollout' t2)
+rollout' t = [t]
+
 
 -- | Gets the position from a token.
 getPosition :: PosToken -> SourcePos

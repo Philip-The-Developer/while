@@ -15,6 +15,10 @@ function int(int) get(int id){
     return print2;  
 };
 
+function int doPrint(int(int) movingCode){
+ return movingCode(0);
+};
+
 int(int)  printFunction;
 int mock;
 
@@ -22,3 +26,6 @@ printFunction := get(1);
 mock := printFunction(0);
 printFunction := get(2);
 mock := printFunction(0);
+
+mock := doPrint(print1);
+mock := doPrint(print2);
