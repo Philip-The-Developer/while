@@ -1,11 +1,8 @@
-function int printchars(int a; int b; int c){
-  output a;
-  output b;
-  output c;
-  return 0;
+function int printchars(int a){
+  return a;
 };
 
-int a; int b; int c;
-a := 1; b := 2; c := 3;
+int a;
+a := 1;
 int mock;
-mock := printchars(a;b;c);
+mock := printchars(a);

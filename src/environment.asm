@@ -24,6 +24,7 @@ global label_env_offsets
 global label_env_type
 global label_env_index
 global label_env_name
+global label_env_new
 global type_int
 global type_double
 global type_char
@@ -196,6 +197,9 @@ section .data
     ; Formats a character output
     character_formatout: db "%c"
     
+    ; empty array
+    empty_array: dq 0
+
     ;primitive types
     type_int: dq 0, 0
     type_double: dq 0, 0
@@ -206,6 +210,8 @@ section .data
     type_array_double: dq 1, 0
     type_array_char: dq 1, 0
     type_array_ref: dq 1, 0
+    
+    type_function_ref_type_ref: dq 0, 2, type_ref, type_ref
 
 ;===============================================================================
 ; Uninitialized data
@@ -228,14 +234,18 @@ section .bss
 ; Default Objects provided by environment
 ;===============================================================================
 
-    env_class_class: resb 24
-    env_label_class: resb 24
+    env_class_class: resb 40
+    env_label_class: resb 40
     label_env_parent: resb 32
     label_env_labels: resb 32
     label_env_offsets: resb 32
     label_env_type: resb 32
     label_env_index: resb 32
     label_env_name: resb 32
+    label_env_funcLabels: resb 32
+    label_env_funcMap: resb 32
+    label_env_new: resb 32
+
 ;===============================================================================
 ; Environment code
 ;===============================================================================
@@ -263,12 +273,15 @@ main:
       create_label label_env_type, type_ref, 1, 'e', 'n', 'v', ':', 't', 'y', 'p', 'e'
       create_label label_env_index, type_int, 2, 'e', 'n', 'v', ':', 'i', 'n', 'd', 'e', 'x'
       create_label label_env_name, type_array_char, 3, 'e', 'n', 'v', ':', 'n', 'a', 'm', 'e'
+      create_label label_env_funcLabels, type_array_ref, 4, 'e', 'n', 'v', ':', 'f', 'u', 'n', 'c', 'L', 'a', 'b', 'e', 'l', 's'
+      create_label label_env_funcMap, type_array_ref, 5, 'e', 'n', 'v', ':', 'f', 'u', 'n', 'c', 'M', 'a', 'p'
+      create_label label_env_new, type_function_ref_type_ref, 0, 'e', 'n', 'v', ':', 'n', 'e','w'
       
       
       ;class class--------------------------------
       mov QWORD [env_class_class], env_class_class
       ;allociate reference array
-      mov rdx, 3
+      mov rdx, 5
       multipush rcx, rsi, rdi, r8, r9, r10, r11
       push rdx
       imul rdi, rdx, 8
@@ -282,9 +295,11 @@ main:
       mov QWORD [rax+8], label_env_parent
       mov QWORD [rax+16],label_env_labels
       mov QWORD [rax+24], label_env_offsets
+      mov QWORD [rax+32], label_env_funcLabels
+      mov QWORD [rax+40], label_env_funcMap
       
       ;allociate offset array
-      mov rdx, 3
+      mov rdx, 5
       multipush rcx, rsi, rdi, r8, r9, r10, r11
       push rdx
       imul rdi, rdx, 8
@@ -298,11 +313,41 @@ main:
       mov QWORD [rax+8], 0
       mov QWORD [rax+16], 8
       mov QWORD [rax+24], 16
+      mov QWORD [rax+32], 24
+      mov QWORD [rax+40], 32
+
+      ;allociate function reference array
+      mov rdx, 1
+      multipush rcx, rsi, rdi, r8, r9, r10, r11
+      push rdx
+      imul rdi, rdx, 8
+      add rdi, 8
+      call malloc
+      test rax, rax
+      jz alloc_error
+      pop QWORD [rax]
+      multipop rcx, rsi, rdi, r8, r9, r10, r11
+      mov QWORD [env_class_class+24], rax
+      mov QWORD [rax+8], label_env_new
+      
+      ;allociate function offset array
+      mov rdx, 1
+      multipush rcx, rsi, rdi, r8, r9, r10, r11
+      push rdx
+      imul rdi, rdx, 8
+      add rdi, 8
+      call malloc
+      test rax, rax
+      jz alloc_error
+      pop QWORD [rax]
+      multipop rcx, rsi, rdi, r8, r9, r10, r11
+      mov QWORD [env_class_class+32], rax
+      mov QWORD [rax+8], new_
 
       ;label class--------------------------------
       mov QWORD [env_label_class], env_class_class
       ;allociate reference array
-      mov rdx, 3
+      mov rdx, 4
       multipush rcx, rsi, rdi, r8, r9, r10, r11
       push rdx
       imul rdi, rdx, 8
@@ -319,7 +364,7 @@ main:
       mov QWORD [rax+32], label_env_name
       
       ;allociate offset array
-      mov rdx, 3
+      mov rdx, 4
       multipush rcx, rsi, rdi, r8, r9, r10, r11
       push rdx
       imul rdi, rdx, 8
@@ -334,6 +379,35 @@ main:
       mov QWORD [rax+16], 8
       mov QWORD [rax+24], 16
       mov QWORD [rax+32], 24
+
+      ;allociate function reference array
+      mov rdx, 1
+      multipush rcx, rsi, rdi, r8, r9, r10, r11
+      push rdx
+      imul rdi, rdx, 8
+      add rdi, 8
+      call malloc
+      test rax, rax
+      jz alloc_error
+      pop QWORD [rax]
+      multipop rcx, rsi, rdi, r8, r9, r10, r11
+      mov QWORD [env_label_class+24], rax
+      mov QWORD [rax+8], label_env_new
+      
+      ;allociate function offset array
+      mov rdx, 1
+      multipush rcx, rsi, rdi, r8, r9, r10, r11
+      push rdx
+      imul rdi, rdx, 8
+      add rdi, 8
+      call malloc
+      test rax, rax
+      jz alloc_error
+      pop QWORD [rax]
+      multipop rcx, rsi, rdi, r8, r9, r10, r11
+      mov QWORD [env_label_class+32], rax
+      mov QWORD [rax+8], new_
+
     ;=================================;
     ; End object initialization       ;
     ;=================================;
@@ -851,4 +925,89 @@ input_character:
     multipop rbx, rcx, rdx, rsi, rdi, r8, r9, r10, r11
     leave
     ret
+
+;===============================================================================
+; The new(ref class) function
+;===============================================================================
+
+new_:
+  ;              ______________
+  ;_____________/initialization\________________________________________________
+  mov rax, rbp
+  mov rbp, rsp
+  sub rsp, 0
+  mov rdx, rsp
+  push rdx
+  push rax
+  multipush rbx, rcx, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15
+  multifpush xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7
+  mov rax, rsp
+  mov rsp, rbp
+  add rsp, 8
+  ; pop reference to class
+  pop rbx
+  ; t4@1:double = call dummy
+  push qword [rbp]
+  mov [rdx-8], rsp
+  mov rsp, rax
+
+  ;              _____________
+  ;_____________/function code\________________________________________________
+  ; (1) check if rbx is a class
+  cmp QWORD [rbx], env_class_class
+  jne return_error
+  ; (2) get label array
+  mov r8, [rbx+8]
+  ; (3) calculate size of object
+  mov r9, [r8]
+  imul r9, r9, 8
+  add r9, 8
+  ; (4) allociate memory
+  multipush rcx, rsi, rdi, r8, r9, r10, r11
+  mov rdi, r9
+  call malloc
+  test rax, rax
+  jz alloc_error
+  pop QWORD [rax]
+  multipop rcx, rsi, rdi, r8, r9, r10, r11
+  mov QWORD [rax], rbx
+  ; (5) set default values
+  mov r10, 8 ;counting variable
+  .loop:
+    cmp r10, r9
+    je .end_loop
+    add r8, 8
+    mov r11, [r8]
+    cmp QWORD [r11], 1
+    je .array
+    mov QWORD [rax+r10], 0
+    add r10, 8
+    jmp .loop
+    .array:
+    mov QWORD [rax+r10], empty_array
+    add r10, 8
+    jmp .loop
+  .end_loop:
+  mov rbx, rax
+  ;            ___________
+  ;___________/return code\_____________________________________________________
+  .return_sequence:
+  mov rdx, rbp
+  sub rdx, 0
+  sub rdx, 168
+  .return_sequence2:
+  cmp rsp, rdx
+  jge .return_sequence3
+  pop rdi
+  cmp rdi, rbx
+  je .return_sequence2
+  jmp .return_sequence2
+  .return_sequence3:
+  mov rax, rbx
+  multifpop xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7
+  multipop rbx, rcx, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15
+  pop rbp
+  pop rsp
+  ret
+  
 

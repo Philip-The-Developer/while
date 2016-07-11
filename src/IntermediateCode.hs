@@ -16,8 +16,8 @@ import Prelude (
     Int,
     show,
     (+), ($), (++), (==),
-    (||), (/=), (!!), (&&), (>), not,
-    String, Bool (..), Maybe (..), error, putStrLn,
+    (||), (/=), (!!), (&&), (>),(-), not,
+    String, Bool (..), Maybe (..), Int(..), error, putStrLn,
     fst, head, last, length, takeWhile, drop, concat, fromIntegral
   )
 import Control.Monad.State (
@@ -30,7 +30,7 @@ import Data.Maybe (
     fromJust, isNothing, isJust
   )
 import Data.String.Utils (
-    split, endswith
+    split, endswith, replace
   )
 
 import Data.Int (
@@ -78,7 +78,7 @@ getType (AST.Declaration t n) = show t
 process :: AST.AST -> TACstream -- $ modified
 process ast = ("",directives):("",intermediateCode):appendix
   where
-    ((directives,intermediateCode,appendix), _) = runState (program ast) (0,0,[Map.empty], "void", [Map.singleton "length" "length_:int:any[]"], Map.empty, Map.singleton "length" ["length_"],Map.empty)
+    ((directives,intermediateCode,appendix), _) = runState (program ast) (0,0,[Map.empty], "void", [Map.singleton "length" "length_:int:any[]"], Map.empty, Map.singleton "length" ["length_"],Map.insert "env:new" [AST.Declaration (T.TFunction T.TRef T.TRef) "new"] Map.empty)
 
 -- | Generates a new label and increments the internal label counter.
 newLabel :: State GenState TAC.Label
@@ -211,7 +211,7 @@ command cmd next = case cmd of
       then error $ "Variable " ++ i ++ " has not been declared."
     else if not $ endswith type2 (fromJust type1)
           then error $ "Assignment of an expression to Variable " ++ i
-        ++ " not possible due to type conflict."++(type2)++"/"++(show $ fromJust type1) --TODO remove debug
+        ++ " not possible due to type conflict."++(show data_)++"/"++show tac++"/"++(type2)++"/"++(show $ fromJust type1) --TODO remove debug
     else if not $ endswith "[]" (fromJust type1)
       then return (directive, tac ++ if data_ == TAC.Variable (fromJust type1) then [] else [TAC.Copy (fromJust type1) data_], [], "")
     else do
@@ -398,8 +398,13 @@ expressionInto varFunc expr = case expr of
         let var' = if isNothing type3 then var ++ ":" ++ returnType else fromJust type3
         return (directive, tac ++ [TAC.FromArray var' (fromJust type1) data_], TAC.Variable var', returnType)
   AST.Parameter e -> do -- $ added
-    (directive, tac,data_,type_) <- expression e
-    return (directive, tac ++ [TAC.Push data_], data_, type_)
+    case e of
+      (AST.Void) -> do
+        var <- newTemp
+        return ([],[],TAC.Variable var,"")
+      _ -> do
+        (directive, tac,data_,type_) <- expression e
+        return (directive, tac ++ [TAC.Push data_], data_, type_)
   AST.Parameters e1 e2 -> do -- $ added
     (directive1, tac1,_,type1) <- expression e1
     (directive2, tac2,data_,type2) <- expression e2
@@ -444,8 +449,8 @@ expressionInto varFunc expr = case expr of
           then error $ "Label " ++n++":"++l++ " has not been declared."
         else do
           return ([],[], TAC.ImmediateReference n l, "ref")
-  AST.SolveReference (AST.Identifier i) (AST.Reference ns l) -> do
-    (directives,tac,type1,retType) <- expression (AST.Identifier i)
+  AST.SolveReference expr (AST.Reference ns l) -> do
+    (directives,tac,type1,retType) <- expression expr
     type2 <- lookupLabel $ ns ++ ":" ++ l
     let labelName = if ns == [] then "label_default_"++l else "label_"++ns++"_"++l
     if not $ endswith "ref" (retType ) 
@@ -457,6 +462,25 @@ expressionInto varFunc expr = case expr of
       var <- newTemp
       let var' = var ++ ":"++resultType
       return (directives,tac++[TAC.Solve var' (type1) (labelName)],TAC.Variable var',resultType)
+  AST.SolveReference expr (AST.Func id params) -> do
+    (directives, tac, type1, retType) <- expression expr
+    func <- lookupLabel id
+    let labelName = "label_"++(replace ":" "_" id)
+    if isNothing func
+    then error $ "Function label "++id++" has not been declared."
+    else do
+      let functype = getType $ head $ fromJust func
+      (directivesp, tacp,_,typep) <- expression params
+      let signature1 = if typep == "" then "(ref)" else "(ref;"++typep++")"
+      let signature2 = "("++((split "(" functype) !! 1)
+      let resultType = (split "(" functype) !! 0
+      if (not $ signature1 == signature2)
+      then error $ "User-defined function " ++ id ++ " call incompatible with given parameters."
+      else do
+        var <- newTemp
+        let var' = var++":"++resultType
+        --error $ show id ++"/"++show typep++"/"++show signature1++"/"++show signature2 ++"/"++show typep ++"/"++ show resultType
+        return (directives++directivesp, tac++[TAC.Push type1]++tacp++[TAC.MCall var' type1 labelName],TAC.Variable var',resultType)
   AST.SolveReference (AST.Reference ns1 l1) (AST.Reference ns2 l2) -> do
     type1 <- lookupLabel $ ns1++":"++l1
     type2 <- lookupLabel $ ns2++":"++l2
@@ -547,16 +571,16 @@ allocateParameters params alts = case params of
 labelenvironment :: String -> AST.Command -> GenState -> (DataLabelScopes, TAC.TAC)
 labelenvironment name labels (_,_,_,_,_,_,_,labelMap) = (labelMap', tac')
   where
-    (labelMap', tac', _) = getLabels name labels 1 labelMap
+    (labelMap', tac', _, _) = getLabels name labels 1 0 labelMap
 
 -- TODO documentation
-getLabels :: String -> AST.Command -> Int64 -> DataLabelScopes -> (DataLabelScopes, TAC.TAC, Int64)
-getLabels labelSpec labels index labelMap = case labels of
-  AST.Sequence c1 c2 -> (labelMap2, tac1++tac2, index2)
+getLabels :: String -> AST.Command -> Int64 -> Int64 -> DataLabelScopes -> (DataLabelScopes, TAC.TAC, Int64, Int64)
+getLabels labelSpec labels attIndex funcIndex labelMap = case labels of
+  AST.Sequence c1 c2 -> (labelMap2, tac1++tac2, attIndex2, funcIndex2)
     where
-      (labelMap1, tac1, index1) = getLabels labelSpec c1 (index) labelMap
-      (labelMap2, tac2, index2) = getLabels labelSpec c2 (index1) labelMap1
-  AST.Declaration _type name -> (labelMap'',tac, index+1)
+      (labelMap1, tac1, attIndex1, funcIndex1) = getLabels labelSpec c1 (attIndex) funcIndex labelMap
+      (labelMap2, tac2, attIndex2, funcIndex2) = getLabels labelSpec c2 (attIndex1) funcIndex1 labelMap1
+  AST.Declaration _type name -> (labelMap'',tac, calcAttIndex attIndex _type, calcFuncIndex funcIndex _type)
     where
       labelMap' = 
         if isNothing $ Map.lookup labelName labelMap 
@@ -565,8 +589,8 @@ getLabels labelSpec labels index labelMap = case labels of
       labelID = "label_"++labelSpec++"_"++name
       labelName = (labelSpec++":"++name)
       (dataType, labelMap'', directive) = mapType _type False labelMap'
-      tac = directive++[TAC.DatLabel labelID index dataType labelName]
-  AST.ArrayDecl _type name ->(labelMap'',tac, index+1)
+      tac = directive++(calcDatLabel labelID dataType labelName _type)
+  AST.ArrayDecl _type name ->(labelMap'',tac, calcAttIndex attIndex _type, calcFuncIndex funcIndex _type)
     where
       labelMap' = 
         if isNothing $ Map.lookup labelName labelMap 
@@ -575,7 +599,20 @@ getLabels labelSpec labels index labelMap = case labels of
       labelID = "label_"++labelSpec++"_"++name
       labelName = (labelSpec++":"++name)
       (dataType, labelMap'', directive) = mapType _type True labelMap'
-      tac = directive ++ [TAC.DatLabel labelID index dataType labelName]
+      tac = directive ++(calcDatLabel labelID dataType labelName _type)
+  where
+    calcAttIndex:: Int64 -> T.Type -> Int64
+    calcAttIndex index _type = case _type of
+      (T.TFunction _ _) -> index
+      otherwise -> index+1
+    calcFuncIndex:: Int64 -> T.Type -> Int64
+    calcFuncIndex index _type = case _type of
+      (T.TFunction _ _) -> index+1
+      otherwise -> index
+    calcDatLabel labelID dataType labelName _type = case _type of
+      (T.TFunction _ _) -> [TAC.DatLabel labelID funcIndex dataType labelName]
+      otherwise -> [TAC.DatLabel labelID attIndex dataType labelName]
+
 
 mapType :: T.Type -> Bool -> DataLabelScopes -> (TAC.Data, DataLabelScopes, TAC.TAC)
 mapType (T.TFunction type1 type2) isArray labelMap = (label', labelMap', directives')
@@ -618,6 +655,11 @@ toClassDirective name labelMap = if isNothing $ Map.lookup labelName labelMap
     labelName = "class_from_label_envionment_"++name
     refArrayName = labelName++"_references"
     offsetArrayName = labelName++"_offsets"
+    funcArrayName = labelName ++"_functions"
+    functionMapName = labelName ++ "_functins_Map"
+    refArray =references (fromJust cmds) False
+    offsetArray = offsets (fromJust cmds) False
+    funcArray = references (fromJust cmds) True
     labelMap' = Map.insert labelName [] labelMap
     cmds = Map.lookup (name++":") labelMap
     tac' = if isNothing cmds 
@@ -626,22 +668,35 @@ toClassDirective name labelMap = if isNothing $ Map.lookup labelName labelMap
                 (TAC.DATA $ TAC.ImmediateReference [] "env_class_class"):
                 (TAC.DATA $ TAC.ImmediateReference [] refArrayName):
                 (TAC.DATA $ TAC.ImmediateReference [] offsetArrayName):
+                (TAC.DATA $ TAC.ImmediateReference [] funcArrayName):
+                (TAC.DATA $ TAC.ImmediateReference [] functionMapName):
                 (TAC.CustomLabel refArrayName):
+		(TAC.DATA $ TAC.ImmediateInteger $ fromIntegral $ (length refArray) +1):
                 (TAC.DATA $ TAC.ImmediateReference [] "label_env_parent"):[] ++
-                (references $ fromJust cmds) ++
+                (refArray) ++
                 (TAC.CustomLabel offsetArrayName):
+                (TAC.DATA $ TAC.ImmediateInteger $ fromIntegral $ (length offsetArray)+1):
                 (TAC.DATA $ TAC.ImmediateInteger 0):[]++
-                (offsets $ fromJust cmds)
-    references :: [AST.Command] -> TAC.TAC
-    references [] = []
-    references (c:rest) = references' c ++ references rest 
+                (offsetArray)++
+		[TAC.CustomLabel funcArrayName]++
+		[TAC.DATA $ TAC.ImmediateInteger $ fromIntegral $ length funcArray]++
+                (funcArray)++
+                [TAC.CustomLabel functionMapName]++
+                [TAC.DATA $ TAC.ImmediateInteger $ fromIntegral $ length funcArray]++
+                (funcMap $ length funcArray)
+    references :: [AST.Command] -> Bool -> TAC.TAC
+    references [] _ = []
+    references (c:rest) functionRef = references' c ++ references rest functionRef 
       where 
         references' c = case c of
           AST.Sequence c1 c2 -> references' c1 ++ references' c2
-          AST.Declaration decType decName -> [TAC.DATA $ TAC.ImmediateReference [] ("label_"++name++"_"++decName)]
-          AST.ArrayDecl decType decName -> [TAC.DATA $ TAC.ImmediateReference [] ("label_"++name++"_"++decName)]
-    offsets :: [AST.Command] -> TAC.TAC
-    offsets c = offsetsCount c 8
+          AST.Declaration decType decName -> solveDecl decType decName
+          AST.ArrayDecl decType decName -> solveDecl decType decName
+	solveDecl decType decName = case decType of
+		(T.TFunction _ _) -> if functionRef then [TAC.DATA $ TAC.ImmediateReference [] ("label_"++name++"_"++decName)] else []
+		otherwise -> if not $ functionRef then [TAC.DATA $ TAC.ImmediateReference [] ("label_"++name++"_"++decName)] else []
+    offsets :: [AST.Command] -> Bool -> TAC.TAC
+    offsets c functionCount =if functionCount then offsetsCount c 0 else offsetsCount c 8
       where
         offsetsCount :: [AST.Command] -> Int64 -> TAC.TAC 
         offsetsCount [] _ = []
@@ -655,5 +710,11 @@ toClassDirective name labelMap = if isNothing $ Map.lookup labelName labelMap
             where
               (index1,tac1) = offsets' c1 index
               (index2, tac2 ) = offsets' c2 index1
-          AST.Declaration decType decName -> (index+8, [TAC.DATA $ TAC.ImmediateInteger index])
-          AST.ArrayDecl decType decName -> (index+8, [TAC.DATA $ TAC.ImmediateInteger index]) 
+          AST.Declaration decType decName -> countDecl decType index 
+          AST.ArrayDecl decType decName -> countDecl decType index
+	countDecl decType index = case decType of
+		(T.TFunction _ _) -> if not $ functionCount then (index, []) else (index+8, [TAC.DATA $ TAC.ImmediateInteger index])
+		otherwise -> if not $ functionCount then (index+8, [TAC.DATA $ TAC.ImmediateInteger index]) else (index, [])
+    funcMap:: Int -> TAC.TAC
+    funcMap 0 = []
+    funcMap n = [TAC.DATA $ TAC.ImmediateInteger 0]++(funcMap $ n - 1)

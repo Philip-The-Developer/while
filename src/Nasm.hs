@@ -731,6 +731,13 @@ generate' (hd:rst) isDebug = do
       returnCode [instr $ "call "++ toCode o2, 
         if endswith ":double" v1 then mov o1 xmm0 else mov o1 rax]
 
+    TAC.MCall var ref label -> do
+      o1 <- variableToOperand var
+      o2 <- dataToOperand ref
+      functionArray <- getTemporary
+      offsetArray <- getTemporary
+      returnCode [Just (MCall o1 o2 label)]
+
     TAC.DatLabel label index _type name -> 
       returnCode[instr $        
         label++":\n"++

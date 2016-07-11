@@ -195,6 +195,7 @@ data Instruction
   | Call String
   | DATA Operand
   | Solve Operand Operand String
+  | MCall Operand Operand String
 
 instance NasmCode Instruction where
   toCode (Mov o1 o2)
@@ -250,7 +251,30 @@ instance NasmCode Instruction where
                                    "mov RAX, [RBX + R11]\n"++
                                    "multipop rbx, r8, r9, r10, r11\n"++
                                    "mov "++toCode oTo++", RAX\n"
-                                   
+
+  toCode (MCall oTo oFrom label) = 
+                                  "multipush r8, r9, r10, r11\n"++
+				  "mov r8, ["++ toCode oFrom++"]\n"++
+				  "add r8, 24\n"++
+				  "mov r9, [r8]\n"++
+				  "mov r11, "++label++"\n"++
+				  "add r11,16\n"++
+				  "mov r10, [r11]\n"++
+				  "imul r10, 8\n"++
+				  "add r10,8\n"++
+				  "mov r11, r9\n"++
+				  "add r11, r10\n"++
+				  "cmp QWORD [r11], "++label++"\n"++
+				  "jne alloc_error ; TODO change error prompt\n"++
+				  "add r8, 32\n"++
+				  "mov r9, [r8]\n"++
+				  "mov r11, r9\n"++
+				  "add r11, r10\n"++
+				  "mov r8, [r11]\n"++
+				  "call r8\n"++
+				  "pop rax\n"++
+				  "multipop r8,r9,r10,r11\n"++
+				  "mov "++ toCode oTo++", rax" 
 
 format :: String -> [Operand] -> String
 format ins ops = ins ++ " " ++ intercalate ", " (toCode <$> ops)

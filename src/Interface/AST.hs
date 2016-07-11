@@ -82,6 +82,7 @@ data Expression
   | Double Prelude.Double                     -- $ Double-precision floating-point number
   | Character Prelude.Char                    --  Character
   | Reference String String                   --  Reference
+  | Void                                      -- void value
   | ToClass String                            --  wrap a label environment to a class
   | SolveReference Expression Expression      -- solve references (@varA.env:parent@)
   deriving (Show, Eq)
@@ -133,7 +134,8 @@ walkAST tc te tb = walkC
     walkE (Parameters p1 p2) = te (Parameters (walkE p1) (walkE p2))             -- $ added
     walkE (Func f p) = te (Func f (walkE p))   
     walkE (ToClass s) = te (ToClass s)
-    walkE (SolveReference e1 e2) = te (SolveReference (walkE e1) (walkE e2))                                  -- $ added
+    walkE (SolveReference e1 e2) = te (SolveReference (walkE e1) (walkE e2))  -- $ added
+    walkE (Void) = te (Void)                                
     walkE e = te e
 
     walkB :: BoolExpression -> BoolExpression
@@ -181,6 +183,7 @@ instance ASTPart Expression where
   showASTPart (Character c) = "'"++(show c)++"'"
   showASTPart (ToClass _) = "toClass _"
   showASTPart (SolveReference _ _ ) = "_->_"
+  showASTPart (Void) = "void"
 
 -- | The AST boolean expression is output-able.
 instance ASTPart BoolExpression where

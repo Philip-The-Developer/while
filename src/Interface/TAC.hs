@@ -58,6 +58,7 @@ data Command
   | Neg Variable Data
   | Call Variable Label     -- $ added
   | VCall Variable Variable -- a call from a TFunction variable
+  | MCall Variable Data String   -- method call @MCall resultVariable ref labelName@
   | FAdd Variable Data Data -- $ added
   | FSub Variable Data Data -- $ added
   | FMul Variable Data Data -- $ added
@@ -102,7 +103,8 @@ instance Show Command where
   show (Mod v d1 d2) = v ++ " = " ++ show d1 ++ " % " ++ show d2
   show (Neg v d) = v ++ " = -" ++ show d
   show (Call v l) = v ++ " = call " ++ l     
-  show (VCall v1 v2) = v1 ++ " = call " ++ v2                           -- $ added
+  show (VCall v1 v2) = v1 ++ " = call " ++ v2                     -- $ added
+  show (MCall var ref label) = var ++ " = call "++label++" at "++show ref
   show (FAdd v d1 d2) = v ++ " = " ++ show d1 ++ " + " ++ show d2 -- $ added
   show (FSub v d1 d2) = v ++ " = " ++ show d1 ++ " - " ++ show d2 -- $ added
   show (FMul v d1 d2) = v ++ " = " ++ show d1 ++ " * " ++ show d2 -- $ added
@@ -255,6 +257,7 @@ getDefVariables (Mod v _ _) = [v]
 getDefVariables (Neg v _) = [v]
 getDefVariables (Call v _) = [v]       -- $ added
 getDefVariables (VCall v1 _) = [v1]
+getDefVariables (MCall var _ _) = [var]
 getDefVariables (FAdd v _ _) = [v]     -- $ added
 getDefVariables (FSub v _ _) = [v]     -- $ added
 getDefVariables (FMul v _ _) = [v]     -- $ added
@@ -271,6 +274,7 @@ getUseVariables (FOutput (Variable v)) = [v]                -- $ added
 getUseVariables (COutput (Variable v)) = [v]
 getUseVariables (Push (Variable v)) = [v]                   -- $ added
 getUseVariables (VCall _ v2) = [v2]
+getUseVariables (MCall _ ref _) = variablesFromData [ref]
 getUseVariables (ArrayAlloc _ d1) = variablesFromData [d1]  -- $ added
 getUseVariables (ArrayDealloc v) = [v]                     -- $ added
 getUseVariables (FromArray _ v2 d1) = [v2] ++ variablesFromData [d1] -- $ added
@@ -377,6 +381,9 @@ renameVariables (Call v l) vI vO =                                    -- $ added
 renameVariables (VCall v1 v2) vI vO =
   let [Variable v1', Variable v2'] = substitute [Variable v1, Variable v2] vI vO
   in VCall v1' v2'
+renameVariables (MCall var ref label) vI vO =
+  let [Variable var', ref'] = substitute [Variable var, ref] vI vO
+  in MCall var' ref' label
 renameVariables (FAdd v d1 d2) vI vO =                                -- $ added
   let [Variable v', d1', d2'] = substitute [Variable v, d1, d2] vI vO
   in FAdd v' d1' d2'

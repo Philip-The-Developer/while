@@ -42,6 +42,29 @@
      mov rax, [macro_save]
 %endmacro
 
+%macro method_call 3
+  multipush r8, r9, r10, r11  
+  ;get the class
+  mov r8, [%2] ; (r8) = class
+  add r8, r8, 24
+  mov r9, [r8] ; (r9) = function ideces
+  add r11, %3, 16 ; (r11) = %3+16
+  mov r10, [r11] ; (r10) = index
+  imul r10, 8
+  add r10, r10, 8
+  add r11, r9, r10
+  cmp %3 , [r11]
+  jne alloc_error ; TODO change error prompt
+  add r8, r8, 32
+  mov r9, [r8] ; (r9) = function offsets
+  add r11, r9, r10
+  mov r8, [r11] ; (r8) = function address
+  call r8
+  pop rax ; (rax) = return value
+  multipop r8,r9,r10, r11
+  mov %1, rax
+%endmacro
+
 %macro debug_rsp 0
      mov [macro_save], rax
      xor rax, rax
@@ -124,6 +147,7 @@ extern type_array_double
 extern type_array_char
 extern type_array_ref
 extern exit_program
+extern label_env_new
 
 global main_code
 main_code:

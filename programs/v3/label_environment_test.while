@@ -3,10 +3,14 @@ labels hallo {
   int i2;
   char c;
   char[] chars;
+  ref reference;
   int(char;int;double;ref) aFunction;
   int(char;int;double;ref) bFunction
 };
-ref reference;
-reference := toClass hallo;
-char character;
-character := reference.hallo:c;
+
+ref halloClass;
+ref halloObject;
+int j;
+halloClass := toClass hallo;
+halloObject := halloClass.env:new();
+halloObject.i := 13
