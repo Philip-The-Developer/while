@@ -2,3 +2,4 @@ dist/
 *~
 *.swp
 *.o
+build.txt
