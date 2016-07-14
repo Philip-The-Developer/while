@@ -102,12 +102,12 @@ cmd = do
     e <- expr
     return $ A.Return e
   <|> do
-    id_ <- identifier
+    id_ <- expr
     _ <- token Assign
     e <- expr
     return $ A.Assign id_ e
   <|> do -- $ added
-    id_ <- identifier
+    id_ <- expr
     _ <- token $ Token '['
     e1 <- expr
     _ <- token $ Token ']'
@@ -184,13 +184,13 @@ mulop = do { _ <- token $ MathOp Times; return $ A.Calculation Times }
 
 factor :: TokenParser A.Expression
 factor = do -- $ added
-    id_ <- identifier
+    id_ <- expr
     _ <- token $ Token '('
     p <- param
     _ <- token $ Token ')'
     return $ A.Func id_ p
   <|> do -- $ added
-    id_ <- identifier
+    id_ <- expr
     _ <- token $ Token '['
     e <- expr
     _ <- token $ Token ']'

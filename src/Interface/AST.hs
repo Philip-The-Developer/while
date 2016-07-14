@@ -55,12 +55,12 @@ data Command
   | While BoolExpression Command              -- ^ repeatedly execute the
                                               -- command as long as the
                                               -- expression yields true
-  | Assign String Expression                  -- ^ assign the value of the
+  | Assign Expression Expression                  -- ^ assign the value of the
                                               -- expression to an identifier
   | Declaration Type String                   -- $ declare type of a variable
   | ArrayDecl Type String                     -- $ declare an array
   | ArrayAlloc Type Expression String         -- $ allocate dynamically an array
-  | ToArray String Expression Expression      -- $ assign the value of the
+  | ToArray Expression Expression Expression      -- $ assign the value of the
                                               -- expression to an array element
   | Environment Command                       -- $ push and pop environment
   | Function Command Command Command          -- $ Type signature and code
@@ -74,10 +74,10 @@ data Expression
                                               -- expr2@
   | Negate Expression                         -- ^ Unary negation: @-expr@
   | Identifier String                         -- ^ Variable: @a@, @b@, …
-  | FromArray String Expression               -- $ Array element: @a[0]@, @b[i]@, …
+  | FromArray Expression Expression               -- $ Array element: @a[0]@, @b[i]@, …
   | Parameter Expression                      -- $ Parameter: @a@, 0+1, …
   | Parameters Expression Expression          -- $ Series of parameters
-  | Func String Expression                    -- $ Function call: @f(a; b; c)@, @g(x; y; z)@, …
+  | Func Expression Expression                    -- $ Function call: @f(a; b; c)@, @g(x; y; z)@, …
   | Integer Int64                             -- $ Integer
   | Double Prelude.Double                     -- $ Double-precision floating-point number
   | Character Prelude.Char                    --  Character
@@ -116,11 +116,11 @@ walkAST tc te tb = walkC
     walkC (IfThen b c) = tc (IfThen (walkB b) (walkC c))
     walkC (IfThenElse b c1 c2) = tc (IfThenElse (walkB b) (walkC c1) (walkC c2))
     walkC (While b c) = tc (While (walkB b) (walkC c))
-    walkC (Assign i e) = tc (Assign i (walkE e))
+    walkC (Assign i e) = tc (Assign (walkE i) (walkE e))
     walkC (Declaration t i) = tc (Declaration t i)								 -- $ added
     walkC (ArrayDecl t i) = tc (ArrayDecl t i)                                   -- $ added
     walkC (ArrayAlloc t e i) = tc (ArrayAlloc t (walkE e) i)                     -- $ added
-    walkC (ToArray i e1 e2) = tc (ToArray i (walkE e1) (walkE e2))               -- $ added
+    walkC (ToArray i e1 e2) = tc (ToArray (walkE i) (walkE e1) (walkE e2))               -- $ added
     walkC (Environment c) = tc (Environment (walkC c))                           -- $ added
     walkC (Function t p c) = tc (Function (walkC t) (walkC p) (walkC c))         -- $ added
     walkC (LabelEnvironment i p) = tc (LabelEnvironment i (walkC p))
@@ -129,10 +129,10 @@ walkAST tc te tb = walkC
     walkE :: Expression -> Expression
     walkE (Calculation op e1 e2) = te (Calculation op (walkE e1) (walkE e2))
     walkE (Negate e) = te (Negate (walkE e))
-    walkE (FromArray i e) = te (FromArray i (walkE e))                           -- $ added
+    walkE (FromArray i e) = te (FromArray (walkE i) (walkE e))                           -- $ added
     walkE (Parameter p) = te (Parameter (walkE p))                               -- $ added
     walkE (Parameters p1 p2) = te (Parameters (walkE p1) (walkE p2))             -- $ added
-    walkE (Func f p) = te (Func f (walkE p))   
+    walkE (Func f p) = te (Func (walkE f) (walkE p))   
     walkE (ToClass s) = te (ToClass s)
     walkE (SolveReference e1 e2) = te (SolveReference (walkE e1) (walkE e2))  -- $ added
     walkE (Void) = te (Void)                                

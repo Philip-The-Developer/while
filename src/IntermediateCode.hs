@@ -205,38 +205,36 @@ command cmd next = case cmd of
     (directive, tac,udf,rt) <- command c begin -- $ modified
     return (direxp++directive,[TAC.Label begin] ++ btac ++ [TAC.Label true] ++ tac ++ [TAC.Goto begin], udf, rt) -- $ modified
   AST.Assign i e -> do -- $ modified
-    type1 <- lookup i False
-    (directive,tac,data_,type2) <- expressionInto (fixedVar i) e
-    if isNothing type1
-      then error $ "Variable " ++ i ++ " has not been declared."
-    else if not $ endswith type2 (fromJust type1)
-          then error $ "Assignment of an expression to Variable " ++ i
-        ++ " not possible due to type conflict."++(show data_)++"/"++show tac++"/"++(type2)++"/"++(show $ fromJust type1) --TODO remove debug
-    else if not $ endswith "[]" (fromJust type1)
-      then return (directive, tac ++ if data_ == TAC.Variable (fromJust type1) then [] else [TAC.Copy (fromJust type1) data_], [], "")
+    (dir1,tac1, data1, type1) <- expression i
+    (dir2,tac2,data2,type2) <-  case data1 of
+        (TAC.Variable v) -> expressionInto (fixedVar $ v) e
+        otherwise -> error $ (show i)++" is not a variable."
+    if not $ endswith type2 type1
+          then error $ "Assignment of an expression to Variable " ++show i
+        ++ " not possible due to type conflict."
+    else if not $ endswith "[]" (type1)
+      then return (dir1++dir2, tac1++tac2 ++ if data2 == TAC.Variable (type1) then [] else [TAC.Copy (type1) data2], [], "")
     else do
       (t,l,env@(s:_),r,f,u,a,dataLabel) <- get
-      let env' = insert i (show data_) env
+      let env' = insert (show i) (show data2) env --TODO special handling of attributes
       put (t,l,env',r,f,u,a,dataLabel)
-      if isNothing $ Map.lookup i s
-        then return (directive, tac ++ [TAC.ArrayCopy (show data_) data_], [], "")
-      else return (directive, tac ++ if data_ == TAC.Variable (fromJust type1) || r /= "void" then [] else [TAC.ArrayCopy (fromJust type1) data_], [], "")
+      if isNothing $ Map.lookup (show i) s
+        then return (dir1++dir2, tac1++tac2 ++ [TAC.ArrayCopy (show data2) data2], [], "")
+      else return (dir1++dir2, tac1++tac2 ++ if data2 == TAC.Variable (type1) || r /= "void" then [] else [TAC.ArrayCopy (type1) data2], [], "")
   AST.ToArray i e1 e2 -> do -- $ added
-    type_ <- lookup i False
-    if isNothing type_
-          then error $ "Array " ++ i ++ " has not been declared."
-    else if not $ endswith "]" $ fromJust type_
-          then error $ "Name " ++ i ++ " does not denote an array."
+    (dir0,tac0, data0, type0) <- expression i
+    if not $ endswith "]" $ type0
+          then error $ "Name " ++ show i ++ " does not denote an array."
         else do
       (directive1,tac1,data1,type1) <- expression e1
       if type1 /= "int"
-        then error $ "Elements of array " ++ i ++ " only accessible via int indices."
+        then error $ "Elements of array " ++show i ++ " only accessible via int indices."
       else do
-        let signature = split ":" $ fromJust type_
+        let signature = split ":" $ type0
         (directive2, tac2,data2,type2) <- expression e2
         if type2 /= (takeWhile (/= '[') $ last signature)
-          then error $ "Assignment of an expression to array " ++ i ++ " not possible due to type conflict."
-        else return (directive1++directive2,tac1 ++ tac2 ++ [TAC.ToArray (fromJust type_) data1 data2], [], "")
+          then error $ "Assignment of an expression to array " ++show i ++ " not possible due to type conflict." ++ type2 ++ "/"++show signature
+        else return (dir0++directive1++directive2,tac0++tac1 ++ tac2 ++ [TAC.ToArray (type0) data1 data2], [], "")
   AST.Declaration _type i -> do -- $$ added
     (t,l,s:ss,r,f,u,a,dataLabel) <- get
     let type_ = Map.lookup i s
@@ -381,22 +379,20 @@ expressionInto varFunc expr = case expr of
           let returnType = last $ split ":" $ fromJust type_
           return ([],[], TAC.Variable $ fromJust type_, returnType)
   AST.FromArray i e -> do -- $ added
-    type1 <- lookup i False
-    if isNothing type1
-          then error $ "Array " ++ i ++ " has not been declared."
-    else if not $ endswith "]" $ fromJust type1
-          then error $ "Name " ++ i ++ " does not denote an array."
+    (dir1,tac1,data1,type1) <- expression i
+    if not $ endswith "]" $ type1
+          then error $ "Name " ++ show i ++ " does not denote an array."
         else do
-      (directive, tac,data_,type2) <- expression e
+      (dir2, tac2,data2,type2) <- expression e
       if type2 /= "int"
-        then error $ "Elements of array " ++ i ++ " only accessible via int indices."
+        then error $ "Elements of array " ++ show i ++ " only accessible via int indices."
       else do
-        let signature = split ":" $ fromJust type1
+        let signature = split ":" $ type1
         var <- varFunc
         type3 <- lookup var False
         let returnType = (takeWhile (/= '[') $ last signature)
         let var' = if isNothing type3 then var ++ ":" ++ returnType else fromJust type3
-        return (directive, tac ++ [TAC.FromArray var' (fromJust type1) data_], TAC.Variable var', returnType)
+        return (dir1++dir1, tac1++tac2 ++ [TAC.FromArray var' (type1) data2], TAC.Variable var', returnType)
   AST.Parameter e -> do -- $ added
     case e of
       (AST.Void) -> do
@@ -410,31 +406,20 @@ expressionInto varFunc expr = case expr of
     (directive2, tac2,data_,type2) <- expression e2
     return (directive1++directive2,tac1 ++ tac2, data_, type1 ++";"++ type2)
   AST.Func i p -> do -- $ added
-    ftype <- lookup i True
-    vtype <- lookup i False
-    let type_ = if isNothing ftype then vtype else ftype
-    if isNothing type_
-      then error $ "User-defined function " ++ i ++ " not in scope."
-    else do
-      (directive, tac,_,params1') <- expression p
-      let params1 = "("++params1'++")"
-      let signature = split ":" $ fromJust type_
-      let name = head signature
-      let params2 = last signature
-      if (name == "length_" && not(endswith "]" params2)) || (not(endswith params1 params2) && name /= "length_")
-          then error $ "User-defined function " ++ i ++ " call incompatible with given parameters. "++params1++"/"++params2 --TODO remove debug
-      else do
-          var <- varFunc
-          type3 <- lookup var False
-          if isNothing ftype
-            then do
-              let returnType = head $ split "(" $ signature!!1
-              let var' = if isNothing type3 || (endswith "]" $ fromJust type3) then var ++ ":" ++ returnType else fromJust type3
-              return (directive, tac ++ [TAC.VCall var' $ fromJust type_], TAC.Variable var', returnType)
-            else do
-              let returnType = signature!!1
-              let var' = if isNothing type3 || (endswith "]" $ fromJust type3) then var ++ ":" ++ returnType else fromJust type3
-              return (directive, tac ++ [TAC.Call var' $ head signature], TAC.Variable var', returnType)
+    (dir1,tac1,data1,type1) <- expression i
+    (directive, tac,_,params1') <- expression p
+    let params1 = "("++params1'++")"
+    let signature = split ":" type1
+    let name = head signature
+    let params2 = last signature
+    if (name == "length_" && not(endswith "]" params2)) || (not(endswith params1 params2) && name /= "length_")
+        then error $ "User-defined function " ++show i ++ " call incompatible with given parameters. "++params1++"/"++params2++"/name:"++name++"/type1:"++type1 --TODO remove debug
+	else do
+	  var <- varFunc
+	  type3 <- lookup var False
+	  let returnType = head $ split "(" $ signature!!1
+	  let var' = if isNothing type3 || (endswith "]" $ fromJust type3) then var ++ ":" ++ returnType else fromJust type3
+	  return (dir1++directive, tac1++tac ++ [TAC.VCall var' $ type1], TAC.Variable var', returnType)
   AST.ToClass labelspec -> do
     (t,l,s,r,f:ff,u,a,dataLabel) <- get
     let (dataLabel', directives) = toClassDirective labelspec dataLabel
@@ -464,10 +449,10 @@ expressionInto varFunc expr = case expr of
       return (directives,tac++[TAC.Solve var' (type1) (labelName)],TAC.Variable var',resultType)
   AST.SolveReference expr (AST.Func id params) -> do
     (directives, tac, type1, retType) <- expression expr
-    func <- lookupLabel id
-    let labelName = "label_"++(replace ":" "_" id)
+    func <- lookupLabel $ show id
+    let labelName = "label_"++(replace ":" "_" (show id))
     if isNothing func
-    then error $ "Function label "++id++" has not been declared."
+    then error $ "Function label "++show id++" has not been declared."
     else do
       let functype = getType $ head $ fromJust func
       (directivesp, tacp,_,typep) <- expression params
@@ -475,7 +460,7 @@ expressionInto varFunc expr = case expr of
       let signature2 = "("++((split "(" functype) !! 1)
       let resultType = (split "(" functype) !! 0
       if (not $ signature1 == signature2)
-      then error $ "User-defined function " ++ id ++ " call incompatible with given parameters."
+      then error $ "User-defined function " ++ show id ++ " call incompatible with given parameters."
       else do
         var <- newTemp
         let var' = var++":"++resultType

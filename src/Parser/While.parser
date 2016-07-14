@@ -89,8 +89,8 @@ CmdC    :: { AST.Command }
         | read id                       { AST.Read $2 }
         | output Expr                   { AST.Output $2 }
         | return Expr                   { AST.Return $2 }
-        | id ':=' Expr                  { AST.Assign $1 $3 }
-        | id '[' Expr ']' ':=' Expr     { AST.ToArray $1 $3 $6 }
+        | Address ':=' Expr             { AST.Assign $1 $3 }
+        | Address '[' Expr ']' ':=' Expr { AST.ToArray $1 $3 $6 }
         | '{' Cmds '}'                  { AST.Environment $2 }
         | func Decl '(' Decls ')' '{' Cmds '}'  { AST.Function $2 $4 $7 }
         | labelspec id '{' Decls '}'          { AST.LabelEnvironment $2 $4 }
@@ -104,17 +104,15 @@ Term    :: { AST.Expression }
         : Term '*' Factor               { AST.Calculation Times $1 $3 }
         | Term '/' Factor               { AST.Calculation DivBy $1 $3 }
         | Term mod Factor               { AST.Calculation Mod $1 $3 }
-        | Term '.' Factor               { AST.SolveReference $1 $3}
         | Factor                        { $1 }
 
 Factor  :: { AST.Expression }
         : '(' Expr ')'                  { $2 }
         | '-' Factor                    { AST.Negate $2 }
-        | id                            { AST.Identifier $1 }
-        | id '[' Expr ']'               { AST.FromArray $1 $3 }
-        | id '(' Params ')'             { AST.Func $1 $3 }
-        | id ':' id '(' ')'             { AST.Func ($1++":"++$3) (AST.Parameter AST.Void) }
-        | id ':' id '(' Params ')'      { AST.Func ($1++":"++$3) $5}
+        | Address '[' Expr ']'          { AST.FromArray $1 $3 }
+        | Address '(' Params ')'        { AST.Func $1 $3 }
+        | Address '(' ')'               { AST.Func $1 (AST.Parameter AST.Void) }
+        | Address                       { $1}
         | id ':' id                     { AST.Reference $1 $3}
         | ':' id                        { AST.Reference "default" $2}
         | toClass id                    { AST.ToClass $2}
@@ -169,3 +167,11 @@ Type :: { Type }
       | char                            { TChar }
       | ref                             { TRef }
       | Type '(' Types ')'         { TFunction $1 $3 }
+
+Address :: { AST.Expression }
+      : Address '.' ID			{ AST.SolveReference $1 $3 }
+      : id				{ AST.Identifier $1 }
+
+ID :: { AST.Expression }
+    : id ':' id				{ AST.Reference $1 $3 }
+    | id                                { AST.Identifier $1 }

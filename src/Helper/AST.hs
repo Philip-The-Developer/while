@@ -111,13 +111,13 @@ astToDot ast = graphToDot
           return $ insEdge (i, ic, ()) $ insEdge (i, ib, ()) gr2
         commandToGraph' i (Assign id_ e) gr = do
           ii <- get
-          gr1 <- expressionToGraph (Identifier id_) gr
+          gr1 <- expressionToGraph id_ gr
           ie <- get
           gr2 <- expressionToGraph e gr1
           return $ insEdge (i, ie, ()) $ insEdge (i, ii, ()) gr2
         commandToGraph' i (ToArray id_ e1 e2) gr = do -- $ added
           ii <- get
-          gr1 <- expressionToGraph (Identifier id_) gr
+          gr1 <- expressionToGraph id_ gr
           ie1 <- get
           gr2 <- expressionToGraph e1 gr1
           ie2 <- get
@@ -171,7 +171,7 @@ astToDot ast = graphToDot
           return $ insEdge (i, ie, ()) gr1
         expressionToGraph' i (FromArray id_ e) gr = do -- $ added
           ii <- get
-          gr1 <- expressionToGraph (Identifier id_) gr
+          gr1 <- expressionToGraph id_ gr
           ie <- get
           gr2 <- expressionToGraph e gr1
           return $ insEdge (i, ie, ()) $ insEdge (i, ii, ()) gr2
@@ -183,7 +183,7 @@ astToDot ast = graphToDot
           return $ insEdge (i, ie2, ()) $ insEdge (i, ie1, ()) gr2
         expressionToGraph' i (Func id_ e) gr = do -- $ added
           ii <- get
-          gr1 <- expressionToGraph (Identifier id_) gr
+          gr1 <- expressionToGraph id_ gr
           ie <- get
           gr2 <- expressionToGraph e gr1
           return $ insEdge (i, ie, ()) $ insEdge (i, ii, ()) gr2
