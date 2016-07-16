@@ -33,6 +33,7 @@ global type_array_int
 global type_array_double
 global type_array_char
 global type_array_ref
+global eof
 global main
 
 extern printf
@@ -66,10 +67,12 @@ extern main_code
 
 ; Debugging macro, outputs the current value of [rsi]
 %macro debug_rsi 0
-     ;push rax
+    ; push rax
      ;xor rax, rax
      ;mov al, BYTE [rsi]
      ;add rax, 100000000
+     ;call output_number
+     ;mov rax, [buffer.remaining]
      ;call output_number
      ;pop rax
 %endmacro
@@ -512,6 +515,7 @@ input_number:
 
             ; Increment our buffer and exit the loop
             inc_rsi
+            debug_rsi
             jmp .read_loop_exit
 
         .not_newline:
@@ -539,23 +543,23 @@ input_number:
 
     ; If we have nothing more to read this may be our last number we can get
     ; from STDIN -- so better check again and maybe set input_eof
-    cmp QWORD [buffer.remaining], 0
-    jne .buffer_not_empty3
+    ;cmp QWORD [buffer.remaining], 0
+    ;jne .buffer_not_empty3
 
         ; Save RAX
-        push rax
+     ;   push rax
         ; Read from STDIN -- number of bytes read is in RAX
-        read
+      ;  read
 
         ; If we read nothing then we are at EOF
-        cmp rax, 0
-        jne .read_no_eof1
+       ; cmp rax, 0
+        ;jne .read_no_eof1
 
-            mov BYTE [input_eof], 1
+         ;   mov BYTE [input_eof], 1
 
-        .read_no_eof1:
+        ;.read_no_eof1:
         ; Restore RAX
-        pop rax
+        ;pop rax
 
     .buffer_not_empty3:
 

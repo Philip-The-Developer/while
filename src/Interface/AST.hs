@@ -9,7 +9,7 @@
 -}
 module Interface.AST (
   ASTPart (..),
-  AST, Command (..), Expression (..), BoolExpression (..),
+  AST, Command (..), Expression (..), BoolExpression (..), Address (..),
   walkAST
 ) where
 
@@ -41,7 +41,7 @@ type AST = Command
 data Command
   = NONE
   | Output Expression                         -- ^ output something
-  | Read String                               -- ^ read something into a
+  | Read Address                               -- ^ read something into a
                                               -- variable
   | Return Expression                         -- $ return something
   | Skip                                      -- ^ a no operation
@@ -55,15 +55,13 @@ data Command
   | While BoolExpression Command              -- ^ repeatedly execute the
                                               -- command as long as the
                                               -- expression yields true
-  | Assign Expression Expression                  -- ^ assign the value of the
+  | Assign Address Expression                  -- ^ assign the value of the
                                               -- expression to an identifier
-  | Declaration Type String                   -- $ declare type of a variable
-  | ArrayDecl Type String                     -- $ declare an array
-  | ArrayAlloc Type Expression String         -- $ allocate dynamically an array
-  | ToArray Expression Expression Expression      -- $ assign the value of the
+  | ArrayAlloc Type Expression Address         -- $ allocate dynamically an array
                                               -- expression to an array element
+  | Declaration Type String
   | Environment Command                       -- $ push and pop environment
-  | Function Command Command Command          -- $ Type signature and code
+  | Function Type String Command Command          -- $ Type signature and code
   | LabelEnvironment String Command
   deriving (Show, Eq)
 
@@ -73,18 +71,14 @@ data Expression
                                               -- operator: @expr1 mathop
                                               -- expr2@
   | Negate Expression                         -- ^ Unary negation: @-expr@
-  | Identifier String                         -- ^ Variable: @a@, @b@, …
-  | FromArray Expression Expression               -- $ Array element: @a[0]@, @b[i]@, …
-  | Parameter Expression                      -- $ Parameter: @a@, 0+1, …
-  | Parameters Expression Expression          -- $ Series of parameters
-  | Func Expression Expression                    -- $ Function call: @f(a; b; c)@, @g(x; y; z)@, …
   | Integer Int64                             -- $ Integer
   | Double Prelude.Double                     -- $ Double-precision floating-point number
+  | Parameters Expression Expression
   | Character Prelude.Char                    --  Character
   | Reference String String                   --  Reference
   | Void                                      -- void value
   | ToClass String                            --  wrap a label environment to a class
-  | SolveReference Expression Expression      -- solve references (@varA.env:parent@)
+  | Variable Address
   deriving (Show, Eq)
 
 -- | A boolean expression.
@@ -97,6 +91,19 @@ data BoolExpression
   | Not BoolExpression                        -- ^ Unary negation: @¬bexpr@
   | Boolean Bool
   | Eof                                       -- ^ End of input predicate
+  deriving (Show, Eq)
+
+data Address
+  = Identifier String
+  | Label String String
+  | FunctionCall Address Expression
+  | FromArray Address Expression
+  | Structure Address Address
+  deriving (Show, Eq)
+
+data VarInfo
+ = Scalar
+ | Array
   deriving (Show, Eq)
 
 -- | Walk the whole AST calling the appropriate function for each tree element.
@@ -116,25 +123,19 @@ walkAST tc te tb = walkC
     walkC (IfThen b c) = tc (IfThen (walkB b) (walkC c))
     walkC (IfThenElse b c1 c2) = tc (IfThenElse (walkB b) (walkC c1) (walkC c2))
     walkC (While b c) = tc (While (walkB b) (walkC c))
-    walkC (Assign i e) = tc (Assign (walkE i) (walkE e))
+    walkC (Assign i e) = tc (Assign i (walkE e))
     walkC (Declaration t i) = tc (Declaration t i)								 -- $ added
-    walkC (ArrayDecl t i) = tc (ArrayDecl t i)                                   -- $ added
     walkC (ArrayAlloc t e i) = tc (ArrayAlloc t (walkE e) i)                     -- $ added
-    walkC (ToArray i e1 e2) = tc (ToArray (walkE i) (walkE e1) (walkE e2))               -- $ added
     walkC (Environment c) = tc (Environment (walkC c))                           -- $ added
-    walkC (Function t p c) = tc (Function (walkC t) (walkC p) (walkC c))         -- $ added
+    walkC (Function t id p c) = tc (Function t id (walkC p) (walkC c))         -- $ added
     walkC (LabelEnvironment i p) = tc (LabelEnvironment i (walkC p))
     walkC (NONE) = NONE
 
     walkE :: Expression -> Expression
     walkE (Calculation op e1 e2) = te (Calculation op (walkE e1) (walkE e2))
     walkE (Negate e) = te (Negate (walkE e))
-    walkE (FromArray i e) = te (FromArray (walkE i) (walkE e))                           -- $ added
-    walkE (Parameter p) = te (Parameter (walkE p))                               -- $ added
     walkE (Parameters p1 p2) = te (Parameters (walkE p1) (walkE p2))             -- $ added
-    walkE (Func f p) = te (Func (walkE f) (walkE p))   
     walkE (ToClass s) = te (ToClass s)
-    walkE (SolveReference e1 e2) = te (SolveReference (walkE e1) (walkE e2))  -- $ added
     walkE (Void) = te (Void)                                
     walkE e = te e
 
@@ -161,28 +162,21 @@ instance ASTPart Command where
   showASTPart (IfThenElse _ _ _) = "if _ then _ else _"
   showASTPart (While _ _) = "while _ do _"
   showASTPart (Assign _ _) = ":="
-  showASTPart (ToArray _ _ _) = ":="                                          -- $ added
   showASTPart (Declaration t _) = show t ++ " _"                              -- $ added
-  showASTPart (ArrayDecl t _) = show t ++ "[] _"                              -- $ added
   showASTPart (ArrayAlloc t _ _) = show t ++ "[_] _"                          -- $ added
   showASTPart (Environment _) = "push scope"                                  -- $ added
-  showASTPart (Function _ _ _) = "function _ (_) {_}"                             -- $ added
+  showASTPart (Function _ _ _ _) = "function _ (_) {_}"                             -- $ added
   showASTPart (LabelEnvironment i _) = "labels "++i++"{_}"
 
 -- | The AST expression is output-able.
 instance ASTPart Expression where
   showASTPart (Calculation op _ _) = show op
   showASTPart (Negate _) = "-"
-  showASTPart (Identifier i) = i
-  showASTPart (FromArray i _) = "_[_]"       -- $ added
-  showASTPart (Parameter p) = showASTPart p  -- $ added
   showASTPart (Parameters _ _) = ";"         -- $ added
-  showASTPart (Func _ _) = "_(_)"            -- $ added
   showASTPart (Integer n) = show n           -- $ modified
   showASTPart (Double n) = show n            -- $ added
   showASTPart (Character c) = "'"++(show c)++"'"
   showASTPart (ToClass _) = "toClass _"
-  showASTPart (SolveReference _ _ ) = "_->_"
   showASTPart (Void) = "void"
 
 -- | The AST boolean expression is output-able.

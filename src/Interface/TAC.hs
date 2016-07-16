@@ -11,7 +11,7 @@ module Interface.TAC (
   TAC, Command (..), Data (..), Variable, ImmediateInteger, ImmediateDouble, ImmediateChar, Label, GotoCondition1 (..),
   GotoCondition2 (..),
   invertCond1, invertCond2, isGoto, getLabelFromGoto,
-  getDefVariables, getUseVariables, getVariables, renameVariables
+  getDefVariables, getUseVariables, getVariables, renameVariables, getCalculation
 ) where
 
 import Prelude (
@@ -25,6 +25,8 @@ import Prelude (
 import Data.Int (
     Int64
   )
+
+import qualified Interface.Token as T
 
 -- | A three address code is a list of three address code commands
 type TAC = [Command]
@@ -122,6 +124,17 @@ instance Show Command where
   show (CustomLabel l) = show l++":"
   show (Solve var id label) = var ++" = "++show id++" -> "++ label
 
+getCalculation :: T.MathOp -> T.Type -> Variable -> Data -> Data -> Command
+getCalculation T.Plus T.TDouble v d1 d2 = FAdd v d1 d2
+getCalculation T.Plus _ v d1 d2 = Add v d1 d2
+getCalculation T.Minus T.TDouble v d1 d2 = FSub v d1 d2
+getCalculation T.Minus _ v d1 d2 = Sub v d1 d2
+getCalculation T.Times T.TDouble v d1 d2 = FMul v d1 d2
+getCalculation T.Times _ v d1 d2 = Mul v d1 d2
+getCalculation T.DivBy T.TDouble v d1 d2 = FDiv v d1 d2
+getCalculation T.DivBy _ v d1 d2 = Div v d1 d2
+getCalculation T.Mod _ v d1 d2 = Mod v d1 d2
+
 -- | The different conditions for a goto statement with one parameter.
 data GotoCondition1
   = IsTrue  -- ^ The parameter (a boolean value) should be true
@@ -206,7 +219,7 @@ instance Show Data where
   show (ImmediateReference ns l) = "label_"++ns++"_"++l    
                          
 
--- | Variable names are just strings.
+-- | Variable as String.
 type Variable = String
 
 -- $| Integers as values.

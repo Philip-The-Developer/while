@@ -17,7 +17,7 @@ import Interface.AST (
   )
 
 import Prelude (
-    String, FilePath, IO, Int,
+    String, FilePath, IO, Int, show,
     (.), ($), (>>), (+)
   )
 
@@ -80,7 +80,7 @@ astToDot ast = graphToDot
           return $ insEdge (i, ie, ()) gr1
         commandToGraph' i (Read id_) gr = do
           ii <- get
-          gr1 <- expressionToGraph (Identifier id_) gr
+          gr1 <- expressionToGraph (Void) gr
           return $ insEdge (i, ii, ()) gr1
         commandToGraph' i (Sequence c1 c2) gr = do
           ic1 <- get
@@ -111,39 +111,27 @@ astToDot ast = graphToDot
           return $ insEdge (i, ic, ()) $ insEdge (i, ib, ()) gr2
         commandToGraph' i (Assign id_ e) gr = do
           ii <- get
-          gr1 <- expressionToGraph id_ gr
+          gr1 <- expressionToGraph Void gr
           ie <- get
           gr2 <- expressionToGraph e gr1
           return $ insEdge (i, ie, ()) $ insEdge (i, ii, ()) gr2
-        commandToGraph' i (ToArray id_ e1 e2) gr = do -- $ added
-          ii <- get
-          gr1 <- expressionToGraph id_ gr
-          ie1 <- get
-          gr2 <- expressionToGraph e1 gr1
-          ie2 <- get
-          gr3 <- expressionToGraph e2 gr2
-          return $ insEdge (i, ie2, ()) $ insEdge (i, ie1, ()) $ insEdge (i, ii, ()) gr3
         commandToGraph' i (Declaration _ id_) gr = do -- $ added
           ii <- get
-          gr1 <- expressionToGraph (Identifier id_) gr
-          return $ insEdge (i, ii, ()) gr1
-        commandToGraph' i (ArrayDecl _ id_) gr = do -- $ added
-          ii <- get
-          gr1 <- expressionToGraph (Identifier id_) gr
+          gr1 <- expressionToGraph Void gr
           return $ insEdge (i, ii, ()) gr1
         commandToGraph' i (ArrayAlloc _ e id_) gr = do -- $ added
           ie <- get
           gr1 <- expressionToGraph e gr
           ii <- get
-          gr2 <- expressionToGraph (Identifier id_) gr1
+          gr2 <- expressionToGraph Void gr1
           return $ insEdge (i, ii, ()) $ insEdge (i, ie, ()) gr2
         commandToGraph' i (Environment c) gr = do -- $ added
           ic <- get
           gr1 <- commandToGraph c gr
           return $ insEdge (i, ic, ()) gr1
-        commandToGraph' i (Function c1 c2 c3) gr = do -- $ added
+        commandToGraph' i (Function t id c2 c3) gr = do -- $ added
           ic1 <- get
-          gr1 <- commandToGraph c1 gr
+          gr1 <- expressionToGraph Void gr
           ic2 <- get
           gr2 <- commandToGraph c2 gr1
           ic3 <- get
@@ -169,24 +157,12 @@ astToDot ast = graphToDot
           ie <- get
           gr1 <- expressionToGraph e gr
           return $ insEdge (i, ie, ()) gr1
-        expressionToGraph' i (FromArray id_ e) gr = do -- $ added
-          ii <- get
-          gr1 <- expressionToGraph id_ gr
-          ie <- get
-          gr2 <- expressionToGraph e gr1
-          return $ insEdge (i, ie, ()) $ insEdge (i, ii, ()) gr2
         expressionToGraph' i (Parameters e1 e2) gr = do -- $ added
           ie1 <- get
           gr1 <- expressionToGraph e1 gr
           ie2 <- get
           gr2 <- expressionToGraph e2 gr1
           return $ insEdge (i, ie2, ()) $ insEdge (i, ie1, ()) gr2
-        expressionToGraph' i (Func id_ e) gr = do -- $ added
-          ii <- get
-          gr1 <- expressionToGraph id_ gr
-          ie <- get
-          gr2 <- expressionToGraph e gr1
-          return $ insEdge (i, ie, ()) $ insEdge (i, ii, ()) gr2
         expressionToGraph' _ _ gr = return gr
 
     boolExpressionToGraph :: BoolExpression -> Gr String ()

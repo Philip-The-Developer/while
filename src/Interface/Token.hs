@@ -9,7 +9,7 @@
 module Interface.Token (
   PosToken (..), Token (..), LogOp (..), RelOp (..), MathOp (..), Type (..),
   getPosition, removePosition, removePositions, getMathOpFunction,
-  getRelOpFunction,getLabel, rollout
+  getRelOpFunction,getLabel, rollout, isArray
 ) where
 
 import Prelude (
@@ -155,36 +155,42 @@ instance Show MathOp where
 
 -- $| Basic type declarations.
 data Type
-  = TInt         -- $ Integer declaration (@int@)
+  = Void         -- Void type
+  | TInt         -- $ Integer declaration (@int@)
   | TDouble      -- $ Double-precision floating-point number declaration (@double@)
   | TChar        --   Character declaration (@char@)
   | TRef         --   Reference declaration (@ref@)
+  | TArray Type
   | TFunction Type Type -- Function declaration (@function char (int;double)@)
   | TypeSequence Type Type -- Sequence of types (@int;char;double;int@)
   deriving (Eq)
 
 -- $| Display as @int@ or @double@.
 instance Show Type where
+  show Void    = "void"
   show TInt    = "int"
   show TDouble = "double"
   show TChar   = "char"
   show TRef    = "ref"
+  show (TArray t) = show t ++ "[]"
   show (TFunction result signature) = (show result)++"("++(show signature)++")"
   show (TypeSequence t1 t2) = (show t1)++";"++(show t2)
 
-getLabel:: Bool -> Type -> String
-getLabel False TInt = "type_int"
-getLabel True TInt = "type_array_int"
-getLabel False TDouble = "type_double"
-getLabel True TDouble = "type_array_double"
-getLabel False TChar = "type_char"
-getLabel True TChar = "type_array_char"
-getLabel False TRef = "type_ref"
-getLabel True TRef = "type_array_char"
-getLabel False (TFunction result signature) = "type_function_"++(getLabel False result)++"_"++(getLabel False signature)
-getLabel True (TFunction result signature) = "type_array_function"++(getLabel False result)++"_"++(getLabel False signature)
-getLabel False (TypeSequence t1 t2) = (getLabel False t1)++"_"++(getLabel False t2)
-getLabel True (TypeSequence t1 t2) = getLabel False (TypeSequence t1 t2)
+getLabel:: Type -> String
+getLabel t = "type_"++(getLabelImpl t)
+getLabelImpl:: Type -> String
+getLabelImpl TInt = "int"
+getLabelImpl TDouble = "double"
+getLabelImpl TChar = "char"
+getLabelImpl TRef = "ref"
+getLabelImpl Void = "void"
+getLabelImpl (TArray t) = (getLabelImpl t)++"@Array"
+getLabelImpl (TFunction result signature) = "$"++getLabelImpl result ++"_"++getLabelImpl signature++"$"
+getLabelImpl (TypeSequence t1 t2) = getLabelImpl t1++"_"++getLabelImpl t2
+
+isArray:: Type -> Bool
+isArray (TArray _) = True
+isArray _ = False
 
 rollout:: Type -> [Type]
 rollout (TFunction t1 t2) =  (rollout' t1) ++ (rollout' t2)

@@ -68,7 +68,7 @@ import Data.ByteString.Char8 (
   )
 
 import qualified Lexer as L
-import qualified Parser.Functional as FP
+--import qualified Parser.Functional as FP
 import qualified IntermediateCode as IC
 import qualified Nasm as N
 import qualified Interface.Token as T
@@ -123,8 +123,8 @@ options =
       "Output graphs as graphviz dot files"
   -- , Option [ ] ["p-parsec"    ] (NoArg optionsSetParsecParser)
   --     "Use the parsec parser"
-  , Option "f" ["p-functional"] (NoArg optionsSetFunctionalParser)
-      "Use the functional parser"
+  --, Option "f" ["p-functional"] (NoArg optionsSetFunctionalParser)
+   --   "Use the functional parser"
   -- , Option [ ] ["p-happy"     ] (NoArg optionsSetHappyParser)
   --     "Use the happy parser"
   , Option "b" ["p-bottom-up" ] (NoArg optionsSetBottomUpParser)
@@ -153,9 +153,9 @@ optionsSetDotFiles opts = opts { optDotFiles = True }
 -- optionsSetParsecParser opts = opts { optParser = PP.process
 --                                    , optParserName = "parsec parser" }
 
-optionsSetFunctionalParser :: Options -> Options
-optionsSetFunctionalParser opts = opts { optParser = FP.parse
-                                       , optParserName = "functional parser" }
+--optionsSetFunctionalParser :: Options -> Options
+--optionsSetFunctionalParser opts = opts { optParser = FP.parse
+--                                       , optParserName = "functional parser" }
 
 -- optionsSetHappyParser :: Options -> Options
 -- optionsSetHappyParser opts = opts { optParser = HP.process . T.removePositions

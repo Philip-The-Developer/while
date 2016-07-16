@@ -148,6 +148,7 @@ extern type_array_char
 extern type_array_ref
 extern exit_program
 extern label_env_new
+extern eof
 
 global main_code
 main_code:

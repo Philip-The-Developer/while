@@ -106,14 +106,6 @@ cmd = do
     _ <- token Assign
     e <- expr
     return $ A.Assign id_ e
-  <|> do -- $ added
-    id_ <- expr
-    _ <- token $ Token '['
-    e1 <- expr
-    _ <- token $ Token ']'
-    _ <- token Assign
-    e2 <- expr
-    return $ A.ToArray id_ e1 e2
   <|> do
     _ <- token $ Token '{'
     c <- cmds
@@ -146,20 +138,14 @@ decls = decl `chainl1` (token (Token ';') >> return A.Sequence)
 
 decl :: TokenParser A.Command -- $ added
 decl = primitives
-  <|> do
-    _type <- type_
-    _ <- token $ Token '['
-    _ <- token $ Token ']'
-    id_ <- identifier
-    return $ A.ArrayDecl _type id_
 
 params :: TokenParser A.Expression -- $ added
-params = param `chainl1` (token (Token ';') >> return A.Parameters)
+params = error $ "NYI in Functional Parser"
 
 param :: TokenParser A.Expression -- $ added
 param = do
     e <- expr
-    return $ A.Parameter e
+    return $ A.Void
 
 primitives :: TokenParser A.Command -- $ added
 primitives = do
@@ -183,22 +169,8 @@ mulop = do { _ <- token $ MathOp Times; return $ A.Calculation Times }
     <|> do { _ <- token $ MathOp Mod  ; return $ A.Calculation Mod   }
 
 factor :: TokenParser A.Expression
-factor = do -- $ added
-    id_ <- expr
-    _ <- token $ Token '('
-    p <- param
-    _ <- token $ Token ')'
-    return $ A.Func id_ p
-  <|> do -- $ added
-    id_ <- expr
-    _ <- token $ Token '['
-    e <- expr
-    _ <- token $ Token ']'
-    return $ A.FromArray id_ e
-  <|> do
-    id_ <- identifier
-    return $ A.Identifier id_
-  <|> do -- $ modified
+factor = -- $ added
+   do -- $ modified
     int <- integer
     return $ A.Integer int
   <|> do -- $ added

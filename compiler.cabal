@@ -65,7 +65,7 @@ executable compiler
                        Optimization.TAC, Optimization.TAC.PruneLabels,
                        Optimization.TAC.UnnecessaryJumps,
                        Optimization.TAC.UnneededLabels,
-                       Parser.Functional, Parser.Functional.Library,
+                       --Parser.Functional, Parser.Functional.Library,
                        Parser.While,
                        GarbageCollection.GarbageCollection, Optimization.Dataflow.GlobalCommonSubexpressions
 

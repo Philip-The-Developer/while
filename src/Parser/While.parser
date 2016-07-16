@@ -66,59 +66,89 @@ Program :: { AST.AST }
         : Cmds                          { $1 }
 
 Cmds    :: { AST.Command }
-        : Cmds ';' Instr                { AST.Sequence $1 $3 }
+        : Cmds ';' Cmd                  { AST.Sequence $1 $3 }
+        | Cmd                           { $1 }
+
+Cmd     :: { AST.Command }
+        : '{' Cmds '}'                  { AST.Environment $2 }
+        | if Bexpr then Cmd             { AST.IfThen $2 $4 }
+        | if Bexpr then Cmd else Cmd    { AST.IfThenElse $2 $4 $6 }
+        | while Bexpr do Cmd            { AST.While $2 $4 }
         | Instr                         { $1 }
 
 Instr    :: { AST.Command }
-        : Cmd                           { $1 }
-        | Alloc                         { $1 }
-
-Cmd     :: { AST.Command }
-        : CmdO                          { $1 }
-        | CmdC                          { $1 }
+        : Addr ':=' Expr                { AST.Assign $1 $3 }
+        | Type '[' Expr ']' Addr        { AST.ArrayAlloc $1 $3 $5 }
+        | output Expr                   { AST.Output $2 }
+        | read Addr                     { AST.Read $2 }
+        | return Expr                   { AST.Return $2 }
+        | Decl                          { $1 }
         |                               { AST.Skip }
 
-CmdO    :: { AST.Command }
-        : if Bexpr then Cmd             { AST.IfThen $2 $4 }
-        | if Bexpr then CmdC else CmdO  { AST.IfThenElse $2 $4 $6 }
-        | while Bexpr do CmdO           { AST.While $2 $4 }
-
-CmdC    :: { AST.Command }
-        : if Bexpr then CmdC else CmdC  { AST.IfThenElse $2 $4 $6 }
-        | while Bexpr do CmdC           { AST.While $2 $4 }
-        | read id                       { AST.Read $2 }
-        | output Expr                   { AST.Output $2 }
-        | return Expr                   { AST.Return $2 }
-        | Address ':=' Expr             { AST.Assign $1 $3 }
-        | Address '[' Expr ']' ':=' Expr { AST.ToArray $1 $3 $6 }
-        | '{' Cmds '}'                  { AST.Environment $2 }
-        | func Decl '(' Decls ')' '{' Cmds '}'  { AST.Function $2 $4 $7 }
-        | labelspec id '{' Decls '}'          { AST.LabelEnvironment $2 $4 }
-
 Expr    :: { AST.Expression }
-        : Expr '+' Term                 { AST.Calculation Plus $1 $3 }
-        | Expr '-' Term                 { AST.Calculation Minus $1 $3 }
-        | Term                          { $1 }
+        : Expr '+' Term              { AST.Calculation Plus $1 $3 }
+        | Expr '-' Term              { AST.Calculation Minus $1 $3
+        | Term                       { $1 }
 
 Term    :: { AST.Expression }
-        : Term '*' Factor               { AST.Calculation Times $1 $3 }
-        | Term '/' Factor               { AST.Calculation DivBy $1 $3 }
-        | Term mod Factor               { AST.Calculation Mod $1 $3 }
-        | Factor                        { $1 }
+        : Term  '*' Factor           { AST.Calculation Times $1 $3 }
+        | Term  '/' Factor           { AST.Calculation DivBy $1 $3 }
+        | Term mod Factor            { AST.Calculation Mod $1 $3 }
+        | Factor                     { $1 }
 
 Factor  :: { AST.Expression }
-        : '(' Expr ')'                  { $2 }
-        | '-' Factor                    { AST.Negate $2 }
-        | Address '[' Expr ']'          { AST.FromArray $1 $3 }
-        | Address '(' Params ')'        { AST.Func $1 $3 }
-        | Address '(' ')'               { AST.Func $1 (AST.Parameter AST.Void) }
-        | Address                       { $1}
-        | id ':' id                     { AST.Reference $1 $3}
-        | ':' id                        { AST.Reference "default" $2}
-        | toClass id                    { AST.ToClass $2}
-        | integer                       { AST.Integer $1 }
-        | real                          { AST.Double $1 }
-        | character                     { AST.Character $1}
+        : toClass id                 { AST.ToClass $2 }
+        | '-' Factor                 { AST.Negate $2 }
+        | Param                      { $1 }
+
+Addr    :: { AST.Address }
+        : id '.' Elements            { AST.Structure ( AST.Identifier $1 ) $3 }
+        | Element                    { $1}
+
+Elements :: { AST.Address }
+         : Elements '.' Element      { AST.Structure $1 $3 }
+         | Element                   { $1 }
+
+Element  :: { AST.Address }
+         : Element '[' Expr ']'      { AST.FromArray $1 $3 } 
+         | Element '(' Params ')'    { AST.FunctionCall $1 $3 }
+         | Element '(' ')'           { AST.FunctionCall $1 AST.Void }
+         | id ':' id                 { AST.Label $1 $3 }
+         | ':' id                    { AST.Label "default" $2 }
+         | id                        { AST.Identifier $1 }
+
+Params   :: { AST.Expression }
+         : Params ';' Param          { AST.Parameters $1 $3 }
+         | Param                     { $1 }
+
+Param    :: { AST.Expression }
+         : integer                   { AST.Integer $1 }
+         | real                      { AST.Double $1 }
+         | character                 { AST.Character $1 }
+         | id ':' id                 { AST.Reference $1 $3 }
+         | ':' id                    { AST.Reference "default" $2 }
+         | Addr                      { AST.Variable $1 }
+
+Decl     :: { AST.Command }
+         : func Type id '(' Decls ')' Cmd { AST.Function $2 $3 $5 $7 }
+         | labelspec id '(' Decls ')'     { AST.LabelEnvironment $2 $4 }
+         | Type id                        { AST.Declaration $1 $2 }
+
+Decls    :: { AST.Command }
+         : Decls ';' Decl            { AST.Sequence $1 $3 }
+         | Decl                      { $1 }
+
+Type     :: { Type }
+         : int                       { TInt }
+         | double                    { TDouble }
+         | char                      { TChar }
+         | ref                       { TRef }
+         | Type '(' Types ')'        { TFunction $1 $3 }
+         | Type '[' ']'              { TArray $1 }
+
+Types    :: { Type }
+         : Types ';' Type             { TypeSequence $1 $3 }
+         | Type                      { $1 }
 
 Bexpr   :: { AST.BoolExpression }
         : Bexpr or Bterm                { AST.LogOp Or $1 $3 }
@@ -134,44 +164,3 @@ Bfactor :: { AST.BoolExpression }
         | Expr relop Expr               { AST.Comparison $2 $1 $3 }
         | bool                          { AST.Boolean $1 }
         | eof                           { AST.Eof }
-
-Primitives :: { AST.Command }
-        : Type id                        { AST.Declaration $1 $2 }
-
-Alloc    :: { AST.Command }
-        : Primitives                    { $1 }
-        | Type '[' Expr ']' id           { AST.ArrayAlloc $1 $3 $5 }
-
-Decl    :: { AST.Command }
-        : Primitives                    { $1 }
-        | Type '[' ']' id                { AST.ArrayDecl $1 $4 }
-
-Decls   :: { AST.Command }
-        : Decls ';' Decl                { AST.Sequence $1 $3 }
-        | Decl                          { $1 }
-
-Params  :: { AST.Expression }
-        : Params ';' Param              { AST.Parameters $1 $3 }
-        | Param                         { $1 }
-
-Param  :: { AST.Expression }
-        : Expr                          { AST.Parameter $1 }
-
-Types :: { Type }
-       : Types ';' Type                 { TypeSequence $1 $3 }
-       | Type                           { $1 }
-
-Type :: { Type }
-      : int                             { TInt }
-      | double                          { TDouble }
-      | char                            { TChar }
-      | ref                             { TRef }
-      | Type '(' Types ')'         { TFunction $1 $3 }
-
-Address :: { AST.Expression }
-      : Address '.' ID			{ AST.SolveReference $1 $3 }
-      : id				{ AST.Identifier $1 }
-
-ID :: { AST.Expression }
-    : id ':' id				{ AST.Reference $1 $3 }
-    | id                                { AST.Identifier $1 }
