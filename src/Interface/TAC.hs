@@ -70,8 +70,11 @@ data Command
   | GotoCond1 Label GotoCondition1 Data
   | GotoCond2 Label GotoCondition2 Data Data
   | Label Label
+  | ShowError Label
   | CustomLabel Label
   | ToClass Data
+  | FromMemory Variable Data
+  | ToMemory Data Data
   | Solve Variable Data String  -- Solve a Variable with a Label
   | DatLabel Label Int64 Data String -- label index type name
   | DATA Data
@@ -117,6 +120,9 @@ instance Show Command where
                               show d
   show (GotoCond2 l cond d1 d2) = "goto " ++ l ++ " if " ++ show d1 ++ " " ++
                                   show cond ++ " " ++ show d2
+  show (FromMemory v d) = show v ++" = &"++show d;
+  show (ToMemory d1 d2) = "&"++show d1++" = "++show d2;
+  show (ShowError l) = "error ("++show l++")"
   show (Label l) = l ++ ":"
   show (DatLabel l i t s) = ".CREATE label "++l++" ( name='"++s++"' type='"++show t++"' index='"++ show i++"')"
   show (ToClass l) = "toClass "++show l 
@@ -277,6 +283,7 @@ getDefVariables (FMul v _ _) = [v]     -- $ added
 getDefVariables (FDiv v _ _) = [v]     -- $ added
 getDefVariables (FNeg v _) = [v]       -- $ added
 getDefVariables (Solve v _ _) = [v]
+getDefVariables (FromMemory v _) = [v]
 getDefVariables _ = []
 
 getUseVariables :: Command -> [Variable]
@@ -310,6 +317,8 @@ getUseVariables (FNeg _ d1) = variablesFromData [d1]        -- $ added
 getUseVariables (GotoCond1 _ _ d1) = variablesFromData [d1]
 getUseVariables (GotoCond2 _ _ d1 d2) = variablesFromData [d1, d2]
 getUseVariables (Solve _ v _) = variablesFromData [v]
+getUseVariables (FromMemory _ d) = variablesFromData [d]
+getUseVariables (ToMemory d1 d2) = variablesFromData [d1, d2]
 getUseVariables _ = []
 
 getVariables :: Command -> [Variable]
@@ -421,6 +430,12 @@ renameVariables (GotoCond2 l c d1 d2) vI vO =
 renameVariables (Solve v1 v2 s) vI vO = 
   let [Variable v1', v2'] = substitute [Variable v1, v2] vI vO 
   in Solve v1' v2' s
+renameVariables (FromMemory v d) vI vO =
+  let [Variable v', d'] = substitute [Variable v, d] vI vO
+  in FromMemory v' d'
+renameVariables (ToMemory d1 d2) vI vO =
+  let [d1', d2'] = substitute [d1, d2] vI vO
+  in ToMemory d1' d2'
 renameVariables c _ _ = c
 
 substitute :: [Data] -> Variable -> Variable -> [Data]

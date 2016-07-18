@@ -34,15 +34,15 @@ import Control.Monad.State (
 import Prelude (
     Monad,
     String, Maybe (..), Int, Bool (..),
-    unlines, show, not, otherwise, round, logBase, fromIntegral, abs, flip, fst, error,
-    ($), (++), (==), (/=), (-), (>), (||), (&&), (*), (.), (<), (>=), (<=), (+), snd, filter
+    unlines, show, not, otherwise, round, logBase, fromIntegral, abs, flip, fst, error, 
+    ($), (++), (==), (/=), (-), (>), (||), (&&), (*), (.), (<), (>=), (<=), (+), snd, filter, Show
   )
 import Data.Functor (
     fmap,
     (<$>)
   )
 import Data.Maybe (
-    fromJust
+    fromJust, isNothing
   )
 import Data.Bits (
     popCount
@@ -67,6 +67,10 @@ import Nasm.RegisterAllocation (
     allocateRegisters
   )
 
+import Debug.Trace (
+   trace
+  )
+
 type StateContent = ( Map.Map TAC.Variable Location   -- The mapping var -> loc
                     , Location                        -- The highest loc used
                     , Map.Map TAC.Variable (Int, Int) -- Live range data
@@ -89,7 +93,7 @@ allFLocations = (FRegister <$> availableFRegisters) ++ (StackLocation <$> [1..])
 
 -- $| Takes three address code, converts it into NASM source code and determines the size of the stack frame.
 process :: TAC.TAC -> Map.Map TAC.Variable (Int, Int) -> (String, Int) -- $ modified
-process tac liveData  = (\(a,b) -> (unlines a,b)) $
+process tac liveData = (\(a,b) -> (unlines a,b)) $
   evalState (generate tac False) (locMap, high, liveData, 1)
   where
     (locMap, high) = allocateRegisters liveData availableRegisters availableFRegisters
@@ -314,6 +318,21 @@ generate' (hd:rst) isDebug = do
                  , instr "jl index_error"
                  , instr $ (if operandIsFRegister o1' then "movq " else "mov ") ++ toCode o1' ++ ", [" ++ toCode o2' ++ "+" ++ toCode o3' ++ "*8+8]"]
                  ++ if o1' /= o1 then [mov o1 o1'] else []
+
+    TAC.FromMemory v d -> do
+      o1 <- variableToOperand v
+      o2 <- dataToOperand d
+      let (pre, o2') = if not $ operandIsRegister o2 then ([mov rax o2], rax) else ([], o2)
+      returnCode $ pre++ [instr $ "mov "++toCode o1++", ["++toCode o2'++"]"]
+
+    TAC.ToMemory d1 d2 -> do
+      o1 <- dataToOperand d1
+      o2 <- dataToOperand d2
+      let (pre, o1') = if not $ operandIsRegister o1 then ([mov rax o1], rax) else ([], o1)
+      returnCode $ pre++ [instr $ "mov QWORD ["++toCode o1'++"], "++toCode o2]
+
+    TAC.ShowError l -> do
+      returnCode [instr $ "jmp "++l]
 
     TAC.ToArray v d1 d2 -> do -- $ added
       (o1, o2, o3) <- getOperands v d1 d2
@@ -772,8 +791,12 @@ generate' (hd:rst) isDebug = do
     returnCode :: (Monad m, NasmCode c) => [Maybe c] -> m [c]
     returnCode = return . force
 
-    force :: [Maybe c] -> [c]
-    force = fmap fromJust
+    force :: (NasmCode c) => [Maybe c] -> [c]
+    force = fmap fromJust'
+      where
+        fromJust' m 
+                  | isNothing m = error "Can not compile Immediate Code to Nasm Assembler Code." 
+                  | otherwise = fromJust m
 
     getValue :: Operand -> Int64
     getValue (Immediate (ImmediateInt x)) = x
@@ -815,7 +838,7 @@ generate' (hd:rst) isDebug = do
         returnCode [cmp o1 o2]
       else do
         temp <- getTemporary
-        returnCode [mov (Location temp) o1, cmp o1 o2]
+        returnCode [mov (Location temp) o1, cmp (Location temp) o2]
 
     fcond2Code :: TAC.Data -> TAC.Data -> State StateContent [Instruction] -- $ added
     fcond2Code d1 d2 = do

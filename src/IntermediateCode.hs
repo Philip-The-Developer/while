@@ -158,10 +158,12 @@ command cmd next = case cmd of
         insert id (id,typ)
         return ([],[],[],T.Void)
 
-  (AST.Assign adr expr) -> do
-    (dir1, tac1, var1, type1) <- address adr
+  (AST.Assign addr expr) -> do
+    (dir1, tac1, var1, type1) <- address addr
     (dir2, tac2, dat2, type2) <- expression expr
-    return (dir1++dir2,tac1++tac2++[TAC.Copy (var1) dat2],[], type1)
+    if T.isPointer type1
+      then return (dir1++dir2, tac1++tac2++[TAC.ToMemory (TAC.Variable var1) dat2], [], T.Void)
+      else return (dir1++dir2, tac1++tac2++[TAC.Copy var1 dat2], [], T.Void)
  
   (AST.While bex cmd) -> do
     labelLoop <- newLabel
@@ -177,7 +179,7 @@ command cmd next = case cmd of
     (dir,tac,stream,type_) <- command cmd next
     (c', (h:t), r', lm') <- get
     put (c', t , r', lm')
-    return (dir, tac, stream, type_)
+    return (dir, tac++(dealloc tac), stream, type_)
 
   (AST.IfThen bexpr cmd) -> do
     labelTrue <- newLabel
@@ -195,7 +197,6 @@ command cmd next = case cmd of
     (dir3, tac3, stream3, type3) <- command cmd2 next
     return (dir1++dir2++dir3, tac1++[TAC.Label labelTrue]++tac2++[TAC.Goto labelEnd, TAC.Label labelFalse]++tac3++[TAC.Label labelEnd], stream2++stream3, if type2 == T.Void then type3 else type2)
     
-
   (AST.Output expr) ->do
     (dir1, tac1, var1, type1) <- expression expr
     case type1 of
@@ -206,13 +207,44 @@ command cmd next = case cmd of
 
   (AST.Read addr) -> do
     (dir1, tac1, var1, type1) <- address addr
-    case type1 of
-      (T.TInt) -> return (dir1,tac1++[TAC.Read var1], [], T.Void)
-      (T.TChar) -> return (dir1, tac1++ [TAC.CRead var1], [], T.Void)
-      (T.TDouble) -> return (dir1, tac1++ [TAC.FRead var1], [], T.Void)
+    (tac2,var2,type2) <- solvePointer var1 type1
+    case type2 of
+      (T.TInt) -> return (dir1,tac1++tac2++[TAC.Read var2], [], T.Void)
+      (T.TChar) -> return (dir1, tac1++tac2++ [TAC.CRead var2], [], T.Void)
+      (T.TDouble) -> return (dir1, tac1++tac2++ [TAC.FRead var2], [], T.Void)
       otherwise -> error $ "read is only suported for int, char and double outputs.\n The expression \""++show addr++"\" has returns type \""++show type1++"\"."
       
+  (AST.Function typ id params cmd) -> do
+    declared <- lookup id
+    label <- newLabel
+    if not $ isNothing declared
+      then error $ "Identifier for function \""++show id++"\" declared twice."
+      else do
+        let func_type = T.TFunction typ (params2Type params)
+        insert id (id, func_type)
+        (c,env,ret,labelMap) <- get
+        let (tacP,envMap) = allociateParameter params Map.empty
+        let ((dir1,tac1, tacStream1),(_,_,_,labelMap')) = runState (program cmd) ((0,0),[envMap]++env, typ, labelMap)
+        put (c,env,ret,labelMap')
+        return (dir1,[],(id,tacP++[TAC.Call "dummy:double" "dummy"]++tac1): tacStream1, T.Void)
+
+  (AST.ArrayAlloc typ expr addr) -> do
+    (dir1, tac1, data1,type1) <- expression expr
+    (dir2, tac2, data2, type2) <- case addr of
+      (AST.Identifier id) ->do
+        insert id (id, T.TArray typ)
+        return ([],[],id++":"++show (T.TArray typ), T.TArray typ)
+      _ -> address addr
+    if (type1 /= T.TInt)
+    then error $ "Array index is not an int."
+    else do
+      (tac3, data3, type3) <- solvePointer data2 type2
+      return (dir1++dir2, tac1++tac2++tac3++[TAC.ArrayAlloc data3 data1], [], T.Void)
   
+  (AST.Return expr) ->do
+    (dir1, tac1, data1, type1) <- expression expr
+    return (dir1, tac1++[TAC.Return data1], [],type1)
+
   _ -> error $ "Command \""++show cmd++"\" can not be compiled into immediate code."  
 -- $| Generates three address code for one expression in the AST (possibly
 -- generating code for subexpressions first) and determines its type.
@@ -233,8 +265,9 @@ expressionInto varFunc expr = case expr of
   (AST.Character c) -> return ([],[],TAC.ImmediateChar c, T.TChar)
 
   (AST.Variable addr) -> do
-    (dir, tac, var, type_) <- address addr
-    return (dir,tac, TAC.Variable var,type_)
+    (dir, tac1, var1, type1) <- address addr
+    (tac2,var2,type2) <- solvePointer var1 type1
+    return (dir,tac1++tac2, TAC.Variable var2,type2)
 
   (AST.Calculation op expr1 expr2) -> do
     (dir1, tac1, dat1, type1) <- expression expr1
@@ -243,6 +276,15 @@ expressionInto varFunc expr = case expr of
     var' <- newTemp
     let var = var' ++":"++show type'
     return (dir1++dir2, tac1++tac2++conv++[TAC.getCalculation op type' var dat1' dat2'], TAC.Variable var, type')
+
+  (AST.Parameters expr1 expr2) -> do
+    (dir1, tac1, dat1, type1) <- expression expr1
+    (dir2, tac2, dat2, type2) <- expression expr2
+    return (dir1++dir2, tac1++tac2, dat2, T.TypeSequence type1 type2)
+
+  (AST.Parameter expr) -> do
+    (dir1, tac1, dat1, type1) <- expression expr
+    return (dir1, tac1++[TAC.Push dat1], dat1, type1)
 
   _ -> error $ "Expression \""++show expr++"\" can not be compiled into immediate code."
 
@@ -254,6 +296,61 @@ address (AST.Identifier i) =do
   else do
     let (var, type_) = fromJust vt
     return ([],[], var++":"++show type_, type_)
+
+address (AST.FromArray addr exprIndex) = do
+  (dir1, tac1, data1', type1') <- address addr
+  (dir2, tac2, data2, type2) <- expression exprIndex
+  (tac3, data1, type1) <- solvePointer data1' type1'
+  if type2 /= T.TInt
+    then error $ "Array index \""++show exprIndex++"\" is not an int."
+    else if not $ T.isArray type1
+    then error $ "\""++show addr++"\" is not an array. An array was expected."
+    else do
+      labelTrue <- newLabel
+      labelFalse <- newLabel
+      multipl' <- newTemp
+      let multipl = multipl'++":int"
+      varSize' <- newTemp
+      let varSize = varSize'++":int"
+      array' <- newTemp
+      let array = array'++":"++ show (T.innerType type1)
+      
+      let tacarr = [TAC.FromMemory varSize $ TAC.Variable data1,
+                    TAC.GotoCond2 (labelTrue) TAC.Less data2 $ TAC.Variable varSize, 
+                    TAC.ShowError "index_error", 
+                    TAC.Label labelTrue,
+                    TAC.Copy array $ TAC.Variable data1,
+                    TAC.Mul multipl (TAC.ImmediateInteger 8) data2, 
+                    TAC.Add array (TAC.Variable array) (TAC.ImmediateInteger 8), 
+                    TAC.Add array (TAC.Variable array) (TAC.Variable multipl)]
+      return (dir1++dir2, tac1++tac2++tac3++tacarr, array, T.TPointer $ T.innerType type1)
+
+
+address (AST.FunctionCall addr params) = do
+  case addr of
+    (AST.Identifier "length") ->do
+      (dir, tac, data_, type_) <- expression params
+      var' <- newTemp
+      let var = var'++":int"
+      if(T.isArray type_)
+        then return (dir,tac++[TAC.Call var "length_"], var, T.TInt)
+        else error $ "length() expects an array as parameter. Actual type is \""++show type_++"\"."++ show (AST.FunctionCall addr params)
+    (AST.Identifier id) -> do
+      (dir1, tac1, data1, type1) <- expression params
+      declared <- lookup id
+      if isNothing declared
+        then error $ "\""++show id++"\" is not declared \"."
+        else do
+          let (label,retType) = fromJust declared
+          case retType of
+            (T.TFunction ret _) -> do
+              var' <- newTemp
+              let var = var'++":"++show ret
+              return (dir1, tac1++[TAC.Call var label], var, ret)
+            otherwise -> error $ "\""++id++"\" is not a function."
+    otherwise -> error $ "Can not solve function call : \""++show addr++"\"."
+  
+
 address adr = error $ "Address \""++show adr++"\" can not be compiled into immediate code." 
 
 -- | Generates three address code for one boolean expression in the AST
@@ -276,7 +373,7 @@ boolExpression bexpr lTrue lFalse = case bexpr of
     (dir1, tac1,data1,type1) <- expression e1  -- $ modified
     (dir2, tac2,data2,type2) <- expression e2  -- $ modified
     if T.isArray type1 || T.isArray type2 -- $ added
-      then error "Cannot use an array in a comparison."
+      then error $ "Cannot use an array in a comparison. At Comparison \""++show (AST.Comparison op e1 e2)++"\". DEBUG "++show type1++"/"++show type2
     else do
       let jump1 = case op of
                 T.Eq -> \l -> TAC.GotoCond2 l TAC.FEqual data1 data2
@@ -315,6 +412,27 @@ convert data1 type1 data2 type2 = do
           (TAC.Variable _) -> return ([TAC.Convert var data1], TAC.Variable var, data2, T.TDouble)
           _ -> return ([],data1, data2,T.TDouble)
       else error $ "Can not convert \""++show type1++"\" to \""++show type1++"\" or \""++show type2++"\" to \""++show type1++"\"."
+
+solvePointer:: String -> T.Type -> State GenState (TAC.TAC, String, T.Type)
+solvePointer var (T.TPointer t) = do
+  res' <- newTemp
+  let res = res'++":"++show t
+  return ([TAC.FromMemory res (TAC.Variable var)], res, t)
+solvePointer var t = return ([], var, t)
+
+params2Type:: AST.Command -> T.Type
+params2Type (AST.Sequence cmd1 cmd2) = T.TypeSequence (params2Type cmd1) (params2Type cmd2)
+params2Type (AST.Declaration t _) = t
+
+allociateParameter:: AST.Command -> Map String (String, T.Type) -> (TAC.TAC, Map String (String, T.Type))
+allociateParameter (AST.Sequence cmd1 cmd2) map = (tac1++tac2, map2)
+  where
+    (tac2, map1) = allociateParameter cmd1 map
+    (tac1, map2) = allociateParameter cmd2 map1
+allociateParameter (AST.Declaration t id) map = (tac, map')
+  where
+    tac = [TAC.Pop $ id++":"++show t]
+    map' = Map.insert id (id, t) map 
 
 mapType :: T.Type -> State GenState (TAC.TAC, String)
 mapType t = case t of

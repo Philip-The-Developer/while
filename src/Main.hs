@@ -43,7 +43,6 @@ import System.FilePath (
 import System.Directory (
     removeFile
   )
-
 import Data.Maybe (
     fromMaybe, fromJust
   )
@@ -268,18 +267,19 @@ main = do
     let finishedTACs = fmap (BB.graphToTac . -- $ modified
                                  LV.removeLiveVariableAnnotations) renamedLVGraphs
 
-    let (nasmCodes, frames) = unzip $ zipWith N.process finishedTACs liveRanges   -- $ modified
+    let (nasmCodes, frames) = unzip $ zipWith N.process finishedTACs liveRanges   -- $ modifieid
     when debugMode $ putStrLn $ "*** NASM code:\n" ++ numberLinesAt 140 (if length nasmCodes > 1 then nasmCodes !! 1 else "")
-
+    
     let userDefined_functions = GC.returnSequence names (tail nasmCodes) frames -- $ added
-
+    
     let nasmFile = addExtension outputFile "asm"
+    
     -- template <- readFile "../src/template.asm"
     let template = unpack $ $(embedFile "src/template.asm")
+    
     writeFile nasmFile $ (intercalate (head nasmCodes) $ 
                             splitOn ";{-# GENERATED #-}" (intercalate ((if (head frames) > 0 then "\nsub rsp, " ++ show (head frames) ++ "\n" else "\n") ++ (nasmCodes !! 1)) $
                                           splitOn ";{-# MAIN CODE #-}" template)) ++ (concat userDefined_functions) -- $ modified
-
     let objectFile = addExtension outputFile "o"
     (_, _, _, pNasm) <- createProcess
                           (proc "nasm" ["-felf64", "-o", objectFile, nasmFile])

@@ -9,7 +9,7 @@
 module Interface.Token (
   PosToken (..), Token (..), LogOp (..), RelOp (..), MathOp (..), Type (..),
   getPosition, removePosition, removePositions, getMathOpFunction,
-  getRelOpFunction,getLabel, rollout, isArray
+  getRelOpFunction,getLabel, rollout, isArray, isPointer, innerType
 ) where
 
 import Prelude (
@@ -163,6 +163,7 @@ data Type
   | TArray Type
   | TFunction Type Type -- Function declaration (@function char (int;double)@)
   | TypeSequence Type Type -- Sequence of types (@int;char;double;int@)
+  | TPointer Type --Pointer to Absolute Address (for intern use only)
   deriving (Eq)
 
 -- $| Display as @int@ or @double@.
@@ -175,6 +176,7 @@ instance Show Type where
   show (TArray t) = show t ++ "[]"
   show (TFunction result signature) = (show result)++"("++(show signature)++")"
   show (TypeSequence t1 t2) = (show t1)++";"++(show t2)
+  show (TPointer t) = (show t)++"*"
 
 getLabel:: Type -> String
 getLabel t = "type_"++(getLabelImpl t)
@@ -191,6 +193,15 @@ getLabelImpl (TypeSequence t1 t2) = getLabelImpl t1++"_"++getLabelImpl t2
 isArray:: Type -> Bool
 isArray (TArray _) = True
 isArray _ = False
+
+isPointer:: Type -> Bool
+isPointer (TPointer _) = True
+isPointer _ = False
+
+innerType:: Type -> Type
+innerType (TArray t) = t
+innerType (TPointer t) = t
+innerType t = t
 
 rollout:: Type -> [Type]
 rollout (TFunction t1 t2) =  (rollout' t1) ++ (rollout' t2)

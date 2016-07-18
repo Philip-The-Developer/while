@@ -74,6 +74,7 @@ data Expression
   | Integer Int64                             -- $ Integer
   | Double Prelude.Double                     -- $ Double-precision floating-point number
   | Parameters Expression Expression
+  | Parameter Expression
   | Character Prelude.Char                    --  Character
   | Reference String String                   --  Reference
   | Void                                      -- void value
@@ -135,6 +136,7 @@ walkAST tc te tb = walkC
     walkE (Calculation op e1 e2) = te (Calculation op (walkE e1) (walkE e2))
     walkE (Negate e) = te (Negate (walkE e))
     walkE (Parameters p1 p2) = te (Parameters (walkE p1) (walkE p2))             -- $ added
+    walkE (Parameter e) = te (Parameter (walkE e))
     walkE (ToClass s) = te (ToClass s)
     walkE (Void) = te (Void)                                
     walkE e = te e
@@ -173,6 +175,7 @@ instance ASTPart Expression where
   showASTPart (Calculation op _ _) = show op
   showASTPart (Negate _) = "-"
   showASTPart (Parameters _ _) = ";"         -- $ added
+  showASTPart (Parameter _) = "_"
   showASTPart (Integer n) = show n           -- $ modified
   showASTPart (Double n) = show n            -- $ added
   showASTPart (Character c) = "'"++(show c)++"'"

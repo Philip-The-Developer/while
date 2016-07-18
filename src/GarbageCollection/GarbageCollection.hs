@@ -11,7 +11,7 @@ module GarbageCollection.GarbageCollection (
 import Prelude (
     String, Int, show,
     (/=), (==), 	
-	(++), tail, length, zipWith3, filter, ($)
+	(++), tail, length, zipWith3, filter, ($), Bool(..)
   )
 import Data.Foldable (
     foldl'

@@ -118,8 +118,8 @@ Element  :: { AST.Address }
          | id                        { AST.Identifier $1 }
 
 Params   :: { AST.Expression }
-         : Params ';' Param          { AST.Parameters $1 $3 }
-         | Param                     { $1 }
+         : Params ';' Expr          { AST.Parameters $1 $ AST.Parameter $3 }
+         | Expr                     { AST.Parameter $1 }
 
 Param    :: { AST.Expression }
          : integer                   { AST.Integer $1 }
@@ -128,6 +128,7 @@ Param    :: { AST.Expression }
          | id ':' id                 { AST.Reference $1 $3 }
          | ':' id                    { AST.Reference "default" $2 }
          | Addr                      { AST.Variable $1 }
+         | '(' Expr ')'              { $2 }
 
 Decl     :: { AST.Command }
          : func Type id '(' Decls ')' Cmd { AST.Function $2 $3 $5 $7 }
