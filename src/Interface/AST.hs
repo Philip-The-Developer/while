@@ -155,6 +155,7 @@ class ASTPart a where
 
 -- | The AST command is output-able.
 instance ASTPart Command where
+  showASTPart (NONE) = "none"
   showASTPart (Output _) = "output"
   showASTPart (Return _) = "return"	                                          -- $ added
   showASTPart (Read _) = "read"
@@ -181,6 +182,8 @@ instance ASTPart Expression where
   showASTPart (Character c) = "'"++(show c)++"'"
   showASTPart (ToClass _) = "toClass _"
   showASTPart (Void) = "void"
+  showASTPart (Reference _ _) = "_:_"
+  showASTPart (Variable _) = "var _"
 
 -- | The AST boolean expression is output-able.
 instance ASTPart BoolExpression where

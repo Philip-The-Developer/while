@@ -31,7 +31,7 @@ import Prelude (
     FilePath, IO, Int, Maybe (..),
     fst, snd, sum, zip, show, compare, min, max,
     ($), (.), (==), (++), (||), (+),
-    String, (&&), not, Ord, zipWith, head, maxBound, (-), dropWhile, (/=)
+    String, (&&), not, Ord, zipWith, head, maxBound, (-), dropWhile, (/=), Bool(..)
   )
 import Data.Functor (
     (<$>)
@@ -99,7 +99,7 @@ liveVariables = nmap removeDefUse . calcLive . nmap calculateDefUse . globalComm
   where
     calculateDefUse :: [Command]
                     -> ([Command], Set Variable, Set Variable)
-    calculateDefUse (cmds) = (cmds, def, use)
+    calculateDefUse (cmds)= (cmds, def, use)
       where
         (def, use) = foldl' foldFunc (Set.empty, Set.empty) cmds
         foldFunc (defI, useI) cmd = (defO, useO)
@@ -109,7 +109,7 @@ liveVariables = nmap removeDefUse . calcLive . nmap calculateDefUse . globalComm
 
     removeDefUse :: ([Command], Set Variable, Set Variable, Set a, Set a)
                  -> ([Command], Set a, Set a)
-    removeDefUse (cmds, _, _, s1, s2) = (cmds, s1, s2)
+    removeDefUse (cmds, _, _, s1, s2)= (cmds, s1, s2)
 
     calcLive
       :: LiveVariablesGraph

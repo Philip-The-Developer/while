@@ -67,10 +67,6 @@ import Nasm.RegisterAllocation (
     allocateRegisters
   )
 
-import Debug.Trace (
-   trace
-  )
-
 type StateContent = ( Map.Map TAC.Variable Location   -- The mapping var -> loc
                     , Location                        -- The highest loc used
                     , Map.Map TAC.Variable (Int, Int) -- Live range data
@@ -416,6 +412,7 @@ generate' (hd:rst) isDebug = do
 
         else if operandIsImmediate o2' then do
           -- This should never be reached (optimized away earlier)
+          --error $ (show (TAC.Mul v d1 d2))++" >> "++(toCode $ fromJust (mov o1 (Immediate $ ImmediateInt$ getValue o2' * getValue o3')))
           returnCode [mov o1 (Immediate $ ImmediateInt $
                                                   getValue o2' * getValue o3')]
 

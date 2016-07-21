@@ -1,0 +1,3 @@
+char c;
+read c;
+output c;

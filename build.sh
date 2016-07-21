@@ -4,10 +4,10 @@ if [ $1 != "test" ]; then
 	echo "        ***BUILD COMPILER***" > build.txt
 	echo "" >> build.txt
 	echo "\$ bin/parser-generator src/Parser/While.parser" >> build.txt
-	bin/parser-generator src/Parser/While.parser >> build.txt
+	bin/parser-generator src/Parser/While.parser &>> build.txt
 	Generator=$?
 	echo "" >> build.txt
-	echo "\$ cabal install --bindir bin/" >> build.txt
+	echo "\$ cabal install --bindir bin/" &>> build.txt
 	cabal install --bindir bin/ >> build.txt
 	Compiler=$?
 
@@ -34,7 +34,7 @@ do
 	rm -r "$f/result"
 	mkdir "$f/result"
 	echo "  compile \"$f\"" >> build.txt
-	bin/compiler -d -i -o "$f/result/program" "$f/program.while" &> "$f/result/compiler_output.txt"
+	bin/compiler -g -d -i -o "$f/result/program" "$f/program.while" &> "$f/result/compiler_output.txt"
 	if [ $? != 0 ]
 		then
 		echo "    Compilation failed: see \"$f/result/compiler_output.txt\" for more details!" >> build.txt
@@ -81,5 +81,5 @@ if [ $FailedTests == 0 ]
 	then
 		echo "SUCCESS"
 	else
-		echo "At least one test failed."
+		echo "$FailedTests of $Tests tests failed."
 fi

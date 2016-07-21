@@ -28,7 +28,7 @@ import Data.Graph.Inductive (
     empty, insNode, insEdge, labNodes
   )
 import Data.List (
-    intercalate, drop, sortBy
+    intercalate, drop, sortBy, elem
   )
 import Data.Foldable (
     foldr, foldl', concatMap
@@ -91,7 +91,7 @@ tacToGraph tac = graph
 
     -- Wraps the list of commands into a list of lists of commands wherein every
     -- sublist is one basic block
-    foldfunc c@(Label _) (tl, blocks) = ([], (c:tl):blocks)
+    foldfunc c@(Label _) (tl, blocks) = ([c], (tl):blocks)
     foldfunc c@(Goto _) (tl, blocks)
       | null tl   = ([c], blocks)
       | otherwise = ([c], tl:blocks)
@@ -109,8 +109,8 @@ tacToGraph tac = graph
         blockForLabel' :: Label -> [[Command]] -> Int -> Int
         blockForLabel' l1 [] _ = error $ "blockForLabel: label " ++ show l1 ++
                                          " not found"
-        blockForLabel' l1 ((Label l2:_) : _) n
-          | l1 == l2  = n
+        blockForLabel' l1 (blk : _) n
+          | elem (Label l1) blk = n+1
         blockForLabel' l1 (_ : blocks) n = blockForLabel' l1 blocks (n+1)
 
     graph :: Gr [Command] ()

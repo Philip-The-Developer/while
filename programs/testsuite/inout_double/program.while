@@ -1,0 +1,3 @@
+double d;
+read d;
+output d;

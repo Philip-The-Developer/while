@@ -21,7 +21,7 @@ import Prelude (
     FilePath, IO, Int, Maybe (..),
     fst, snd, sum, zip, show, compare, min, max,
     ($), (.), (==), (++), (||), (+),
-    String, (&&), not, Ord, zipWith, head, maxBound, (-)
+    String, (&&), not, Ord, zipWith, head, maxBound, (-), Bool(..)
   )
 import Data.Functor (
     (<$>)
@@ -52,7 +52,7 @@ import Control.Monad.State (
     evalState, get, put, return
   )
 import qualified Data.String.Utils as String
-  
+
 -- $| This is just a string.
 type Expression = String
 
@@ -111,9 +111,9 @@ globalCommonSubexpressions = nmap removeKillUse . usedExpressions . init3  . pos
       -> Gr ([Command], Set Variable, Set Variable, [Expression], Set Expression, Set Expression, Set Expression, Set Expression, Set Expression, Set Expression, Set Expression)
             ()
     anticipatedExpressions gr = dataFlow gr anticipated
-    availableExpressions gr = dataFlow gr available
+    availableExpressions gr  = dataFlow gr available
     postponableExpressions gr = dataFlow gr postponable
-    usedExpressions gr = eliminate (dataFlow gr used)
+    usedExpressions gr  = eliminate (dataFlow gr used)
 
     anticipated, available, postponable, used, eliminate
       :: Gr ([Command], Set Variable, Set Variable, [Expression], Set Expression, Set Expression, Set Expression, Set Expression, Set Expression, Set Expression, Set Expression)
@@ -184,7 +184,7 @@ globalCommonSubexpressions = nmap removeKillUse . usedExpressions . init3  . pos
           (aIn, n, (cmds', def, use, exprs, eUsed, eKilled, anticipatedIn, availableIn, postponableIn, usedIn, usedOut), aOut)
           where
             cmds' = let (pre, post) = foldl' replace ([], []) $ zipWith (\ cmd expr -> (cmd, expr)) cmds exprs in (nub pre) ++ post
-            var expr = let infix_ = if isInfixOf ":double" expr then ":double" else ":int" in (String.replace infix_ "" expr) ++ infix_
+            var expr = expr --let infix_ = if isInfixOf ":double" expr then ":double" else ":int" in (String.replace infix_ "" expr) ++ infix_
             earliest = anticipatedIn `Set.difference` availableIn
             latest = Set.intersection (earliest `Set.union` postponableIn) $
                       Set.union eUsed $ Set.difference all $

@@ -1,0 +1,3 @@
+int i;
+read i;
+output i;

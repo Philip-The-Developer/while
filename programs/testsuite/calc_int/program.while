@@ -1,0 +1,40 @@
+int a;
+int b;
+int c;
+
+
+# normal calculations
+a := 1+1;
+b := (-1)+1;
+c := 1 + (-1);
+output a;
+output b;
+output c;
+
+a := 1-1;
+b := (-1) - 1;
+c := 1 - (-1);
+output a;
+output b;
+output c;
+
+a := 3*5;
+b := (-3) * 5;
+c := 3 * (-5);
+output a;
+output b;
+output c;
+
+a := 10 / 5;
+b := 13/5;
+c := 10 / 2;
+output a;
+output b;
+output c;
+
+a := 10 mod 5;
+b := 11 mod 5;
+c := 30 mod 7;
+output a;
+output b;
+output c;

@@ -267,6 +267,10 @@ main = do
     let finishedTACs = fmap (BB.graphToTac . -- $ modified
                                  LV.removeLiveVariableAnnotations) renamedLVGraphs
 
+    when debugMode $ putStrLn $ "*** renamed intermediate code:\n" ++
+                     numberLines (unlines $ fmap show $ finishedTACs!!1)
+                     ++ "\n"
+
     let (nasmCodes, frames) = unzip $ zipWith N.process finishedTACs liveRanges   -- $ modifieid
     when debugMode $ putStrLn $ "*** NASM code:\n" ++ numberLinesAt 140 (if length nasmCodes > 1 then nasmCodes !! 1 else "")
     
