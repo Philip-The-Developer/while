@@ -1,0 +1,65 @@
+function int printarray (int[] a){
+  int i;
+  i := 0;
+  while i < length(a) do {
+    output a[i];
+    i := i + 1;
+  };
+  return 0;
+};
+
+#source:http://wwwiti.cs.uni-magdeburg.de/iti_db/algoj/code/algoj/kap5/Sort.java
+function int[] msort (int[] array; int le; int ri) {
+  int i; int j; int k;
+  int[length(array)] b;
+
+  if ri > le then {
+    int mid; mid := (ri + le) / 2;
+    array := msort(array; le; mid);
+    array := msort(array; mid + 1; ri);
+
+    k:= le;
+    while k <= mid do{
+      b[k] := array[k];
+      k := k + 1;
+    };
+    k := mid;
+    while k < ri do {
+      b[ri + mid - k] := array[k + 1];
+      k := k + 1;
+    };
+
+    i := le; j := ri;
+    k := le;
+    while k <= ri do {
+      if b[i] < b[j] then {
+        array[k] := b[i];
+        i := i + 1;
+      } else {
+        array[k] := b[j];
+        j := j - 1;
+      };
+      k := k + 1;
+    };
+  };
+  return array;
+};
+function int[] mergesort(int[] a) {
+  return msort(a; 0; length(a)-1);
+};
+
+int mock;
+int[10] a;
+int[10] b;
+a[0] := 8;
+a[1] := 6;
+a[2] := 2;
+a[3] := 5;
+a[4] := 3;
+a[5] := 9;
+a[6] := 4;
+a[7] := 10;
+a[8] := 1;
+a[9] := 7;
+a := mergesort(a);
+mock := printarray(a);

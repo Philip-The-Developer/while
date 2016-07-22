@@ -1,0 +1,17 @@
+labels c1(int i; int j);
+labels c2(char i; char j);
+ref clazz1; clazz1 := toClass c1;
+ref clazz2; clazz2 := toClass c2;
+ref obj1; obj1 := clazz1.env:new();
+ref obj2; obj2 := clazz2.env:new();
+
+obj1.c1:i := 23;
+obj2.c2:i := 'h';
+obj1.c1:j := 32;
+obj2.c2:j := 'l';
+
+output obj1.c1:i;
+output obj2.c2:i;
+output obj1.c1:j;
+output obj2.c2:j;
+

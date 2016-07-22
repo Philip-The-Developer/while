@@ -65,6 +65,13 @@ extern main_code
     dec QWORD [buffer.remaining]
 %endmacro
 
+%macro debug 1
+  push rax
+  mov rax, %1
+  call output_number
+  pop rax
+%endmacro
+
 ; Debugging macro, outputs the current value of [rsi]
 %macro debug_rsi 0
     ; push rax
@@ -963,12 +970,15 @@ new_:
   ; (2) get label array
   mov r8, [rbx+8]
   ; (3) calculate size of object
-  mov r9, [r8]
-  imul r9, r9, 8
-  add r9, 8
+  ;mov r9, [r8]
+  ;imul r9, r9, 8
+  ;add r9, 8
   ; (4) allociate memory
+  mov rdx, [r8]
   multipush rcx, rsi, rdi, r8, r9, r10, r11
-  mov rdi, r9
+  push rdx
+  imul rdi, rdx, 8
+  add rdi, 8
   call malloc
   test rax, rax
   jz alloc_error
@@ -976,7 +986,12 @@ new_:
   multipop rcx, rsi, rdi, r8, r9, r10, r11
   mov QWORD [rax], rbx
   ; (5) set default values
+  ;rax is the object
+  ;r10 is the counting variable
+  ;r8 is the Array of labels
   mov r10, 8 ;counting variable
+  mov r9, [r8]
+  imul r9, r9, 8
   .loop:
     cmp r10, r9
     je .end_loop

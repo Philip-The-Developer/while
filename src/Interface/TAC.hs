@@ -120,14 +120,14 @@ instance Show Command where
                               show d
   show (GotoCond2 l cond d1 d2) = "goto " ++ l ++ " if " ++ show d1 ++ " " ++
                                   show cond ++ " " ++ show d2
-  show (FromMemory v d) = show v ++" = &"++show d;
+  show (FromMemory v d) = v ++" = &"++show d;
   show (ToMemory d1 d2) = "&"++show d1++" = "++show d2;
-  show (ShowError l) = "error ("++show l++")"
+  show (ShowError l) = "error ("++l++")"
   show (Label l) = l ++ ":"
   show (DatLabel l i t s) = ".CREATE label "++l++" ( name='"++s++"' type='"++show t++"' index='"++ show i++"')"
   show (ToClass l) = "toClass "++show l 
   show (DATA d) = ".DATA "++ show d
-  show (CustomLabel l) = show l++":"
+  show (CustomLabel l) = l++":"
   show (Solve var id label) = var ++" = "++show id++" -> "++ label
 
 getCalculation :: T.MathOp -> T.Type -> Variable -> Data -> Data -> Command

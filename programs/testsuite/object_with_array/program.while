@@ -1,0 +1,5 @@
+labels l(int[] a; int index);
+ref clazz; clazz := toClass l;
+ref obj; obj := clazz.env:new();
+int[20] obj.l:a;
+output length(obj.l:a);

@@ -1,0 +1,13 @@
+labels myEnv (
+  int i;
+  int j
+);
+
+ref class; 
+class := toClass myEnv;
+ref obj;
+obj := class.env:new();
+read obj.myEnv:i;
+read obj.myEnv:j;
+output obj.myEnv:i;
+output obj.myEnv:j;
