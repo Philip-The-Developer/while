@@ -25,6 +25,7 @@ global label_env_type
 global label_env_index
 global label_env_name
 global label_env_new
+global type_void
 global type_int
 global type_double
 global type_char
@@ -211,6 +212,7 @@ section .data
     empty_array: dq 0
 
     ;primitive types
+    type_void: dq 0, 0
     type_int: dq 0, 0
     type_double: dq 0, 0
     type_char: dq 0, 0

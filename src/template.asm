@@ -23,6 +23,13 @@
     dec QWORD [buffer.remaining]
 %endmacro
 
+%macro debug 1
+  push rax
+  mov rax, %1
+  call output_number
+  pop rax
+%endmacro
+
 ; Debugging macro, outputs the current value of [rsi]
 %macro debug_rsi 0
      ;push rax
@@ -138,6 +145,7 @@ extern buffer
 extern env_class_class
 extern env_label_class
 extern label_env_parent
+extern type_void
 extern type_int
 extern type_double
 extern type_char

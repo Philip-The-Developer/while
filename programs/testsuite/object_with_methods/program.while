@@ -1,0 +1,33 @@
+labels queue(int[] data; int index; int(int) push; int() pop);
+
+function int doPush(ref self; int element){
+  if length(self.queue:data) <= (self.queue:index +1)
+  then self.queue:index := 0 
+  else self.queue:index := self.queue:index + 1;
+  self.queue:data[self.queue:index] := element;
+  return self.queue:index;
+};
+
+function int doPop(ref self){
+  int akk;
+  akk := self.queue:data[self.queue:index];
+  if self.queue:index = 0 
+  then self.queue:index := (length(self.queue:data)-1)
+  else self.queue:index := (self.queue:index - 1);
+  return akk;
+};
+
+function ref newQueue(int buffer){
+  ref clazz; clazz := toClass queue;
+  ref obj; obj := clazz.env:new();
+  int[buffer] obj.queue:data;
+  obj.queue:push := doPush;
+  obj.queue:pop := doPop;
+  return obj;
+};
+
+ref q; q := newQueue(13);
+output q.queue:push(4);
+output q.queue:push(5);
+output q.queue:pop();
+output q.queue:pop();

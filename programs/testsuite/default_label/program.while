@@ -1,0 +1,14 @@
+labels xuprsks(int a; char b; int[] c);
+ref clazz; clazz := toClass xuprsks;
+ref obj; obj := clazz.env:new();
+int[3] obj.c;
+obj.c[0] := 1;
+obj.c[1] := 2;
+obj.c[2] := 3;
+obj.b := 'l';
+obj.a := -14;
+output obj.b;
+output obj.a;
+output obj.c[0];
+output obj.c[1];
+output obj.c[2];

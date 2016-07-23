@@ -145,6 +145,7 @@ Type     :: { Type }
          | char                      { TChar }
          | ref                       { TRef }
          | Type '(' Types ')'        { TFunction $1 $3 }
+         | Type '(' ')'              { TFunction $1 Void }
          | Type '[' ']'              { TArray $1 }
 
 Types    :: { Type }

@@ -194,29 +194,31 @@ reduce 53 states (_ : stack) input =
 reduce 54 states (_ : StackElement_Types v3 : _ : StackElement_Type v1 : stack) input =
   (reduceAndGoto 54 states, StackElement_Type ( TFunction v1 v3 ) : stack, input)
 reduce 55 states (_ : _ : StackElement_Type v1 : stack) input =
-  (reduceAndGoto 55 states, StackElement_Type ( TArray v1 ) : stack, input)
-reduce 56 states (StackElement_Type v3 : _ : StackElement_Types v1 : stack) input =
-  (reduceAndGoto 56 states, StackElement_Types ( TypeSequence v1 v3 ) : stack, input)
-reduce 57 states (StackElement_Type v1 : stack) input =
-  (reduceAndGoto 57 states, StackElement_Types ( v1 ) : stack, input)
-reduce 58 states (StackElement_Bterm v3 : _ : StackElement_Bexpr v1 : stack) input =
-  (reduceAndGoto 58 states, StackElement_Bexpr ( AST.LogOp Or v1 v3 ) : stack, input)
-reduce 59 states (StackElement_Bterm v1 : stack) input =
-  (reduceAndGoto 59 states, StackElement_Bexpr ( v1 ) : stack, input)
-reduce 60 states (StackElement_Bfactor v3 : _ : StackElement_Bterm v1 : stack) input =
-  (reduceAndGoto 60 states, StackElement_Bterm ( AST.LogOp And v1 v3 ) : stack, input)
-reduce 61 states (StackElement_Bfactor v1 : stack) input =
-  (reduceAndGoto 61 states, StackElement_Bterm ( v1 ) : stack, input)
-reduce 62 states (_ : StackElement_Bexpr v2 : _ : stack) input =
-  (reduceAndGoto 62 states, StackElement_Bfactor ( v2 ) : stack, input)
-reduce 63 states (StackElement_Bfactor v2 : _ : stack) input =
-  (reduceAndGoto 63 states, StackElement_Bfactor ( AST.Not v2 ) : stack, input)
-reduce 64 states (StackElement_Expr v3 : StackTerminal ( PosToken _ (RelOp v2) ) : StackElement_Expr v1 : stack) input =
-  (reduceAndGoto 64 states, StackElement_Bfactor ( AST.Comparison v2 v1 v3 ) : stack, input)
-reduce 65 states (StackTerminal ( PosToken _ (DBool v1) ) : stack) input =
-  (reduceAndGoto 65 states, StackElement_Bfactor ( AST.Boolean v1 ) : stack, input)
-reduce 66 states (_ : stack) input =
-  (reduceAndGoto 66 states, StackElement_Bfactor ( AST.Eof ) : stack, input)
+  (reduceAndGoto 55 states, StackElement_Type ( TFunction v1 Void ) : stack, input)
+reduce 56 states (_ : _ : StackElement_Type v1 : stack) input =
+  (reduceAndGoto 56 states, StackElement_Type ( TArray v1 ) : stack, input)
+reduce 57 states (StackElement_Type v3 : _ : StackElement_Types v1 : stack) input =
+  (reduceAndGoto 57 states, StackElement_Types ( TypeSequence v1 v3 ) : stack, input)
+reduce 58 states (StackElement_Type v1 : stack) input =
+  (reduceAndGoto 58 states, StackElement_Types ( v1 ) : stack, input)
+reduce 59 states (StackElement_Bterm v3 : _ : StackElement_Bexpr v1 : stack) input =
+  (reduceAndGoto 59 states, StackElement_Bexpr ( AST.LogOp Or v1 v3 ) : stack, input)
+reduce 60 states (StackElement_Bterm v1 : stack) input =
+  (reduceAndGoto 60 states, StackElement_Bexpr ( v1 ) : stack, input)
+reduce 61 states (StackElement_Bfactor v3 : _ : StackElement_Bterm v1 : stack) input =
+  (reduceAndGoto 61 states, StackElement_Bterm ( AST.LogOp And v1 v3 ) : stack, input)
+reduce 62 states (StackElement_Bfactor v1 : stack) input =
+  (reduceAndGoto 62 states, StackElement_Bterm ( v1 ) : stack, input)
+reduce 63 states (_ : StackElement_Bexpr v2 : _ : stack) input =
+  (reduceAndGoto 63 states, StackElement_Bfactor ( v2 ) : stack, input)
+reduce 64 states (StackElement_Bfactor v2 : _ : stack) input =
+  (reduceAndGoto 64 states, StackElement_Bfactor ( AST.Not v2 ) : stack, input)
+reduce 65 states (StackElement_Expr v3 : StackTerminal ( PosToken _ (RelOp v2) ) : StackElement_Expr v1 : stack) input =
+  (reduceAndGoto 65 states, StackElement_Bfactor ( AST.Comparison v2 v1 v3 ) : stack, input)
+reduce 66 states (StackTerminal ( PosToken _ (DBool v1) ) : stack) input =
+  (reduceAndGoto 66 states, StackElement_Bfactor ( AST.Boolean v1 ) : stack, input)
+reduce 67 states (_ : stack) input =
+  (reduceAndGoto 67 states, StackElement_Bfactor ( AST.Eof ) : stack, input)
 
 reduce n states stack input = error $
   "Reached a non-defined reduce.\nRule: " ++ show n ++ "\nStates: " ++
@@ -240,7 +242,7 @@ reduceNumber
 reduceNumber = (reduceList !!)
   where
     reduceList :: [Int]
-    reduceList = [1,1,3,1,3,4,6,4,1,3,5,2,2,2,1,0,3,3,1,3,3,3,1,2,2,1,3,1,3,1,4,4,3,3,2,1,3,1,1,1,1,3,2,1,3,7,5,2,3,1,1,1,1,1,4,3,3,1,3,1,3,1,3,2,3,1,1]
+    reduceList = [1,1,3,1,3,4,6,4,1,3,5,2,2,2,1,0,3,3,1,3,3,3,1,2,2,1,3,1,3,1,4,4,3,3,2,1,3,1,1,1,1,3,2,1,3,7,5,2,3,1,1,1,1,1,4,3,3,3,1,3,1,3,1,3,2,3,1,1]
 
 -- | Returns the number of the non-terminal symbol for a given rule.
 lhs
@@ -249,7 +251,7 @@ lhs
 lhs = (lhsList !!)
   where
     lhsList :: [NonTerminal]
-    lhsList = [0,1,2,2,3,3,3,3,3,4,4,4,4,4,4,4,5,5,5,6,6,6,6,7,7,7,8,8,9,9,10,10,10,10,10,10,11,11,12,12,12,12,12,12,12,13,13,13,14,14,15,15,15,15,15,15,16,16,17,17,18,18,19,19,19,19,19]
+    lhsList = [0,1,2,2,3,3,3,3,3,4,4,4,4,4,4,4,5,5,5,6,6,6,6,7,7,7,8,8,9,9,10,10,10,10,10,10,11,11,12,12,12,12,12,12,12,13,13,13,14,14,15,15,15,15,15,15,15,16,16,17,17,18,18,19,19,19,19,19]
 
 -- | For a given state and non-terminal symbol returns the next state we will
 --   enter.
@@ -358,37 +360,37 @@ goto 56 7 = 37
 goto 56 8 = 38
 goto 56 10 = 20
 goto 56 12 = 39
-goto 58 15 = 92
-goto 58 16 = 93
-goto 59 5 = 95
+goto 58 15 = 93
+goto 58 16 = 94
+goto 59 5 = 96
 goto 59 6 = 36
 goto 59 7 = 37
 goto 59 8 = 38
 goto 59 10 = 20
 goto 59 12 = 39
-goto 69 6 = 99
+goto 69 6 = 100
 goto 69 7 = 37
 goto 69 8 = 38
 goto 69 10 = 20
 goto 69 12 = 39
-goto 70 6 = 100
+goto 70 6 = 101
 goto 70 7 = 37
 goto 70 8 = 38
 goto 70 10 = 20
 goto 70 12 = 39
-goto 71 7 = 101
+goto 71 7 = 102
 goto 71 8 = 38
 goto 71 10 = 20
 goto 71 12 = 39
-goto 72 7 = 102
+goto 72 7 = 103
 goto 72 8 = 38
 goto 72 10 = 20
 goto 72 12 = 39
-goto 73 7 = 103
+goto 73 7 = 104
 goto 73 8 = 38
 goto 73 10 = 20
 goto 73 12 = 39
-goto 77 5 = 105
+goto 77 5 = 106
 goto 77 6 = 36
 goto 77 7 = 37
 goto 77 8 = 38
@@ -400,9 +402,9 @@ goto 78 7 = 37
 goto 78 8 = 38
 goto 78 10 = 20
 goto 78 12 = 39
-goto 78 18 = 106
+goto 78 18 = 107
 goto 78 19 = 48
-goto 79 3 = 107
+goto 79 3 = 108
 goto 79 4 = 18
 goto 79 8 = 19
 goto 79 10 = 20
@@ -414,43 +416,43 @@ goto 80 7 = 37
 goto 80 8 = 38
 goto 80 10 = 20
 goto 80 12 = 39
-goto 80 19 = 108
-goto 81 3 = 109
+goto 80 19 = 109
+goto 81 3 = 110
 goto 81 4 = 18
 goto 81 8 = 19
 goto 81 10 = 20
 goto 81 13 = 21
 goto 81 15 = 22
-goto 84 13 = 111
-goto 84 14 = 112
-goto 84 15 = 113
-goto 96 10 = 120
-goto 110 13 = 111
-goto 110 14 = 122
-goto 110 15 = 113
-goto 115 5 = 125
-goto 115 6 = 36
-goto 115 7 = 37
-goto 115 8 = 38
-goto 115 10 = 20
-goto 115 12 = 39
-goto 118 15 = 126
-goto 119 8 = 127
-goto 119 10 = 20
-goto 121 3 = 128
-goto 121 4 = 18
-goto 121 8 = 19
-goto 121 10 = 20
-goto 121 13 = 21
-goto 121 15 = 22
-goto 124 13 = 130
-goto 124 15 = 113
-goto 129 3 = 131
-goto 129 4 = 18
-goto 129 8 = 19
-goto 129 10 = 20
-goto 129 13 = 21
-goto 129 15 = 22
+goto 84 13 = 112
+goto 84 14 = 113
+goto 84 15 = 114
+goto 97 10 = 121
+goto 111 13 = 112
+goto 111 14 = 123
+goto 111 15 = 114
+goto 116 5 = 126
+goto 116 6 = 36
+goto 116 7 = 37
+goto 116 8 = 38
+goto 116 10 = 20
+goto 116 12 = 39
+goto 119 15 = 127
+goto 120 8 = 128
+goto 120 10 = 20
+goto 122 3 = 129
+goto 122 4 = 18
+goto 122 8 = 19
+goto 122 10 = 20
+goto 122 13 = 21
+goto 122 15 = 22
+goto 125 13 = 131
+goto 125 15 = 114
+goto 130 3 = 132
+goto 130 4 = 18
+goto 130 8 = 19
+goto 130 10 = 20
+goto 130 13 = 21
+goto 130 15 = 22
 
 goto state_ nonterminal = error $
   "Reached a non-defined goto.\nState: " ++ show state_ ++ "\nNon-Terminal: " ++
@@ -1011,11 +1013,11 @@ state states@(40:_) stack input = case headMay input of
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '+', '-', 'eof', ')', ';', '}', else"
 state states@(41:_) stack input = case headMay input of
-  Just ( PosToken _ (Token ')') ) -> reduce 65 states stack input
-  Just ( PosToken _ (LogOp And) ) -> reduce 65 states stack input
-  Just ( PosToken _  Do ) -> reduce 65 states stack input
-  Just ( PosToken _ (LogOp Or) ) -> reduce 65 states stack input
-  Just ( PosToken _  Then ) -> reduce 65 states stack input
+  Just ( PosToken _ (Token ')') ) -> reduce 66 states stack input
+  Just ( PosToken _ (LogOp And) ) -> reduce 66 states stack input
+  Just ( PosToken _  Do ) -> reduce 66 states stack input
+  Just ( PosToken _ (LogOp Or) ) -> reduce 66 states stack input
+  Just ( PosToken _  Then ) -> reduce 66 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ')', and, do, or, then"
@@ -1035,11 +1037,11 @@ state states@(42:_) stack input = case headMay input of
                if null input then "end of file" else show (head input)
                ++ "\nexpecting id, integer, real, bool, character, not, toClass, '-', ':', eof, '('"
 state states@(43:_) stack input = case headMay input of
-  Just ( PosToken _ (Token ')') ) -> reduce 66 states stack input
-  Just ( PosToken _ (LogOp And) ) -> reduce 66 states stack input
-  Just ( PosToken _  Do ) -> reduce 66 states stack input
-  Just ( PosToken _ (LogOp Or) ) -> reduce 66 states stack input
-  Just ( PosToken _  Then ) -> reduce 66 states stack input
+  Just ( PosToken _ (Token ')') ) -> reduce 67 states stack input
+  Just ( PosToken _ (LogOp And) ) -> reduce 67 states stack input
+  Just ( PosToken _  Do ) -> reduce 67 states stack input
+  Just ( PosToken _ (LogOp Or) ) -> reduce 67 states stack input
+  Just ( PosToken _  Then ) -> reduce 67 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ')', and, do, or, then"
@@ -1073,19 +1075,19 @@ state states@(46:_) stack input = case headMay input of
                ++ "\nexpecting or, then"
 state states@(47:_) stack input = case headMay input of
   Just ( PosToken _ (LogOp And) ) -> shift 80 states stack input
-  Just ( PosToken _ (Token ')') ) -> reduce 59 states stack input
-  Just ( PosToken _  Do ) -> reduce 59 states stack input
-  Just ( PosToken _ (LogOp Or) ) -> reduce 59 states stack input
-  Just ( PosToken _  Then ) -> reduce 59 states stack input
+  Just ( PosToken _ (Token ')') ) -> reduce 60 states stack input
+  Just ( PosToken _  Do ) -> reduce 60 states stack input
+  Just ( PosToken _ (LogOp Or) ) -> reduce 60 states stack input
+  Just ( PosToken _  Then ) -> reduce 60 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting and, ')', do, or, then"
 state states@(48:_) stack input = case headMay input of
-  Just ( PosToken _ (Token ')') ) -> reduce 61 states stack input
-  Just ( PosToken _ (LogOp And) ) -> reduce 61 states stack input
-  Just ( PosToken _  Do ) -> reduce 61 states stack input
-  Just ( PosToken _ (LogOp Or) ) -> reduce 61 states stack input
-  Just ( PosToken _  Then ) -> reduce 61 states stack input
+  Just ( PosToken _ (Token ')') ) -> reduce 62 states stack input
+  Just ( PosToken _ (LogOp And) ) -> reduce 62 states stack input
+  Just ( PosToken _  Do ) -> reduce 62 states stack input
+  Just ( PosToken _ (LogOp Or) ) -> reduce 62 states stack input
+  Just ( PosToken _  Then ) -> reduce 62 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ')', and, do, or, then"
@@ -1187,9 +1189,10 @@ state states@(58:_) stack input = case headMay input of
   Just ( PosToken _ (Type TDouble) ) -> shift 9 states stack input
   Just ( PosToken _ (Type TChar) ) -> shift 10 states stack input
   Just ( PosToken _ (Type TRef)) -> shift 11 states stack input
+  Just ( PosToken _ (Token ')') ) -> shift 92 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
-               ++ "\nexpecting int, double, char, ref"
+               ++ "\nexpecting int, double, char, ref, ')'"
 state states@(59:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 27 states stack input
   Just ( PosToken _ (DInt _) ) -> shift 28 states stack input
@@ -1199,7 +1202,7 @@ state states@(59:_) stack input = case headMay input of
   Just ( PosToken _ (MathOp Minus) ) -> shift 32 states stack input
   Just ( PosToken _ NameSpace) -> shift 33 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 34 states stack input
-  Just ( PosToken _ (Token ']') ) -> shift 94 states stack input
+  Just ( PosToken _ (Token ']') ) -> shift 95 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting id, integer, real, character, toClass, '-', ':', '(', ']'"
@@ -1253,7 +1256,7 @@ state states@(61:_) stack input = case headMay input of
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ':', 'eof', '(', ')', '*', '+', '-', '.', '/', ':=', ';', '[', ']', '}', and, do, else, mod, or, relop, then"
 state states@(62:_) stack input = case headMay input of
-  Just ( PosToken _ Dot) -> shift 96 states stack input
+  Just ( PosToken _ Dot) -> shift 97 states stack input
   Nothing -> reduce 26 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 26 states stack input
   Just ( PosToken _ (MathOp Times) ) -> reduce 26 states stack input
@@ -1299,7 +1302,7 @@ state states@(63:_) stack input = case headMay input of
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '(', '[', 'eof', ')', '*', '+', '-', '.', '/', ':=', ';', ']', '}', and, do, else, mod, or, relop, then"
 state states@(64:_) stack input = case headMay input of
-  Just ( PosToken _ (Id _) ) -> shift 97 states stack input
+  Just ( PosToken _ (Id _) ) -> shift 98 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting id"
@@ -1386,7 +1389,7 @@ state states@(67:_) stack input = case headMay input of
 state states@(68:_) stack input = case headMay input of
   Just ( PosToken _ (MathOp Plus) ) -> shift 69 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 70 states stack input
-  Just ( PosToken _ (Token ')') ) -> shift 98 states stack input
+  Just ( PosToken _ (Token ')') ) -> shift 99 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '+', '-', ')'"
@@ -1451,11 +1454,11 @@ state states@(73:_) stack input = case headMay input of
                if null input then "end of file" else show (head input)
                ++ "\nexpecting id, integer, real, character, toClass, '-', ':', '('"
 state states@(74:_) stack input = case headMay input of
-  Just ( PosToken _ (Token ')') ) -> reduce 63 states stack input
-  Just ( PosToken _ (LogOp And) ) -> reduce 63 states stack input
-  Just ( PosToken _  Do ) -> reduce 63 states stack input
-  Just ( PosToken _ (LogOp Or) ) -> reduce 63 states stack input
-  Just ( PosToken _  Then ) -> reduce 63 states stack input
+  Just ( PosToken _ (Token ')') ) -> reduce 64 states stack input
+  Just ( PosToken _ (LogOp And) ) -> reduce 64 states stack input
+  Just ( PosToken _  Do ) -> reduce 64 states stack input
+  Just ( PosToken _ (LogOp Or) ) -> reduce 64 states stack input
+  Just ( PosToken _  Then ) -> reduce 64 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ')', and, do, or, then"
@@ -1463,13 +1466,13 @@ state states@(75:_) stack input = case headMay input of
   Just ( PosToken _ (RelOp _) ) -> shift 77 states stack input
   Just ( PosToken _ (MathOp Plus) ) -> shift 69 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 70 states stack input
-  Just ( PosToken _ (Token ')') ) -> shift 98 states stack input
+  Just ( PosToken _ (Token ')') ) -> shift 99 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting relop, '+', '-', ')'"
 state states@(76:_) stack input = case headMay input of
   Just ( PosToken _ (LogOp Or) ) -> shift 78 states stack input
-  Just ( PosToken _ (Token ')') ) -> shift 104 states stack input
+  Just ( PosToken _ (Token ')') ) -> shift 105 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting or, ')'"
@@ -1562,12 +1565,12 @@ state states@(81:_) stack input = case headMay input of
                if null input then "end of file" else show (head input)
                ++ "\nexpecting id, ':', read, output, return, if, while, int, double, char, ref, func, labelspec, '{', 'eof', ')', ';', '}', else"
 state states@(82:_) stack input = case headMay input of
-  Just ( PosToken _ (Token '(') ) -> shift 110 states stack input
+  Just ( PosToken _ (Token '(') ) -> shift 111 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '('"
 state states@(83:_) stack input = case headMay input of
-  Just ( PosToken _ (Token ']') ) -> shift 94 states stack input
+  Just ( PosToken _ (Token ']') ) -> shift 95 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ']'"
@@ -1641,33 +1644,19 @@ state states@(89:_) stack input = case headMay input of
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '+', '-', ')', ';'"
 state states@(90:_) stack input = case headMay input of
-  Just ( PosToken _ (Token ')') ) -> shift 114 states stack input
-  Just ( PosToken _ (Token ';') ) -> shift 115 states stack input
+  Just ( PosToken _ (Token ')') ) -> shift 115 states stack input
+  Just ( PosToken _ (Token ';') ) -> shift 116 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ')', ';'"
 state states@(91:_) stack input = case headMay input of
   Just ( PosToken _ (MathOp Plus) ) -> shift 69 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 70 states stack input
-  Just ( PosToken _ (Token ']') ) -> shift 116 states stack input
+  Just ( PosToken _ (Token ']') ) -> shift 117 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '+', '-', ']'"
 state states@(92:_) stack input = case headMay input of
-  Just ( PosToken _ (Token '(') ) -> shift 58 states stack input
-  Just ( PosToken _ (Token '[') ) -> shift 83 states stack input
-  Just ( PosToken _ (Token ')') ) -> reduce 57 states stack input
-  Just ( PosToken _ (Token ';') ) -> reduce 57 states stack input
-  _ -> error $ "unexpected " ++
-               if null input then "end of file" else show (head input)
-               ++ "\nexpecting '(', '[', ')', ';'"
-state states@(93:_) stack input = case headMay input of
-  Just ( PosToken _ (Token ')') ) -> shift 117 states stack input
-  Just ( PosToken _ (Token ';') ) -> shift 118 states stack input
-  _ -> error $ "unexpected " ++
-               if null input then "end of file" else show (head input)
-               ++ "\nexpecting ')', ';'"
-state states@(94:_) stack input = case headMay input of
   Just ( PosToken _ (Token '(') ) -> reduce 55 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 55 states stack input
   Just ( PosToken _ (Token ';') ) -> reduce 55 states stack input
@@ -1676,20 +1665,43 @@ state states@(94:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '(', ')', ';', '[', id"
+state states@(93:_) stack input = case headMay input of
+  Just ( PosToken _ (Token '(') ) -> shift 58 states stack input
+  Just ( PosToken _ (Token '[') ) -> shift 83 states stack input
+  Just ( PosToken _ (Token ')') ) -> reduce 58 states stack input
+  Just ( PosToken _ (Token ';') ) -> reduce 58 states stack input
+  _ -> error $ "unexpected " ++
+               if null input then "end of file" else show (head input)
+               ++ "\nexpecting '(', '[', ')', ';'"
+state states@(94:_) stack input = case headMay input of
+  Just ( PosToken _ (Token ')') ) -> shift 118 states stack input
+  Just ( PosToken _ (Token ';') ) -> shift 119 states stack input
+  _ -> error $ "unexpected " ++
+               if null input then "end of file" else show (head input)
+               ++ "\nexpecting ')', ';'"
 state states@(95:_) stack input = case headMay input of
+  Just ( PosToken _ (Token '(') ) -> reduce 56 states stack input
+  Just ( PosToken _ (Token ')') ) -> reduce 56 states stack input
+  Just ( PosToken _ (Token ';') ) -> reduce 56 states stack input
+  Just ( PosToken _ (Token '[') ) -> reduce 56 states stack input
+  Just ( PosToken _ (Id _) ) -> reduce 56 states stack input
+  _ -> error $ "unexpected " ++
+               if null input then "end of file" else show (head input)
+               ++ "\nexpecting '(', ')', ';', '[', id"
+state states@(96:_) stack input = case headMay input of
   Just ( PosToken _ (MathOp Plus) ) -> shift 69 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 70 states stack input
-  Just ( PosToken _ (Token ']') ) -> shift 119 states stack input
+  Just ( PosToken _ (Token ']') ) -> shift 120 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '+', '-', ']'"
-state states@(96:_) stack input = case headMay input of
+state states@(97:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 61 states stack input
   Just ( PosToken _ NameSpace) -> shift 2 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting id, ':'"
-state states@(97:_) stack input = case headMay input of
+state states@(98:_) stack input = case headMay input of
   Nothing -> reduce 33 states stack input
   Just ( PosToken _ (Token '(') ) -> reduce 33 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 33 states stack input
@@ -1729,7 +1741,7 @@ state states@(97:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting 'eof', '(', ')', '*', '+', '-', '.', '/', ':=', ';', '[', ']', '}', and, do, else, mod, or, relop, then, 'eof', ')', '*', '+', '-', '/', ';', ']', '}', and, do, else, mod, or, relop, then"
-state states@(98:_) stack input = case headMay input of
+state states@(99:_) stack input = case headMay input of
   Nothing -> reduce 44 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 44 states stack input
   Just ( PosToken _ (MathOp Times) ) -> reduce 44 states stack input
@@ -1749,7 +1761,7 @@ state states@(98:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting 'eof', ')', '*', '+', '-', '/', ';', ']', '}', and, do, else, mod, or, relop, then"
-state states@(99:_) stack input = case headMay input of
+state states@(100:_) stack input = case headMay input of
   Just ( PosToken _ (MathOp Times) ) -> shift 71 states stack input
   Just ( PosToken _ (MathOp DivBy) ) -> shift 72 states stack input
   Just ( PosToken _ (MathOp Mod) ) -> shift 73 states stack input
@@ -1769,7 +1781,7 @@ state states@(99:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '*', '/', mod, 'eof', ')', '+', '-', ';', ']', '}', and, do, else, or, relop, then"
-state states@(100:_) stack input = case headMay input of
+state states@(101:_) stack input = case headMay input of
   Just ( PosToken _ (MathOp Times) ) -> shift 71 states stack input
   Just ( PosToken _ (MathOp DivBy) ) -> shift 72 states stack input
   Just ( PosToken _ (MathOp Mod) ) -> shift 73 states stack input
@@ -1789,7 +1801,7 @@ state states@(100:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '*', '/', mod, 'eof', ')', '+', '-', ';', ']', '}', and, do, else, or, relop, then"
-state states@(101:_) stack input = case headMay input of
+state states@(102:_) stack input = case headMay input of
   Nothing -> reduce 19 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 19 states stack input
   Just ( PosToken _ (MathOp Times) ) -> reduce 19 states stack input
@@ -1809,7 +1821,7 @@ state states@(101:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting 'eof', ')', '*', '+', '-', '/', ';', ']', '}', and, do, else, mod, or, relop, then"
-state states@(102:_) stack input = case headMay input of
+state states@(103:_) stack input = case headMay input of
   Nothing -> reduce 20 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 20 states stack input
   Just ( PosToken _ (MathOp Times) ) -> reduce 20 states stack input
@@ -1829,7 +1841,7 @@ state states@(102:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting 'eof', ')', '*', '+', '-', '/', ';', ']', '}', and, do, else, mod, or, relop, then"
-state states@(103:_) stack input = case headMay input of
+state states@(104:_) stack input = case headMay input of
   Nothing -> reduce 21 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 21 states stack input
   Just ( PosToken _ (MathOp Times) ) -> reduce 21 states stack input
@@ -1849,37 +1861,37 @@ state states@(103:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting 'eof', ')', '*', '+', '-', '/', ';', ']', '}', and, do, else, mod, or, relop, then"
-state states@(104:_) stack input = case headMay input of
-  Just ( PosToken _ (Token ')') ) -> reduce 62 states stack input
-  Just ( PosToken _ (LogOp And) ) -> reduce 62 states stack input
-  Just ( PosToken _  Do ) -> reduce 62 states stack input
-  Just ( PosToken _ (LogOp Or) ) -> reduce 62 states stack input
-  Just ( PosToken _  Then ) -> reduce 62 states stack input
+state states@(105:_) stack input = case headMay input of
+  Just ( PosToken _ (Token ')') ) -> reduce 63 states stack input
+  Just ( PosToken _ (LogOp And) ) -> reduce 63 states stack input
+  Just ( PosToken _  Do ) -> reduce 63 states stack input
+  Just ( PosToken _ (LogOp Or) ) -> reduce 63 states stack input
+  Just ( PosToken _  Then ) -> reduce 63 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ')', and, do, or, then"
-state states@(105:_) stack input = case headMay input of
+state states@(106:_) stack input = case headMay input of
   Just ( PosToken _ (MathOp Plus) ) -> shift 69 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 70 states stack input
-  Just ( PosToken _ (Token ')') ) -> reduce 64 states stack input
-  Just ( PosToken _ (LogOp And) ) -> reduce 64 states stack input
-  Just ( PosToken _  Do ) -> reduce 64 states stack input
-  Just ( PosToken _ (LogOp Or) ) -> reduce 64 states stack input
-  Just ( PosToken _  Then ) -> reduce 64 states stack input
+  Just ( PosToken _ (Token ')') ) -> reduce 65 states stack input
+  Just ( PosToken _ (LogOp And) ) -> reduce 65 states stack input
+  Just ( PosToken _  Do ) -> reduce 65 states stack input
+  Just ( PosToken _ (LogOp Or) ) -> reduce 65 states stack input
+  Just ( PosToken _  Then ) -> reduce 65 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '+', '-', ')', and, do, or, then"
-state states@(106:_) stack input = case headMay input of
+state states@(107:_) stack input = case headMay input of
   Just ( PosToken _ (LogOp And) ) -> shift 80 states stack input
-  Just ( PosToken _ (Token ')') ) -> reduce 58 states stack input
-  Just ( PosToken _  Do ) -> reduce 58 states stack input
-  Just ( PosToken _ (LogOp Or) ) -> reduce 58 states stack input
-  Just ( PosToken _  Then ) -> reduce 58 states stack input
+  Just ( PosToken _ (Token ')') ) -> reduce 59 states stack input
+  Just ( PosToken _  Do ) -> reduce 59 states stack input
+  Just ( PosToken _ (LogOp Or) ) -> reduce 59 states stack input
+  Just ( PosToken _  Then ) -> reduce 59 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting and, ')', do, or, then"
-state states@(107:_) stack input = case headMay input of
-  Just ( PosToken _  Else ) -> shift 121 states stack input
+state states@(108:_) stack input = case headMay input of
+  Just ( PosToken _  Else ) -> shift 122 states stack input
   Nothing -> reduce 5 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 5 states stack input
   Just ( PosToken _ (Token ';') ) -> reduce 5 states stack input
@@ -1888,16 +1900,16 @@ state states@(107:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting else, 'eof', ')', ';', '}', else"
-state states@(108:_) stack input = case headMay input of
-  Just ( PosToken _ (Token ')') ) -> reduce 60 states stack input
-  Just ( PosToken _ (LogOp And) ) -> reduce 60 states stack input
-  Just ( PosToken _  Do ) -> reduce 60 states stack input
-  Just ( PosToken _ (LogOp Or) ) -> reduce 60 states stack input
-  Just ( PosToken _  Then ) -> reduce 60 states stack input
+state states@(109:_) stack input = case headMay input of
+  Just ( PosToken _ (Token ')') ) -> reduce 61 states stack input
+  Just ( PosToken _ (LogOp And) ) -> reduce 61 states stack input
+  Just ( PosToken _  Do ) -> reduce 61 states stack input
+  Just ( PosToken _ (LogOp Or) ) -> reduce 61 states stack input
+  Just ( PosToken _  Then ) -> reduce 61 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ')', and, do, or, then"
-state states@(109:_) stack input = case headMay input of
+state states@(110:_) stack input = case headMay input of
   Nothing -> reduce 7 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 7 states stack input
   Just ( PosToken _ (Token ';') ) -> reduce 7 states stack input
@@ -1906,7 +1918,7 @@ state states@(109:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting 'eof', ')', ';', '}', else"
-state states@(110:_) stack input = case headMay input of
+state states@(111:_) stack input = case headMay input of
   Just ( PosToken _ (Type TInt) ) -> shift 8 states stack input
   Just ( PosToken _ (Type TDouble) ) -> shift 9 states stack input
   Just ( PosToken _ (Type TChar) ) -> shift 10 states stack input
@@ -1916,26 +1928,26 @@ state states@(110:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting int, double, char, ref, func, labelspec"
-state states@(111:_) stack input = case headMay input of
+state states@(112:_) stack input = case headMay input of
   Just ( PosToken _ (Token ')') ) -> reduce 49 states stack input
   Just ( PosToken _ (Token ';') ) -> reduce 49 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ')', ';'"
-state states@(112:_) stack input = case headMay input of
-  Just ( PosToken _ (Token ')') ) -> shift 123 states stack input
-  Just ( PosToken _ (Token ';') ) -> shift 124 states stack input
+state states@(113:_) stack input = case headMay input of
+  Just ( PosToken _ (Token ')') ) -> shift 124 states stack input
+  Just ( PosToken _ (Token ';') ) -> shift 125 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ')', ';'"
-state states@(113:_) stack input = case headMay input of
+state states@(114:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 57 states stack input
   Just ( PosToken _ (Token '(') ) -> shift 58 states stack input
   Just ( PosToken _ (Token '[') ) -> shift 83 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting id, '(', '['"
-state states@(114:_) stack input = case headMay input of
+state states@(115:_) stack input = case headMay input of
   Nothing -> reduce 31 states stack input
   Just ( PosToken _ (Token '(') ) -> reduce 31 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 31 states stack input
@@ -1959,7 +1971,7 @@ state states@(114:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting 'eof', '(', ')', '*', '+', '-', '.', '/', ':=', ';', '[', ']', '}', and, do, else, mod, or, relop, then"
-state states@(115:_) stack input = case headMay input of
+state states@(116:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 27 states stack input
   Just ( PosToken _ (DInt _) ) -> shift 28 states stack input
   Just ( PosToken _ (DDouble _) ) -> shift 29 states stack input
@@ -1971,7 +1983,7 @@ state states@(115:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting id, integer, real, character, toClass, '-', ':', '('"
-state states@(116:_) stack input = case headMay input of
+state states@(117:_) stack input = case headMay input of
   Nothing -> reduce 30 states stack input
   Just ( PosToken _ (Token '(') ) -> reduce 30 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 30 states stack input
@@ -1995,7 +2007,7 @@ state states@(116:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting 'eof', '(', ')', '*', '+', '-', '.', '/', ':=', ';', '[', ']', '}', and, do, else, mod, or, relop, then"
-state states@(117:_) stack input = case headMay input of
+state states@(118:_) stack input = case headMay input of
   Just ( PosToken _ (Token '(') ) -> reduce 54 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 54 states stack input
   Just ( PosToken _ (Token ';') ) -> reduce 54 states stack input
@@ -2004,7 +2016,7 @@ state states@(117:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '(', ')', ';', '[', id"
-state states@(118:_) stack input = case headMay input of
+state states@(119:_) stack input = case headMay input of
   Just ( PosToken _ (Type TInt) ) -> shift 8 states stack input
   Just ( PosToken _ (Type TDouble) ) -> shift 9 states stack input
   Just ( PosToken _ (Type TChar) ) -> shift 10 states stack input
@@ -2012,13 +2024,13 @@ state states@(118:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting int, double, char, ref"
-state states@(119:_) stack input = case headMay input of
+state states@(120:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 1 states stack input
   Just ( PosToken _ NameSpace) -> shift 2 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting id, ':'"
-state states@(120:_) stack input = case headMay input of
+state states@(121:_) stack input = case headMay input of
   Just ( PosToken _ (Token '(') ) -> shift 55 states stack input
   Just ( PosToken _ (Token '[') ) -> shift 56 states stack input
   Nothing -> reduce 28 states stack input
@@ -2042,7 +2054,7 @@ state states@(120:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '(', '[', 'eof', ')', '*', '+', '-', '.', '/', ':=', ';', ']', '}', and, do, else, mod, or, relop, then"
-state states@(121:_) stack input = case headMay input of
+state states@(122:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 1 states stack input
   Just ( PosToken _ NameSpace) -> shift 2 states stack input
   Just ( PosToken _  Read ) -> shift 3 states stack input
@@ -2065,13 +2077,13 @@ state states@(121:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting id, ':', read, output, return, if, while, int, double, char, ref, func, labelspec, '{', 'eof', ')', ';', '}', else"
-state states@(122:_) stack input = case headMay input of
-  Just ( PosToken _ (Token ')') ) -> shift 129 states stack input
-  Just ( PosToken _ (Token ';') ) -> shift 124 states stack input
+state states@(123:_) stack input = case headMay input of
+  Just ( PosToken _ (Token ')') ) -> shift 130 states stack input
+  Just ( PosToken _ (Token ';') ) -> shift 125 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ')', ';'"
-state states@(123:_) stack input = case headMay input of
+state states@(124:_) stack input = case headMay input of
   Nothing -> reduce 46 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 46 states stack input
   Just ( PosToken _ (Token ';') ) -> reduce 46 states stack input
@@ -2080,7 +2092,7 @@ state states@(123:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting 'eof', ')', ';', '}', else"
-state states@(124:_) stack input = case headMay input of
+state states@(125:_) stack input = case headMay input of
   Just ( PosToken _ (Type TInt) ) -> shift 8 states stack input
   Just ( PosToken _ (Type TDouble) ) -> shift 9 states stack input
   Just ( PosToken _ (Type TChar) ) -> shift 10 states stack input
@@ -2090,7 +2102,7 @@ state states@(124:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting int, double, char, ref, func, labelspec"
-state states@(125:_) stack input = case headMay input of
+state states@(126:_) stack input = case headMay input of
   Just ( PosToken _ (MathOp Plus) ) -> shift 69 states stack input
   Just ( PosToken _ (MathOp Minus) ) -> shift 70 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 36 states stack input
@@ -2098,15 +2110,15 @@ state states@(125:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '+', '-', ')', ';'"
-state states@(126:_) stack input = case headMay input of
+state states@(127:_) stack input = case headMay input of
   Just ( PosToken _ (Token '(') ) -> shift 58 states stack input
   Just ( PosToken _ (Token '[') ) -> shift 83 states stack input
-  Just ( PosToken _ (Token ')') ) -> reduce 56 states stack input
-  Just ( PosToken _ (Token ';') ) -> reduce 56 states stack input
+  Just ( PosToken _ (Token ')') ) -> reduce 57 states stack input
+  Just ( PosToken _ (Token ';') ) -> reduce 57 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting '(', '[', ')', ';'"
-state states@(127:_) stack input = case headMay input of
+state states@(128:_) stack input = case headMay input of
   Nothing -> reduce 10 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 10 states stack input
   Just ( PosToken _ (Token ';') ) -> reduce 10 states stack input
@@ -2115,7 +2127,7 @@ state states@(127:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting 'eof', ')', ';', '}', else"
-state states@(128:_) stack input = case headMay input of
+state states@(129:_) stack input = case headMay input of
   Nothing -> reduce 6 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 6 states stack input
   Just ( PosToken _ (Token ';') ) -> reduce 6 states stack input
@@ -2124,7 +2136,7 @@ state states@(128:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting 'eof', ')', ';', '}', else"
-state states@(129:_) stack input = case headMay input of
+state states@(130:_) stack input = case headMay input of
   Just ( PosToken _ (Id _) ) -> shift 1 states stack input
   Just ( PosToken _ NameSpace) -> shift 2 states stack input
   Just ( PosToken _  Read ) -> shift 3 states stack input
@@ -2147,13 +2159,13 @@ state states@(129:_) stack input = case headMay input of
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting id, ':', read, output, return, if, while, int, double, char, ref, func, labelspec, '{', 'eof', ')', ';', '}', else"
-state states@(130:_) stack input = case headMay input of
+state states@(131:_) stack input = case headMay input of
   Just ( PosToken _ (Token ')') ) -> reduce 48 states stack input
   Just ( PosToken _ (Token ';') ) -> reduce 48 states stack input
   _ -> error $ "unexpected " ++
                if null input then "end of file" else show (head input)
                ++ "\nexpecting ')', ';'"
-state states@(131:_) stack input = case headMay input of
+state states@(132:_) stack input = case headMay input of
   Nothing -> reduce 45 states stack input
   Just ( PosToken _ (Token ')') ) -> reduce 45 states stack input
   Just ( PosToken _ (Token ';') ) -> reduce 45 states stack input

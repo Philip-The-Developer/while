@@ -61,7 +61,7 @@ type Type = String
 -- $| This is just a string.
 type ReturnType = T.Type
 -- TODO docu| This is a Map of frontend label names to a tupel of
-type DataLabelScopes = Map String [AST.Command]
+type DataLabelScopes = Map String (String,[AST.Command])
 -- $| This is a list of UDF names and TACs.
 type TACstream = [(TAC.Label, TAC.TAC)]
 
@@ -74,7 +74,7 @@ getType (AST.Declaration t n) = show t
 process :: AST.AST -> TACstream -- $ modified
 process ast = ("",directives):("",intermediateCode):appendix
   where
-    ((directives,intermediateCode,appendix), _) = runState (program ast) ((0,0),[Map.empty], T.Void, Map.insert "env:new" [AST.Declaration (T.TFunction T.TRef T.TRef) "new"] Map.empty)
+    ((directives,intermediateCode,appendix), _) = runState (program ast) ((0,0),[Map.empty], T.Void, Map.insert "env:new" ("label_env_new",[AST.Declaration (T.TFunction T.TRef T.Void) "new"]) Map.empty)
 
 -- | Generates a new label and increments the internal label counter.
 newLabel :: State GenState (TAC.Label)
@@ -110,7 +110,7 @@ lookup i = do
           _type = Map.lookup i m
     scopes i (_:mm) = scopes i mm
 
-lookupLabel :: String -> State GenState (Maybe [AST.Command])
+lookupLabel :: String -> State GenState (Maybe (String,[AST.Command]))
 lookupLabel str = do
   (_,_,_,labelMap) <- get
   return $ Map.lookup str labelMap
@@ -249,8 +249,13 @@ command cmd next = case cmd of
     if (type1 /= T.TInt)
     then error $ "Array index is not an int."
     else do
-      (tac3, data3, type3) <- solvePointer data2 type2
-      return (dir1++dir2, tac1++tac2++tac3++[TAC.ArrayAlloc data3 data1], [], T.Void)
+      if T.isPointer type2
+      then do
+        let typeI = T.innerType type2
+        tvar' <- newTemp
+        let tvar = tvar'++":"++(show typeI)
+        return (dir1++dir2, tac1++tac2++[TAC.ArrayAlloc tvar data1, TAC.ToMemory (TAC.Variable data2) (TAC.Variable tvar)],[],T.Void)
+      else return (dir1++dir2, tac1++tac2++[TAC.ArrayAlloc data2 data1], [], T.Void)
   
   (AST.Return expr) ->do
     (dir1, tac1, data1, type1) <- expression expr
@@ -259,8 +264,8 @@ command cmd next = case cmd of
   AST.LabelEnvironment name labels -> do
     (c,e,r,dataLabel) <- get
     let cmdList = Map.lookup (name++":") dataLabel
-    let cmdList' = if isNothing cmdList then [] else (fromJust cmdList)
-    let dataLabel' = Map.insert (name++":") (labels:cmdList') dataLabel
+    let (_,cmdList') = if isNothing cmdList then ("",[]) else (fromJust cmdList)
+    let dataLabel' = Map.insert (name++":") ("",(labels:cmdList')) dataLabel
     let (dataLabel'',tac) = labelenvironment name labels (c,e,r,dataLabel') 
     put (c,e,r,dataLabel'')
     return (tac,[],[],T.Void)
@@ -305,7 +310,9 @@ expressionInto varFunc expr = case expr of
   (AST.Parameter expr) -> do
     (dir1, tac1, dat1, type1) <- expression expr
     return (dir1, tac1++[TAC.Push dat1], dat1, type1)
-  
+ 
+  (AST.Void) -> return ([],[],TAC.Variable "void",T.Void)
+ 
   (AST.ToClass id) -> do
     (c,e,r,labelMap) <- get
     let (labelMap', dir) = toClassDirective id labelMap
@@ -320,17 +327,27 @@ addressInto :: AST.Address -> Maybe String -> State GenState (TAC.TAC, TAC.TAC, 
 addressInto (AST.Identifier i) prevVar =do
   vt <- lookup i
   if isNothing vt
-  then error $ "Variable \""++i++"\" has not been declaret."
+    then do
+      dl <- lookupLabel ("default:"++i)
+      if isNothing $ dl
+        then error $ "Variable \""++i++"\" has not been declaret."
+        else addressInto (AST.Label "default" i) prevVar 
   else do
     let (var, type_) = fromJust vt
     if isNothing prevVar
-    then return ([],[], var++":"++show type_, type_)
+    then do
+      case type_ of
+        T.TFunction _ _ -> do
+          vref' <- newTemp
+          let vref = vref'++":"++(show type_) 
+          return ([], [TAC.Copy vref (TAC.ImmediateReference [] var)], vref, type_)
+        otherwise -> return ([],[], var++":"++show type_, type_)
     else do
       let prevVar' = fromJust prevVar
       error $ "[NYI]: address (AST.Identifier i) prevVar not Nothing!"
 
 addressInto (AST.FromArray addr exprIndex) prevVar = do
-  (dir1, tac1, data1', type1') <- address addr
+  (dir1, tac1, data1', type1') <- addressInto addr prevVar
   (dir2, tac2, data2, type2) <- expression exprIndex
   (tac3, data1, type1) <- solvePointer data1' type1'
   if type2 /= T.TInt
@@ -383,12 +400,13 @@ addressInto (AST.FunctionCall addr params) prevVar = do
       let tac0 = if isNothing prevVar then [] else [TAC.Push $ TAC.Variable $ fromJust prevVar]
       (dir1, tac1, data1', type1') <- addressInto addr prevVar
       (tac2, data1, type1) <- solvePointer data1' type1'
+      (dirP, tacP, dataP, typeP) <- expression params
       case type1 of
         T.TFunction r _ ->do
           let retType = r;
           result' <- newTemp
           let result = result'++":"++(show retType)
-          return (dir1, tac0++tac1++tac2++[TAC.VCall result data1], result, retType)
+          return (dir1++dirP, tac0++tac1++tac2++tacP++[TAC.VCall result data1], result, retType)
 
 addressInto (AST.Label envName attrName) prevVar
   |isNothing prevVar = error $ envName++":"++attrName++" should not be nothing."
@@ -398,7 +416,7 @@ addressInto (AST.Label envName attrName) prevVar
     if isNothing vt
     then error $ envName++":"++attrName++" is not declared."
     else do
-      let (decl:_) = fromJust vt
+      let (labelStr, (decl:_)) = fromJust vt
       type_ <- case decl of
         AST.Declaration t id ->return t
         otherwise -> error $ (show decl)++" is not a declaration."
@@ -417,7 +435,7 @@ addressInto (AST.Label envName attrName) prevVar
           let retType = T.TPointer type_
           vResult' <- newTemp
           let vResult = vResult'++":"++(show retType)
-          let tac = [TAC.Copy vlabelOP $ TAC.ImmediateReference [] ("label_"++envName++"_"++attrName),
+          let tac = [TAC.Copy vlabelOP $ TAC.ImmediateReference [] labelStr,
                      TAC.Add vlabelOP (TAC.Variable vlabelOP) (TAC.ImmediateInteger 16),
                      TAC.FromMemory vIndex $ TAC.Variable vlabelOP,
                      TAC.FromMemory vlabelOP $ TAC.Variable prevVar',
@@ -443,7 +461,7 @@ addressInto (AST.Label envName attrName) prevVar
           let retType = T.TPointer type_
           vResult' <- newTemp
           let vResult = vResult'++":"++(show retType)
-          let tac = [TAC.Copy vlabelOP $ TAC.ImmediateReference [] ("label_"++envName++"_"++attrName),
+          let tac = [TAC.Copy vlabelOP $ TAC.ImmediateReference [] labelStr,
                      TAC.Add vlabelOP (TAC.Variable vlabelOP) (TAC.ImmediateInteger 16),
                      TAC.FromMemory vIndex $ TAC.Variable vlabelOP,
                      TAC.FromMemory vlabelOP $ TAC.Variable prevVar',
@@ -566,15 +584,18 @@ getLabels labelSpec labels attIndex funcIndex labelMap = case labels of
     where
       (labelMap1, tac1, attIndex1, funcIndex1) = getLabels labelSpec c1 (attIndex) funcIndex labelMap
       (labelMap2, tac2, attIndex2, funcIndex2) = getLabels labelSpec c2 (attIndex1) funcIndex1 labelMap1
-  AST.Declaration _type name -> (labelMap'',tac, calcAttIndex attIndex _type, calcFuncIndex funcIndex _type)
+  AST.Declaration _type name -> (labelMap''',tac, calcAttIndex attIndex _type, calcFuncIndex funcIndex _type)
     where
       labelMap' = 
         if isNothing $ Map.lookup labelName labelMap 
-        then Map.insert labelName [AST.Declaration _type name] labelMap 
+        then Map.insert labelName ("label_"++labelSpec++"_"++name, [AST.Declaration _type name]) labelMap 
         else error $ "Label "++labelName++" defined twice."
+      labelMap'' = if isNothing $ Map.lookup ("default:"++name) labelMap'
+                   then Map.insert ("default:"++name) ("label_"++labelSpec++"_"++name, [AST.Declaration _type name]) labelMap'
+                   else Map.insert ("default:"++name) ("",[AST.NONE]) labelMap'
       labelID = "label_"++labelSpec++"_"++name
       labelName = (labelSpec++":"++name)
-      (dataType, labelMap'', directive) = if T.isArray _type then mapType (T.innerType _type) True labelMap' else mapType _type False labelMap'
+      (dataType, labelMap''', directive) = if T.isArray _type then mapType (T.innerType _type) True labelMap'' else mapType _type False labelMap''
       tac = directive++(calcDatLabel labelID dataType labelName _type)
   where
     calcAttIndex:: Int64 -> T.Type -> Int64
@@ -602,7 +623,7 @@ mapType (T.TFunction type1 type2) isArray labelMap = (label', labelMap', directi
                           TAC.DATA $ TAC.ImmediateInteger (if isArray then 1 else 0),
                           TAC.DATA $ TAC.ImmediateInteger $ fromIntegral $ length rolledOut]++datas
                     else []
-    labelMap' = Map.insert labelName [AST.NONE] labelMapR
+    labelMap' = Map.insert labelName ("",[AST.NONE]) labelMapR
 mapType _type isArray labelMap = (TAC.ImmediateReference [] $ T.getLabel _type, labelMap, [])
 
 functionType2Directive:: [T.Type]-> DataLabelScopes -> (TAC.TAC, DataLabelScopes, TAC.TAC) -- data type, label map, directive
@@ -633,14 +654,15 @@ toClassDirective name labelMap = if isNothing $ Map.lookup labelName labelMap
     offsetArrayName = labelName++"_offsets"
     funcArrayName = labelName ++"_functions"
     functionMapName = labelName ++ "_functins_Map"
-    refArray =references (fromJust cmds) False
-    offsetArray = offsets (fromJust cmds) False
-    funcArray = references (fromJust cmds) True
-    labelMap' = Map.insert labelName [] labelMap
-    cmds = Map.lookup (name++":") labelMap
-    tac' = if isNothing cmds 
-           then error ("Label envionment "++name++" has not been declared.")
-           else (TAC.CustomLabel labelName): 
+    refArray =references cmds False
+    offsetArray = offsets cmds False
+    funcArray = references cmds True
+    labelMap' = Map.insert labelName (labelName,[]) labelMap
+    cmds' = Map.lookup (name++":") labelMap
+    (_,cmds) = if isNothing cmds'
+               then error $ "Label environment "++name++" has not been declared."
+               else fromJust cmds'
+    tac' =      (TAC.CustomLabel labelName): 
                 (TAC.DATA $ TAC.ImmediateReference [] "env_class_class"):
                 (TAC.DATA $ TAC.ImmediateReference [] refArrayName):
                 (TAC.DATA $ TAC.ImmediateReference [] offsetArrayName):

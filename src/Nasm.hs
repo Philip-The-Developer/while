@@ -319,13 +319,15 @@ generate' (hd:rst) isDebug = do
       o1 <- variableToOperand v
       o2 <- dataToOperand d
       let (pre, o2') = if not $ operandIsRegister o2 then ([mov rax o2], rax) else ([], o2)
-      returnCode $ pre++ [instr $ "mov "++toCode o1++", ["++toCode o2'++"]"]
+      if | operandIsFRegister o1 -> returnCode $ pre++ [instr $ "movq "++toCode o1++", ["++toCode o2'++"]"]
+         | otherwise -> returnCode $ pre++ [instr $ "mov "++toCode o1++", ["++toCode o2'++"]"]
 
     TAC.ToMemory d1 d2 -> do
       o1 <- dataToOperand d1
       o2 <- dataToOperand d2
       let (pre, o1') = if not $ operandIsRegister o1 then ([mov rax o1], rax) else ([], o1)
-      returnCode $ pre++ [instr $ "mov QWORD ["++toCode o1'++"], "++toCode o2]
+      if | operandIsImmediateDouble o2 -> returnCode $ pre ++ [mov' o2, instr $ "mov QWORD ["++toCode o1'++"], rax"]
+         | otherwise -> returnCode $ pre++ [instr $ "mov QWORD ["++toCode o1'++"], "++toCode o2]
 
     TAC.ShowError l -> do
       returnCode [instr $ "jmp "++l]
