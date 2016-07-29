@@ -21,7 +21,7 @@ import Prelude (
     String, Int, Bool (..), Maybe (..),
     show, otherwise, not,
     (++), (*), (||), (&&),
-    Double, Char
+    Double, Char, error, ($)
   )
 import Data.Int (
     Int64
@@ -294,64 +294,64 @@ mov', idiv, push, pop, neg, fneg :: Operand -> Maybe Instruction
 instr :: String -> Maybe Instruction
 mov o1 o2
   | isL o1 && not (isM o2) || isR o1 = Just (Mov o1 o2)
-  | otherwise = Nothing
+  | otherwise = error $ "mov "++show o1++", "++show o2++" is not supported"
 mov' o1                                                      -- $ added
   | isI o1 = Just (Mov' o1)
-  | otherwise = Nothing
+  | otherwise = error $ "mov' "++show o1++" is not supported"
 fmov o1 o2                                                   -- $ added
   | isL o1 && isR o2 || isR o1 && isL o2 = Just (FMov o1 o2)
-  | otherwise = Nothing
+  | otherwise = error $ "fmov "++show o1 ++ " "++show o2++ " is not supported"
 add o1 o2
   | isL o1 && not (isM o2) || isR o1 = Just (Add o1 o2)
-  | otherwise = Nothing
+  | otherwise = error $ "add "++show o1++" "++show o2++ " is not supported"
 fadd o1 o2                                                   -- $ added
   | isR o1 && isR o2 = Just (FAdd o1 o2)
-  | otherwise = Nothing
+  | otherwise = error $ "fadd "++ show o1 ++ " "++ show o2++ " is not supported"
 sub o1 o2
   | isL o1 && not (isM o2) || isR o1 = Just (Sub o1 o2)
-  | otherwise = Nothing
+  | otherwise = error $ "sub "++ show o1 ++ " " ++ show o2++ " is not supported" 
 fsub o1 o2                                                   -- $ added
   | isR o1 && isR o2 = Just (FSub o1 o2)
-  | otherwise = Nothing
+  | otherwise = error $ "fsub "++ show o1 ++" "++ show o2 ++ " is not supported"
 imul o1 o2
   | isR o1 && isL o2 = Just (IMul o1 o2)
-  | otherwise = Nothing
+  | otherwise = error $ "imul "++ show o1 ++ " "++ show o2++ " is not supported"
 imul' o1 o2 o3
   | isR o1 && isL o2 && isI o3 = Just (IMul' o1 o2 o3)
-  | otherwise = Nothing
+  | otherwise = error $ "imul' "++ show o1 ++ " "++ show o2++ " " ++ show o3++ " is not supported"
 fmul o1 o2                                                   -- $ added
   | isR o1 && isR o2 = Just (FMul o1 o2)
-  | otherwise = Nothing
+  | otherwise = error $ "fmul "++ show o1 ++ " " ++ show o2 ++ " is not supported"
 idiv o1
   | isL o1 = Just (IDiv o1)
-  | otherwise = Nothing
+  | otherwise = error $ "idiv "++ show o1++ " is not supported" 
 fdiv o1 o2                                                   -- $ added
   | isR o1 && isR o2 = Just (FDiv o1 o2)
-  | otherwise = Nothing
+  | otherwise = error $ "fdiv "++ show o1 ++ " "++ show o2++ " is not supported"
 cmp o1 o2
   | isR o1 || isL o1 && not (isM o2) = Just (Cmp o1 o2)
-  | otherwise = Nothing
+  | otherwise = error $ "cmp "++ show o1 ++ " "++ show o2++ " is not supported"
 fcmp o1 o2                                                   -- $ added
   | isR o1 && isL o2 = Just (FCmp o1 o2)
-  | otherwise = Nothing
+  | otherwise = error $ "fcmp "++ show o1 ++ " "++show o2++" is not supported"
 neg o1
   | isL o1 = Just (Neg o1)
-  | otherwise = Nothing
+  | otherwise = error $"neg "++ show o1++" is not supported"
 fneg o1                                                      -- $ added
   | isFR o1 = Just (FNeg o1)
-  | otherwise = Nothing
+  | otherwise = error $ "fneg "++ show o1++" is not supported" 
 push o1
   | not (isFR o1) = Just (Push o1)
-  | otherwise = Nothing
+  | otherwise = error $ "push "++ show o1++ "is not supported"
 pop o1
   | isL o1 && not (isFR o1) = Just (Pop o1)                  -- $ modified
-  | otherwise = Nothing
+  | otherwise = error $ "pop "++ show o1 ++" is not supported" 
 shl o1 o2
   | isL o1 && isI o2 = Just (Shl o1 o2)
-  | otherwise = Nothing
+  | otherwise = error $ "shl "++ show o1 ++" "++ show o2++" is not supported"
 sar o1 o2
   | isL o1 && isI o2 = Just (Sar o1 o2)
-  | otherwise = Nothing
+  | otherwise =error $ "sar "++show o1 ++" "++show o2++ "is not supported" 
 instr i = Just (Instr i)
 
 {-

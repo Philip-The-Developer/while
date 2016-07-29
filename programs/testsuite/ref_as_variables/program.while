@@ -1,0 +1,19 @@
+labels l(int a; int b; char c);
+ref label1;
+ref label2;
+ref label3;
+ref label4;
+label1 := l:a;
+label2 := :b;
+label3 := :c;
+
+ref class;
+ref obj;
+class := toClass l;
+obj := class.env:new();
+obj.label1 := 13;
+obj.label2 := 14;
+obj.label3 := 'o';
+output obj.label1;
+output obj.label2;
+output obj.label3;

@@ -37,6 +37,10 @@ import Data.Int (
     Int64
   )
 
+import Debug.Trace (
+    trace
+  )
+
 import qualified Interface.Token as T
 import qualified Interface.AST as AST
 import qualified Interface.TAC as TAC
@@ -144,7 +148,7 @@ program prog = do
 -- an appendix with user-defined functions for later use and
 -- checks the existence of a return statement.
 command :: AST.Command -> TAC.Label -> State GenState (TAC.TAC, TAC.TAC, TACstream, ReturnType) -- $ modified
-command cmd next = case cmd of
+command cmd next | trace (show cmd) True = case cmd of
   (AST.Sequence c1 c2) -> do
     (dir1, tac1, stream1, type1) <- command c1 next
     (dir2, tac2, stream2, type2) <- command c2 next
@@ -203,6 +207,29 @@ command cmd next = case cmd of
       (T.TInt) -> return (dir1,tac1++[TAC.Output var1], [], T.Void)
       (T.TChar) -> return (dir1, tac1++ [TAC.COutput var1], [], T.Void)
       (T.TDouble) -> return (dir1, tac1++ [TAC.FOutput var1], [], T.Void)
+      (T.TRuntimeType t) -> do
+        labelInt <- newLabel
+        labelChar <- newLabel
+        labelDouble <- newLabel
+        labelEnd <- newLabel
+        vdouble' <- newTemp
+        let vdouble = vdouble'++":double"
+        let tac = [TAC.GotoCond2 labelInt TAC.Equal (TAC.Variable t) (TAC.ImmediateReference [] "type_int"),
+                   TAC.GotoCond2 labelChar TAC.Equal (TAC.Variable t) (TAC.ImmediateReference [] "type_char"),
+                   TAC.GotoCond2 labelDouble TAC.Equal (TAC.Variable t) (TAC.ImmediateReference [] "type_double"),
+                   TAC.ShowError "index_error",
+                   TAC.Label labelInt,
+                   TAC.Output var1,
+                   TAC.Goto labelEnd,
+                   TAC.Label labelChar,
+                   TAC.COutput var1,
+                   TAC.Goto labelEnd,
+                   TAC.Label labelDouble,
+                   TAC.Copy vdouble var1,
+                   TAC.FOutput (TAC.Variable vdouble),
+                   TAC.Label labelEnd,
+                   TAC.Comment "finish Output"]
+        return (dir1, tac1++ tac, [], T.Void)
       otherwise -> error $ "output is only suported for int, char and double outputs.\n The expression \""++show expr++"\" has returns type \""++show type1++"\"."
 
   (AST.Read addr) -> do
@@ -333,18 +360,45 @@ addressInto (AST.Identifier i) prevVar =do
         then error $ "Variable \""++i++"\" has not been declaret."
         else addressInto (AST.Label "default" i) prevVar 
   else do
-    let (var, type_) = fromJust vt
+    let (var, varType_) = fromJust vt
     if isNothing prevVar
     then do
-      case type_ of
+      case varType_ of
         T.TFunction _ _ -> do
           vref' <- newTemp
-          let vref = vref'++":"++(show type_) 
-          return ([], [TAC.Copy vref (TAC.ImmediateReference [] var)], vref, type_)
-        otherwise -> return ([],[], var++":"++show type_, type_)
+          let vref = vref'++":"++(show varType_) 
+          return ([], [TAC.Copy vref (TAC.ImmediateReference [] var)], vref, varType_)
+        otherwise -> return ([],[], var++":"++show varType_, varType_)
     else do
       let prevVar' = fromJust prevVar
-      error $ "[NYI]: address (AST.Identifier i) prevVar not Nothing!"
+      vOP' <- newTemp
+      let vOP = vOP'++":ref"
+      vindex' <- newTemp
+      let vindex = vindex'++":int"
+      vOffsetArray' <- newTemp
+      let vOffsetArray = vOffsetArray'++":ref"
+      vMultiplier' <- newTemp
+      let vMultiplier = vMultiplier'++":int"
+      vOffset' <- newTemp
+      let vOffset = vOffset'++":int"
+      type_' <- newTemp
+      let type_ = type_'++":ref"
+      let retType = T.TPointer $ T.TRuntimeType type_
+      vResult' <- newTemp
+      let vResult = vResult'++":"++(show retType)
+      let tac = [TAC.Add vOP (TAC.Variable (var++":"++show varType_)) (TAC.ImmediateInteger 8),
+                 TAC.FromMemory type_ (TAC.Variable vOP),
+                 TAC.Add vOP (TAC.Variable vOP) (TAC.ImmediateInteger 8),
+                 TAC.FromMemory vindex (TAC.Variable vOP),
+                 TAC.FromMemory vOP (TAC.Variable prevVar'),
+                 TAC.Add vOP (TAC.Variable vOP) (TAC.ImmediateInteger 16),
+                 TAC.FromMemory vOffsetArray (TAC.Variable vOP),
+                 TAC.Add vOP (TAC.Variable vOffsetArray) (TAC.ImmediateInteger 8),
+                 TAC.Mul vMultiplier (TAC.Variable vindex) (TAC.ImmediateInteger 8),
+                 TAC.Add vOP (TAC.Variable vOP) (TAC.Variable vMultiplier),
+                 TAC.FromMemory vOffset (TAC.Variable vOP),
+                 TAC.Add vResult (TAC.Variable vOffset) (TAC.Variable prevVar')]
+      return ([], tac,vResult, retType)
 
 addressInto (AST.FromArray addr exprIndex) prevVar = do
   (dir1, tac1, data1', type1') <- addressInto addr prevVar
@@ -374,7 +428,7 @@ addressInto (AST.FromArray addr exprIndex) prevVar = do
       return (dir1++dir2, tac1++tac2++tac3++tacarr, array, T.TPointer $ T.innerType type1)
 
 
-addressInto (AST.FunctionCall addr params) prevVar = do
+addressInto (AST.FunctionCall addr params) prevVar | trace (show addr) True = do
   case addr of
     (AST.Identifier "length") ->do
       (dir, tac, data_, type_) <- expression params
@@ -387,7 +441,11 @@ addressInto (AST.FunctionCall addr params) prevVar = do
       (dir1, tac1, data1, type1) <- expression params
       declared <- lookup id
       if isNothing declared
-        then error $ "\""++show id++"\" is not declared \"."
+        then do 
+          dl <- lookupLabel ("default:"++id)
+          if isNothing $ dl
+            then error $ "Variable \""++id++"\" has not been declaret."
+            else addressInto (AST.FunctionCall (AST.Label "default" id) params) prevVar 
         else do
           let (label,retType) = fromJust declared
           case retType of
@@ -395,10 +453,30 @@ addressInto (AST.FunctionCall addr params) prevVar = do
               var' <- newTemp
               let var = var'++":"++show ret
               return (dir1, tac1++[TAC.Call var label], var, ret)
+            (T.TRef) -> if isNothing prevVar
+              then error $ "Method call does not declare calling object."
+              else do
+              classRef' <- newTemp
+              let classRef = classRef'++":ref"
+              runtimeType' <- newTemp
+              let runtimeType = runtimeType'++":ref"
+              let tac0 = [TAC.Push $ TAC.Variable $ fromJust prevVar, TAC.FromMemory classRef $ TAC.Variable $ fromJust prevVar,TAC.Add runtimeType (TAC.Variable label) (TAC.ImmediateInteger 8), TAC.FromMemory runtimeType (TAC.Variable runtimeType)]
+              let funcType = T.TRuntimeType runtimeType
+              funcAddr' <- newTemp
+              let funcAddr = funcAddr'++":"++(show funcType)
+              resultType' <- newTemp
+              let resultType = resultType'++":ref"
+              result' <- newTemp
+              let result = result'++":"++(show (T.TRuntimeType resultType))
+              let tacCalcReturnType = [TAC.Add resultType (TAC.Variable runtimeType) (TAC.ImmediateInteger 16), TAC.FromMemory resultType (TAC.Variable resultType)]
+              tacExe <- methodCall classRef (TAC.Variable label) funcAddr
+              return (dir1, tac0++tac1++tacCalcReturnType++tacExe++[TAC.VCall result funcAddr],result, T.TRuntimeType resultType)
             otherwise -> error $ "\""++id++"\" is not a function."
     otherwise -> do
-      let tac0 = if isNothing prevVar then [] else [TAC.Push $ TAC.Variable $ fromJust prevVar]
-      (dir1, tac1, data1', type1') <- addressInto addr prevVar
+      classRef' <- newTemp
+      let classRef = classRef'++":ref"
+      let tac0 = if isNothing prevVar then [] else [TAC.Push $ TAC.Variable $ fromJust prevVar, TAC.FromMemory classRef (TAC.Variable $ fromJust prevVar)]
+      (dir1, tac1, data1', type1') <- addressInto addr (Just classRef)
       (tac2, data1, type1) <- solvePointer data1' type1'
       (dirP, tacP, dataP, typeP) <- expression params
       case type1 of
@@ -409,7 +487,15 @@ addressInto (AST.FunctionCall addr params) prevVar = do
           return (dir1++dirP, tac0++tac1++tac2++tacP++[TAC.VCall result data1], result, retType)
 
 addressInto (AST.Label envName attrName) prevVar
-  |isNothing prevVar = error $ envName++":"++attrName++" should not be nothing."
+  |isNothing prevVar = do
+    vt <- lookupLabel $ envName++":"++attrName
+    if isNothing vt
+    then error $ envName++":"++attrName++" is not declared."
+    else do
+      let (labelStr,_) = fromJust vt
+      var' <- newTemp
+      let var = var'++ ":ref"
+      return ([], [TAC.Copy var $TAC.ImmediateReference [] labelStr], var, T.TRef)  
   |otherwise = do
     let prevVar'= fromJust prevVar
     vt <- lookupLabel $ envName++":"++attrName
@@ -422,30 +508,10 @@ addressInto (AST.Label envName attrName) prevVar
         otherwise -> error $ (show decl)++" is not a declaration."
       case type_ of
         T.TFunction r _ ->do
-          vlabelOP' <- newTemp
-          let vlabelOP = vlabelOP'++":ref"
-          multipl' <- newTemp
-          let multipl = multipl'++":int"
-          vIndex' <- newTemp
-          let vIndex = vIndex'++":int"
-          vOffsetArray' <- newTemp
-          let vOffsetArray = vOffsetArray'++":ref"
-          vOffset' <- newTemp
-          let vOffset = vOffset'++":int"
           let retType = T.TPointer type_
           vResult' <- newTemp
           let vResult = vResult'++":"++(show retType)
-          let tac = [TAC.Copy vlabelOP $ TAC.ImmediateReference [] labelStr,
-                     TAC.Add vlabelOP (TAC.Variable vlabelOP) (TAC.ImmediateInteger 16),
-                     TAC.FromMemory vIndex $ TAC.Variable vlabelOP,
-                     TAC.FromMemory vlabelOP $ TAC.Variable prevVar',
-                     TAC.Add vlabelOP (TAC.Variable vlabelOP) (TAC.ImmediateInteger 32),
-                     TAC.FromMemory vOffsetArray $ TAC.Variable vlabelOP,
-                     TAC.Copy vlabelOP $ TAC.Variable vOffsetArray,
-                     TAC.Add vlabelOP (TAC.Variable vlabelOP) $ TAC.ImmediateInteger 8,
-                     TAC.Mul multipl (TAC.Variable vIndex) (TAC.ImmediateInteger 8),
-                     TAC.Add vlabelOP (TAC.Variable vlabelOP) (TAC.Variable multipl),
-                     TAC.Copy vResult $ TAC.Variable vlabelOP]
+          tac <- methodCall prevVar' (TAC.ImmediateReference [] labelStr) vResult
           return ([],tac,vResult,retType) 
         otherwise -> do
           vlabelOP' <- newTemp
@@ -489,6 +555,31 @@ addressInto (AST.Structure addr1 addr2) prevVar= do
   
 
 addressInto adr _  = error $ "Address \""++show adr++"\" can not be compiled into immediate code." 
+
+methodCall:: String -> TAC.Data -> String ->State GenState TAC.TAC
+methodCall refToClass label resultVariable = do
+  vlabelOP' <- newTemp
+  let vlabelOP = vlabelOP'++":ref"
+  multipl' <- newTemp
+  let multipl = multipl'++":int"
+  vIndex' <- newTemp
+  let vIndex = vIndex'++":int"
+  vOffsetArray' <- newTemp
+  let vOffsetArray = vOffsetArray'++":ref"
+  vOffset' <- newTemp
+  let vOffset = vOffset'++":int"
+  let tac = [TAC.Copy vlabelOP label,
+             TAC.Add vlabelOP (TAC.Variable vlabelOP) (TAC.ImmediateInteger 16),
+             TAC.FromMemory vIndex $ TAC.Variable vlabelOP,
+             TAC.Add vlabelOP (TAC.Variable refToClass) (TAC.ImmediateInteger 32),
+             TAC.FromMemory vOffsetArray $ TAC.Variable vlabelOP,
+             TAC.Copy vlabelOP $ TAC.Variable vOffsetArray,
+             TAC.Add vlabelOP (TAC.Variable vlabelOP) $ TAC.ImmediateInteger 8,
+             TAC.Mul multipl (TAC.Variable vIndex) (TAC.ImmediateInteger 8),
+             TAC.Add vlabelOP (TAC.Variable vlabelOP) (TAC.Variable multipl),
+             TAC.Copy resultVariable $ TAC.Variable vlabelOP]
+  return tac
+
 
 -- | Generates three address code for one boolean expression in the AST
 -- (possibly generating code for boolean subexpressions first).

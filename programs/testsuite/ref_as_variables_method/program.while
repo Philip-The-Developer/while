@@ -1,0 +1,24 @@
+labels L(int() a; int() b);
+
+function int recv8(ref self){
+  return 8;
+};
+
+function int recv9(ref self){
+  return 9;
+};
+
+ref label1; label1 := :a;
+ref label2; label2 := :b;
+
+ref class;
+class := toClass L;
+class.label1 := recv9;
+class.label2 := recv8;
+ref obj; obj := obj.env:new();
+
+#output obj.label1();
+#output obj.label2();
+output obj.a();
+output obj.b();
+

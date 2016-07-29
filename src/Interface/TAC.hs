@@ -78,6 +78,7 @@ data Command
   | Solve Variable Data String  -- Solve a Variable with a Label
   | DatLabel Label Int64 Data String -- label index type name
   | DATA Data
+  | Comment String
   deriving (Eq)
 
 -- | Gives a neat output for three address commands.
@@ -129,6 +130,7 @@ instance Show Command where
   show (DATA d) = ".DATA "++ show d
   show (CustomLabel l) = l++":"
   show (Solve var id label) = var ++" = "++show id++" -> "++ label
+  show (Comment s) = "; "++s
 
 getCalculation :: T.MathOp -> T.Type -> Variable -> Data -> Data -> Command
 getCalculation T.Plus T.TDouble v d1 d2 = FAdd v d1 d2

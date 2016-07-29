@@ -85,7 +85,7 @@ tacToGraph :: TAC -> Gr [Command] ()
 tacToGraph tac = graph
   where
     out = if null (fst printing) then snd printing
-          else fst printing : snd printing
+          else fst printing : snd printing 
     printing = foldr foldfunc start tac
     start = ([], [])
 

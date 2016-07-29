@@ -241,12 +241,14 @@ generate' (hd:rst) isDebug = do
       return $
         if | o1 == o2 -> []
            | operandIsImmediateDouble o2 -> force [ mov' o2, mov o1 rax ] -- $ added
-           | operandIsFRegister o1 || operandIsFRegister o2 -> force [ fmov o1 o2 ] -- $ added
+           | operandIsFRegister o1 && operandIsFRegister o2 -> force [ fmov o1 o2 ] -- $ added
            | otherwise -> case mov o1 o2 of
               Just code -> [code]
               Nothing -> force [ mov rax o2 -- $ fixed
                                , mov o1 rax
                                ]
+    TAC.Comment s -> do
+      returnCode [instr $ "; "++s]
 
     TAC.Convert v d -> do -- $ added
       o1 <- variableToOperand v

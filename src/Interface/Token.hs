@@ -164,6 +164,7 @@ data Type
   | TFunction Type Type -- Function declaration (@function char (int;double)@)
   | TypeSequence Type Type -- Sequence of types (@int;char;double;int@)
   | TPointer Type --Pointer to Absolute Address (for intern use only)
+  | TRuntimeType String -- Type can only solve at runetime
   deriving (Eq)
 
 -- $| Display as @int@ or @double@.
@@ -173,6 +174,7 @@ instance Show Type where
   show TDouble = "double"
   show TChar   = "char"
   show TRef    = "ref"
+  show (TRuntimeType i)= "type@"++(i)
   show (TArray t) = show t ++ "[]"
   show (TFunction result signature) = (show result)++"("++(show signature)++")"
   show (TypeSequence t1 t2) = (show t1)++";"++(show t2)

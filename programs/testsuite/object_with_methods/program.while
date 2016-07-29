@@ -21,8 +21,8 @@ function ref newQueue(int buffer){
   ref clazz; clazz := toClass queue;
   ref obj; obj := clazz.env:new();
   int[buffer] obj.queue:data;
-  obj.queue:push := doPush;
-  obj.queue:pop := doPop;
+  clazz.queue:push := doPush;
+  clazz.queue:pop := doPop;
   return obj;
 };
 
