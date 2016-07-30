@@ -59,6 +59,18 @@ extern main_code
     mov QWORD [buffer.remaining], rax
 %endmacro
 
+%macro allociate 1
+  mov rax, %1 
+  multipush rcx, rsi, rdi, r8, r9, r10, r11
+  push rax
+  imul rdi, rax, 8
+  call malloc
+  test rax, rax
+  jz alloc_error
+  pop QWORD [rax]
+  multipop rcx, rsi, rdi, r8, r9, r10, r11
+%endmacro
+
 ; Increment our rsi register (=buffer.current) and decrent the remaining bytes
 %macro inc_rsi 0
     ; Move forward in our buffer
@@ -207,7 +219,790 @@ section .data
     character_formatin: db "%c\n"
     ; Formats a character output
     character_formatout: db "%c"
+;================================================================================
+; object-classs model
+;================================================================================
+
+;           _________________
+;__________/Primitive classes\___________________________________________________
+
+  class_primitive_int:
+    dq handle_class
+    dq class_class
+    dq 1
+    dq class_primitive_int_str
+    dq empty_ref_obj
+    dq empty_int_obj
+    dq empty_ref_obj
+    dq empty_int_obj 
+  class_primitive_int_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 3
+    dq 'i'
+    dq 'n'
+    dq 't'
+
+  empty_int_obj:
+    dq handle_object
+    dq class_primitive_int
+    dq 0
+
+  class_primitive_double:
+    dq handle_class
+    dq class_class
+    dq 1
+    dq class_primitive_double_str
+    dq empty_ref_obj
+    dq empty_int_obj
+    dq empty_ref_obj
+    dq empty_int_obj 
+  class_primitive_double_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 6
+    dq 'd'
+    dq 'o'
+    dq 'u'
+    dq 'b'
+    dq 'l'
+    dq 'e'
+
+  class_primitive_char:
+    dq handle_class
+    dq class_class
+    dq 1
+    dq class_primitive_char_str
+    dq empty_ref_obj
+    dq empty_int_obj
+    dq empty_ref_obj
+    dq empty_int_obj 
+  class_primitive_char_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 4
+    dq 'c'
+    dq 'h'
+    dq 'a'
+    dq 'r'
+
+  class_primitive_ref:
+    dq handle_class
+    dq class_class
+    dq 1
+    dq class_primitive_ref_str
+    dq empty_ref_obj
+    dq empty_int_obj
+    dq empty_ref_obj
+    dq empty_int_obj 
+  class_primitive_ref_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 3
+    dq 'r'
+    dq 'e'
+    dq 'f'
+
+  empty_ref_obj:
+    dq handle_object
+    dq class_primitive_ref
+    dq 0
+
+;                     ______________
+;____________________/function class\___________________________________
+  class_function:
+    dq handle_class
+    dq class_class
+    dq 1
+    dq class_function_str
+    dq empty_ref_obj
+    dq empty_int_obj
+    dq class_function_attribute_labels
+    dq class_function_attribute_offsets
+
+  class_function_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 8
+    dq 'f'
+    dq 'u'
+    dq 'n'
+    dq 'c'
+    dq 't'
+    dq 'i'
+    dq 'o'
+    dq 'n'
+
+  class_function_attribute_labels:
+    dq handle_object
+    dq class_primitive_ref
+    dq 5
+    dq label_env_handle
+    dq label_env_parent
+    dq label_env_length
+    dq label_env_fparameter
+    dq label_env_result
+
+  class_function_attribute_offsets:
+    dq handle_object
+    dq class_primitive_int
+    dq 5
+    dq 0
+    dq 8
+    dq 16
+    dq 24
+    dq 32
+   
+  env_new_function_type:
+    dq handle_object
+    dq class_function
+    dq 1
+    dq env_new_function_type_param
+    dq class_primitive_ref
+
+  env_new_function_type_param:
+    dq handle_object
+    dq class_primitive_ref
+    dq 0
+
+;                     ___________
+;____________________/class class\_______________________________________
+
+  class_class:
+    dq handle_class
+    dq class_class
+    dq 1
+    dq class_class_str
+    dq class_class_function_label
+    dq class_class_function_address
+    dq class_class_attribute_label
+    dq class_class_attribute_offset
+
+  class_class_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 5
+    dq 'c'
+    dq 'l'
+    dq 'a'
+    dq 's'
+    dq 's'
+
+  class_class_function_label:
+    dq handle_object
+    dq class_primitive_ref
+    dq 1
+    dq label_env_new
+
+  class_class_function_address:
+    dq handle_object
+    dq class_primitive_int
+    dq 1
+    dq new_
+
+  class_class_attribute_label:
+    dq handle_object
+    dq class_primitive_ref
+    dq 8
+    dq label_env_handle
+    dq label_env_parent
+    dq label_env_length
+    dq label_env_name
+    dq label_env_funcLabels
+    dq label_env_funcAddress
+    dq label_env_attrLabels
+    dq label_env_attrOffsets
+
+  class_class_attribute_offset:
+    dq handle_object
+    dq class_primitive_int
+    dq 8
+    dq 0
+    dq 8
+    dq 16
+    dq 24
+    dq 32
+    dq 40
+    dq 48
+    dq 56
     
+;                  ___________
+;_________________/label class\___________________
+
+  class_label:
+    dq handle_class
+    dq class_class
+    dq 1
+    dq class_label_str
+    dq empty_ref_obj
+    dq empty_int_obj
+    dq class_label_attribute_labels
+    dq class_label_attribute_offsets
+
+  class_label_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 5
+    dq 'l'
+    dq 'a'
+    dq 'b'
+    dq 'e'
+    dq 'l'
+
+  class_label_attribute_labels:
+    dq handle_object
+    dq class_primitive_ref
+    dq 6
+    dq label_env_handle
+    dq label_env_parent
+    dq label_env_length
+    dq label_env_name
+    dq label_env_type
+    dq label_env_index
+
+  class_label_attribute_offsets:
+    dq handle_object
+    dq class_primitive_int
+    dq 6
+    dq 0
+    dq 8
+    dq 16
+    dq 24
+    dq 32
+    dq 40
+
+;               _____________
+;______________/Message Class\__________________________
+
+  class_message_set:
+    dq handle_class
+    dq class_class
+    dq 1
+    dq class_message_set_str
+    dq empty_ref_obj
+    dq empty_int_obj
+    dq class_message_set_labels
+    dq class_message_set_offsets
+
+  class_message_set_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 3
+    dq 'S'
+    dq 'E'
+    dq 'T'
+
+  class_message_set_labels:
+    dq handle_object
+    dq class_primitive_ref
+    dq 5
+    dq label_env_handle
+    dq label_env_parent
+    dq label_env_length
+    dq label_env_key ; a label
+    dq label_env_value
+
+  class_message_set_offsets:
+    dq handle_object
+    dq class_primitive_int
+    dq 5
+    dq 0
+    dq 8
+    dq 16
+    dq 24
+    dq 32
+
+
+
+  class_message_get:
+    dq handle_class
+    dq class_class
+    dq 1
+    dq class_message_get_str
+    dq empty_ref_obj
+    dq empty_int_obj
+    dq class_message_get_labels
+    dq class_message_get_offsets
+
+  class_message_get_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 3
+    dq 'G'
+    dq 'E'
+    dq 'T'
+
+  class_message_get_labels:
+    dq handle_object
+    dq class_primitive_ref
+    dq 5
+    dq label_env_handle
+    dq label_env_parent
+    dq label_env_length
+    dq label_env_key ; a label
+    dq label_env_value
+
+  class_message_get_offsets:
+    dq handle_object
+    dq class_primitive_int
+    dq 5
+    dq 0
+    dq 8
+    dq 16
+    dq 24
+    dq 32
+
+  class_message_function:
+    dq handle_class
+    dq class_class
+    dq 1
+    dq class_message_function_str
+    dq empty_ref_obj
+    dq empty_int_obj
+    dq class_message_function_labels
+    dq class_message_function_offsets
+
+  class_message_function_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 6
+    dq 'M'
+    dq 'E'
+    dq 'T'
+    dq 'H'
+    dq 'O'
+    dq 'D'
+
+  class_message_function_labels:
+    dq handle_object
+    dq class_primitive_ref
+    dq 7
+    dq label_env_handle
+    dq label_env_parent
+    dq label_env_length
+    dq label_env_key
+    dq label_env_result
+    dq label_env_parameter
+    dq label_env_callee
+
+  class_message_function_offsets:
+    dq handle_object
+    dq class_primitive_int
+    dq 7
+    dq 0
+    dq 8
+    dq 16
+    dq 24
+    dq 32
+    dq 40
+    dq 48
+;               ______
+;______________/labels\_________________________________
+
+  label_env_new:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_new_str
+    dq env_new_function_type
+    dq 0
+
+  label_env_new_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 7
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'n'
+    dq 'e'
+    dq 'w'
+
+  label_env_handle:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_handle_str
+    dq class_primitive_int
+    dq 0
+
+  label_env_handle_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 10
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'h'
+    dq 'a'
+    dq 'n'
+    dq 'd'
+    dq 'l'
+    dq 'e'
+
+  label_env_parent:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_parent_str
+    dq class_primitive_ref
+    dq 1
+  
+  label_env_parent_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 10
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'p'
+    dq 'a'
+    dq 'r'
+    dq 'e'
+    dq 'n'
+    dq 't'
+
+  label_env_length:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_length_str
+    dq class_primitive_int
+    dq 2
+
+  label_env_length_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 10
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'l'
+    dq 'e'
+    dq 'n'
+    dq 'g'
+    dq 't'
+    dq 'h'
+
+  label_env_name:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_name_str
+    dq class_primitive_ref
+    dq 3
+
+  label_env_name_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 8
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'n'
+    dq 'a'
+    dq 'm'
+    dq 'e'
+
+  label_env_funcLabels:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_funcLabels_str
+    dq class_primitive_ref
+    dq 4
+
+  label_env_funcLabels_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 14
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'f'
+    dq 'u'
+    dq 'n'
+    dq 'c'
+    dq 'L'
+    dq 'a'
+    dq 'b'
+    dq 'e'
+    dq 'l'
+    dq 's'
+
+  label_env_funcAddress:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_funcAddress_str
+    dq class_primitive_ref
+    dq 5
+
+  label_env_funcAddress_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 15
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'f'
+    dq 'u'
+    dq 'n'
+    dq 'c'
+    dq 'A'
+    dq 'd'
+    dq 'd'
+    dq 'r'
+    dq 'e'
+    dq 's'
+    dq 's'
+
+  label_env_attrLabels:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_attrLabels_str
+    dq class_primitive_ref
+    dq 6
+
+  label_env_attrLabels_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 14
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'a'
+    dq 't'
+    dq 't'
+    dq 'r'
+    dq 'L'
+    dq 'a'
+    dq 'b'
+    dq 'e'
+    dq 'l'
+    dq 's'
+
+  label_env_attrOffsets:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_attrOffsets_str
+    dq class_primitive_ref
+    dq 7
+
+  label_env_attrOffsets_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 15
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'a'
+    dq 't'
+    dq 't'
+    dq 'r'
+    dq 'O'
+    dq 'f'
+    dq 'f'
+    dq 's'
+    dq 'e'
+    dq 't'
+    dq 's'
+
+  label_env_type:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_type_str
+    dq class_primitive_ref
+    dq 4
+   
+  label_env_type_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 8
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 't'
+    dq 'y'
+    dq 'p'
+    dq 'e'
+
+  label_env_index:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_index_str
+    dq class_primitive_int
+    dq 5
+
+  label_env_index_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 8
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'i'
+    dq 'n'
+    dq 'd'
+    dq 'e'
+    dq 'x'
+ 
+  label_env_key:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_key_str
+    dq class_primitive_ref
+    dq 3
+
+  label_env_key_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 7
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'k'
+    dq 'e'
+    dq 'y'
+    
+  label_env_parameter:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_parameter_str
+    dq class_primitive_ref
+    dq 5
+
+  label_env_parameter_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 13
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'p'
+    dq 'a'
+    dq 'r'
+    dq 'a'
+    dq 'm'
+    dq 'e'
+    dq 't'
+    dq 'e'
+    dq 'r'
+    
+  label_env_callee:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_callee_str
+    dq class_primitive_ref
+    dq 6
+
+  label_env_callee_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 10
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'c'
+    dq 'a'
+    dq 'l'
+    dq 'l'
+    dq 'e'
+    dq 'e'
+
+  label_env_result:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_result_str
+    dq class_primitive_ref
+    dq 4
+
+  label_env_result_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 10
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'r'
+    dq 'e'
+    dq 's'
+    dq 'u'
+    dq 'l'
+    dq 't'
+
+  label_env_value:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_value_str
+    dq class_primitive_ref
+    dq 4
+
+  label_env_value_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 9
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'v'
+    dq 'a'
+    dq 'l'
+    dq 'u'
+    dq 'e'
+
+  label_env_fparameter:
+    dq handle_object
+    dq class_label
+    dq 1
+    dq label_env_fparameter_str
+    dq class_primitive_ref
+    dq 3
+
+  label_env_fparameter_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 14
+    dq 'e'
+    dq 'n'
+    dq 'v'
+    dq ':'
+    dq 'f'
+    dq 'p'
+    dq 'a'
+    dq 'r'
+    dq 'a'
+    dq 'm'
+    dq 'e'
+    dq 't'
+    dq 'e'
+    dq 'r'
+
     ; empty array
     empty_array: dq 0
 
@@ -246,17 +1041,6 @@ section .bss
 ; Default Objects provided by environment
 ;===============================================================================
 
-    env_class_class: resb 40
-    env_label_class: resb 40
-    label_env_parent: resb 32
-    label_env_labels: resb 32
-    label_env_offsets: resb 32
-    label_env_type: resb 32
-    label_env_index: resb 32
-    label_env_name: resb 32
-    label_env_funcLabels: resb 32
-    label_env_funcMap: resb 32
-    label_env_new: resb 32
 
 ;===============================================================================
 ; Environment code
@@ -274,155 +1058,6 @@ main:
     push rbp
     mov rbp, rsp
 
-    ;=================================;
-    ; Start object initialization     ;
-    ;=================================;
-
-      ;label ------------------------------------
-      create_label label_env_parent, type_ref, 0, 'e', 'n', 'v', ':', 'p', 'a', 'r', 'e', 'n', 't'
-      create_label label_env_labels, type_array_ref, 1, 'e', 'n', 'v', ':', 'l', 'a', 'b', 'e', 'l', 's'
-      create_label label_env_offsets, type_array_int, 2, 'e', 'n', 'v', ':', 'o', 'f', 'f', 's', 'e', 't', 's'
-      create_label label_env_type, type_ref, 1, 'e', 'n', 'v', ':', 't', 'y', 'p', 'e'
-      create_label label_env_index, type_int, 2, 'e', 'n', 'v', ':', 'i', 'n', 'd', 'e', 'x'
-      create_label label_env_name, type_array_char, 3, 'e', 'n', 'v', ':', 'n', 'a', 'm', 'e'
-      create_label label_env_funcLabels, type_array_ref, 4, 'e', 'n', 'v', ':', 'f', 'u', 'n', 'c', 'L', 'a', 'b', 'e', 'l', 's'
-      create_label label_env_funcMap, type_array_ref, 5, 'e', 'n', 'v', ':', 'f', 'u', 'n', 'c', 'M', 'a', 'p'
-      create_label label_env_new, type_function_ref_type_ref, 0, 'e', 'n', 'v', ':', 'n', 'e','w'
-      
-      
-      ;class class--------------------------------
-      mov QWORD [env_class_class], env_class_class
-      ;allociate reference array
-      mov rdx, 5
-      multipush rcx, rsi, rdi, r8, r9, r10, r11
-      push rdx
-      imul rdi, rdx, 8
-      add rdi, 8
-      call malloc
-      test rax, rax
-      jz alloc_error
-      pop QWORD [rax]
-      multipop rcx, rsi, rdi, r8, r9, r10, r11
-      mov QWORD [env_class_class+8], rax
-      mov QWORD [rax+8], label_env_parent
-      mov QWORD [rax+16],label_env_labels
-      mov QWORD [rax+24], label_env_offsets
-      mov QWORD [rax+32], label_env_funcLabels
-      mov QWORD [rax+40], label_env_funcMap
-      
-      ;allociate offset array
-      mov rdx, 5
-      multipush rcx, rsi, rdi, r8, r9, r10, r11
-      push rdx
-      imul rdi, rdx, 8
-      add rdi, 8
-      call malloc
-      test rax, rax
-      jz alloc_error
-      pop QWORD [rax]
-      multipop rcx, rsi, rdi, r8, r9, r10, r11
-      mov QWORD [env_class_class+16], rax
-      mov QWORD [rax+8], 0
-      mov QWORD [rax+16], 8
-      mov QWORD [rax+24], 16
-      mov QWORD [rax+32], 24
-      mov QWORD [rax+40], 32
-
-      ;allociate function reference array
-      mov rdx, 1
-      multipush rcx, rsi, rdi, r8, r9, r10, r11
-      push rdx
-      imul rdi, rdx, 8
-      add rdi, 8
-      call malloc
-      test rax, rax
-      jz alloc_error
-      pop QWORD [rax]
-      multipop rcx, rsi, rdi, r8, r9, r10, r11
-      mov QWORD [env_class_class+24], rax
-      mov QWORD [rax+8], label_env_new
-      
-      ;allociate function offset array
-      mov rdx, 1
-      multipush rcx, rsi, rdi, r8, r9, r10, r11
-      push rdx
-      imul rdi, rdx, 8
-      add rdi, 8
-      call malloc
-      test rax, rax
-      jz alloc_error
-      pop QWORD [rax]
-      multipop rcx, rsi, rdi, r8, r9, r10, r11
-      mov QWORD [env_class_class+32], rax
-      mov QWORD [rax+8], new_
-
-      ;label class--------------------------------
-      mov QWORD [env_label_class], env_class_class
-      ;allociate reference array
-      mov rdx, 4
-      multipush rcx, rsi, rdi, r8, r9, r10, r11
-      push rdx
-      imul rdi, rdx, 8
-      add rdi, 8
-      call malloc
-      test rax, rax
-      jz alloc_error
-      pop QWORD [rax]
-      multipop rcx, rsi, rdi, r8, r9, r10, r11
-      mov QWORD [env_label_class+8], rax
-      mov QWORD [rax+8], label_env_parent
-      mov QWORD [rax+16],label_env_type
-      mov QWORD [rax+24], label_env_index
-      mov QWORD [rax+32], label_env_name
-      
-      ;allociate offset array
-      mov rdx, 4
-      multipush rcx, rsi, rdi, r8, r9, r10, r11
-      push rdx
-      imul rdi, rdx, 8
-      add rdi, 8
-      call malloc
-      test rax, rax
-      jz alloc_error
-      pop QWORD [rax]
-      multipop rcx, rsi, rdi, r8, r9, r10, r11
-      mov QWORD [env_label_class+16], rax
-      mov QWORD [rax+8], 0
-      mov QWORD [rax+16], 8
-      mov QWORD [rax+24], 16
-      mov QWORD [rax+32], 24
-
-      ;allociate function reference array
-      mov rdx, 1
-      multipush rcx, rsi, rdi, r8, r9, r10, r11
-      push rdx
-      imul rdi, rdx, 8
-      add rdi, 8
-      call malloc
-      test rax, rax
-      jz alloc_error
-      pop QWORD [rax]
-      multipop rcx, rsi, rdi, r8, r9, r10, r11
-      mov QWORD [env_label_class+24], rax
-      mov QWORD [rax+8], label_env_new
-      
-      ;allociate function offset array
-      mov rdx, 1
-      multipush rcx, rsi, rdi, r8, r9, r10, r11
-      push rdx
-      imul rdi, rdx, 8
-      add rdi, 8
-      call malloc
-      test rax, rax
-      jz alloc_error
-      pop QWORD [rax]
-      multipop rcx, rsi, rdi, r8, r9, r10, r11
-      mov QWORD [env_label_class+32], rax
-      mov QWORD [rax+8], new_
-
-    ;=================================;
-    ; End object initialization       ;
-    ;=================================;
     ;execute main code
     jmp main_code
 
@@ -966,50 +1601,6 @@ new_:
 
   ;              _____________
   ;_____________/function code\________________________________________________
-  ; (1) check if rbx is a class
-  cmp QWORD [rbx], env_class_class
-  jne return_error
-  ; (2) get label array
-  mov r8, [rbx+8]
-  ; (3) calculate size of object
-  ;mov r9, [r8]
-  ;imul r9, r9, 8
-  ;add r9, 8
-  ; (4) allociate memory
-  mov rdx, [r8]
-  multipush rcx, rsi, rdi, r8, r9, r10, r11
-  push rdx
-  imul rdi, rdx, 8
-  add rdi, 8
-  call malloc
-  test rax, rax
-  jz alloc_error
-  pop QWORD [rax]
-  multipop rcx, rsi, rdi, r8, r9, r10, r11
-  mov QWORD [rax], rbx
-  ; (5) set default values
-  ;rax is the object
-  ;r10 is the counting variable
-  ;r8 is the Array of labels
-  mov r10, 8 ;counting variable
-  mov r9, [r8]
-  imul r9, r9, 8
-  .loop:
-    cmp r10, r9
-    je .end_loop
-    add r8, 8
-    mov r11, [r8]
-    cmp QWORD [r11], 1
-    je .array
-    mov QWORD [rax+r10], 0
-    add r10, 8
-    jmp .loop
-    .array:
-    mov QWORD [rax+r10], empty_array
-    add r10, 8
-    jmp .loop
-  .end_loop:
-  mov rbx, rax
   ;            ___________
   ;___________/return code\_____________________________________________________
   .return_sequence:
@@ -1031,4 +1622,222 @@ new_:
   pop rsp
   ret
   
+;===============================================================================
+; Handle a message for a class
+;===============================================================================
+handle_class:
+  mov rax, rsp
+  multipush rbx, rcx, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15
+  mov r12, [rax+16] ; r12 = object
+  mov r14, [rax+8]  ; r14 = message
+  mov r15, [r14 +8] ; rdx = class of message
+  cmp QWORD [rdx], class_message_set
+  je .set
+  cmp QWORD [rdx], class_message_get
+  je .get
+  cmp QWORD [rdx], class_message_function
+  je handle_object.function
 
+;                   ___
+;__________________(set\_______________________________________________________
+  .set:
+    mov rbx, [r14+24]; rbx = key:label
+    mov rcx, [rbx+32]; rcx = type of label
+    cmp rcx, class_function
+    jne .setAttribute
+    mov r10, [r12+32]; r10 = array of Labels
+    mov r11, [r12+40]; r11 = array of functions 
+    mov rcx, [rbx+40]; rcx = index of label
+    cmp QWORD[r10+16], rcx
+    jle index_error
+    cmp QWORD[r10+rcx*8], rbx
+    je .returnSet
+      ;TODO search for Label
+      .returnSet:
+        mov rax, [r14+32] ; rax = value object
+        mov rbx, [rax+24] ; rbx = value
+        mov QWORD[r11+24+rcx*8], rbx
+        jmp .returnSeq
+    
+  .setAttribute:
+    mov r10, [r12+48]; r10 = array of Labels
+    mov r11, [r12+56]; r11 = array of offsets 
+    mov rcx, [rbx+40]; rcx = index of label
+    cmp QWORD[r10+16], rcx
+    jle index_error
+    cmp QWORD[r10+rcx*8], rbx
+    je .attrreturnSet
+      ;TODO search for Label
+      .attrreturnSet:
+        mov rax, [r14+32] ; rax = value object
+        mov rbx, [rax+24] ; rbx = value
+        mov QWORD[r11+24+rcx*8], rbx
+        jmp .returnSeq
+;                  ___
+;_________________/get\________________________________________________________
+  .get:
+    mov rbx, [r14+24]; rbx = key:label
+    mov rcx, [rbx+32]; rcx = type of label
+    cmp rcx, class_function
+    jne .getAttribute
+    mov r10, [r12+32]; r10 = array of labels
+    mov r11, [r12+40]; r11 = array of functions
+    mov rcx, [rbx+40]; rcx = index of label
+    cmp QWORD[r10+16], rcx
+    jle index_error
+    cmp QWORD[r10+24+rcx*8], rbx
+    je .returnGet
+      ;TODO search for Label
+      .returnGet:
+        mov rbx, [r11+24+rcx*8] ; rbx = value
+        ;--- create object
+        allociate 4
+        mov QWORD [rax], handle_object
+        mov QWORD [rax+8], class_primitive_int
+        mov QWORD [rax+16], 1
+        mov QWORD [rax+24], rbx
+        ;---
+        mov QWORD[r14+32], rax
+        jmp .returnSeq
+
+  .getAttribute:
+    mov r10, [r12+48]; r10 = array of labels
+    mov r11, [r12+56]; r11 = array of offsets
+    mov rcx, [rbx+40]; rcx = index of label
+    cmp QWORD[r10+16], rcx
+    jle index_error
+    cmp QWORD[r10+24+rcx*8], rbx
+    je .attrreturnGet
+      ;TODO search for Label
+      .attrreturnGet:
+        mov rbx, [r11+24+rcx*8] ; rbx = value
+        ;--- create object
+        allociate 4
+        mov QWORD [rax], handle_object
+        mov QWORD [rax+8], class_primitive_int
+        mov QWORD [rax+16], 1
+        mov QWORD [rax+24], rbx
+        ;---
+        mov QWORD[r14+32], rax
+        jmp .returnSeq
+
+  .returnSeq:
+  multipop rbx, rcx, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15
+  ret
+
+;================================================================================
+; handle object
+;================================================================================
+handle_object:
+  mov rax, rsp
+  multipush rbx, rcx, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15
+  mov r14, [rax+16] ; r14 = object
+  mov r15, [rax+8]  ; r15 = message
+  mov rdx, [r15 +8] ; rdx = class of message
+  cmp QWORD [rdx], class_message_set
+  je .set
+  cmp QWORD [rdx], class_message_get
+  je .get
+  cmp QWORD [rdx], class_message_function
+  je .function
+;                      ___
+;_____________________/get\_______________________________________________________
+  .set:
+    mov r13, [r15+24]; r13 = key:label
+    mov r8, [r14+8] ; r8 = class of object
+    mov r9, [r8]; r9 = handle method of class
+    ;-- create get-message
+    allociate 5
+    mov QWORD [rax], handle_object
+    mov QWORD [rax+8], class_message_get
+    mov QWORD [rax+16], 1
+    mov QWORD [rax+24], r13
+    ;--
+    push QWORD r8
+    push QWORD rax
+    call r9
+    pop rax ; rax = getMessage
+    add rsp, 8
+    mov r8, [rax+32]; r8 = return object
+    mov r9, [r8+24]; r9 = offset
+    mov r12, [r15+32]; r12 = value object
+    mov QWORD [r14+r9], r12
+    jmp .returnSeq
+;                      ___
+;_____________________/set\_______________________________________________________
+  .get:
+    mov r13, [r15+24]; r13 = key:label
+    mov r8, [r14+8] ; r8 = class of object
+    mov r9, [r8]; r9 = handle method of class
+    ;-- create get-message
+    allociate 5
+    mov QWORD [rax], handle_object
+    mov QWORD [rax+8], class_message_get
+    mov QWORD [rax+16], 1
+    mov QWORD [rax+24], r13
+    ;--
+    push QWORD r8
+    push QWORD rax
+    call r9
+    pop rax ; rax = getMessage
+    add rsp, 8
+    mov r8, [rax+32]; r8 = return object
+    mov r9, [r8+24]; r9 = offset
+    mov r12, [r14+r9]; r12 = value object
+    mov QWORD [r15+32], r12
+    jmp .returnSeq
+;                      ________
+;_____________________/function\__________________________________________________
+  .function:
+    mov r13, [r15+24]; r13 = key:label
+    mov r8, [r14+8] ; r8 = class of object
+    mov r9, [r8]; r9 = handle method of class
+    ;-- create get-message
+    allociate 5
+    mov QWORD [rax], handle_object
+    mov QWORD [rax+8], class_message_get
+    mov QWORD [rax+16], 1
+    mov QWORD [rax+24], r13
+    ;--
+    push QWORD r8
+    push QWORD rax
+    call r9
+    pop rax ; rax = getMessage
+    add rsp, 8
+    mov r8, [rax+32]; r8 = return object
+    mov r9, [r8+24]; r9 = address
+
+    mov r8, [r15+40]; r8 = parameter array
+    push r14
+    mov r11, [r8+16]; r11 = parameter count
+    imul r10, r11, 8
+    add r10, r8; r10 = last parameter address
+    mov rbx, [r8+24]; rbx = current parameter
+    .parameter_loop:
+      cmp rbx, r10
+      jg .end_parameter_loop
+      mov rcx, [rbx]; rcx = current parameter object
+      push QWORD [rcx+24]
+      add rbx, 8
+      jmp .parameter_loop
+    .end_parameter_loop:
+    call r9; call method/ result is in rax
+    imul r11, r11, 8
+    add rsp, r11; pop parameter
+    add rsp, 8; pop self reference
+    mov rbx, rax; rbx = result of functioncall
+    mov r8, [r13+32]; r8 = type /hopfull it is a class_function TODO
+    mov r9, [r8+56]; r9 = return type
+    ;-- create object
+    allociate 4
+    mov QWORD [rax], handle_object
+    mov QWORD [rax+8], r9
+    mov QWORD [rax+16], 1
+    mov QWORD [rax+24], rbx
+    ;--
+    mov QWORD[r15+32], rax
+    jmp .returnSeq   
+    
+  .returnSeq:
+  multipop rbx, rcx, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15
+  ret
