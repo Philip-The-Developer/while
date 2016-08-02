@@ -79,6 +79,14 @@ data Command
   | DatLabel Label Int64 Data String -- label index type name
   | DATA Data
   | Comment String
+  | Send Data Data         -- send message object
+  | SET Variable Data Data          -- {set label value}
+  | GET Variable Data               -- {set label}
+  | SETARRAY Variable Data Data     -- (setarray index value)
+  | GETARRAY Variable Data          -- (getarray index)
+  | METHOD Variable Data [Data] --{mehode label [Parameter]}
+  | GETResult Variable Variable Variable -- variable type-variable message
+  | METHODResult Variable Variable Variable -- variable type-variable message
   deriving (Eq)
 
 -- | Gives a neat output for three address commands.
@@ -130,6 +138,14 @@ instance Show Command where
   show (DATA d) = ".DATA "++ show d
   show (CustomLabel l) = l++":"
   show (Solve var id label) = var ++" = "++show id++" -> "++ label
+  show (SET var label value) = var ++ " = .SET ("++ show label ++ ", "++show value++")"
+  show (GET var label) = var++" = .GET ("++show label++")"
+  show (SETARRAY var index value) = var ++" = .SET_ARRAY ("++show index++", "++show value++")"
+  show (GETARRAY var index) = var ++" = .GET_ARRAY ("++show index++")"
+  show (METHOD var label param) = var ++ " = .METHOD ("++show label++", "++show param++")"
+  show (Send message obj) = show message++" ==> "++ show obj
+  show (GETResult var t message) = var ++" = ("++show t++") .READ_ANSWER "++message
+  show (METHODResult var t message) = var ++ " = ("++show t++") .READ_ANSWER "++message
   show (Comment s) = "; "++s
 
 getCalculation :: T.MathOp -> T.Type -> Variable -> Data -> Data -> Command
@@ -286,6 +302,13 @@ getDefVariables (FDiv v _ _) = [v]     -- $ added
 getDefVariables (FNeg v _) = [v]       -- $ added
 getDefVariables (Solve v _ _) = [v]
 getDefVariables (FromMemory v _) = [v]
+getDefVariables (GET v _) = [v]
+getDefVariables (SET v _ _)= [v]
+getDefVariables (GETARRAY v _) = [v]
+getDefVariables (SETARRAY v _ _) = [v]
+getDefVariables (METHOD v _ _) = [v]
+getDefVariables (GETResult v t _) = [v,t]
+getDefVariables (METHODResult v t _)= [v,t]
 getDefVariables _ = []
 
 getUseVariables :: Command -> [Variable]
@@ -321,6 +344,14 @@ getUseVariables (GotoCond2 _ _ d1 d2) = variablesFromData [d1, d2]
 getUseVariables (Solve _ v _) = variablesFromData [v]
 getUseVariables (FromMemory _ d) = variablesFromData [d]
 getUseVariables (ToMemory d1 d2) = variablesFromData [d1, d2]
+getUseVariables (GET _ d1) = variablesFromData [d1]
+getUseVariables (SET _ d1 d2) = variablesFromData [d1, d2]
+getUseVariables (GETARRAY _ d1) = variablesFromData [d1]
+getUseVariables (SETARRAY _ d1 d2) = variablesFromData [d1, d2]
+getUseVariables (METHOD _ d1 d2) = variablesFromData ([d1] ++ d2)
+getUseVariables (Send msg obj) = variablesFromData [msg, obj]
+getUseVariables (GETResult _ _ msg) = [msg]
+getUseVariables (METHODResult _ _ msg) = [msg]
 getUseVariables _ = []
 
 getVariables :: Command -> [Variable]
@@ -438,6 +469,30 @@ renameVariables (FromMemory v d) vI vO =
 renameVariables (ToMemory d1 d2) vI vO =
   let [d1', d2'] = substitute [d1, d2] vI vO
   in ToMemory d1' d2'
+renameVariables (GET v1 d1) vI vO =
+  let [Variable v1', d1'] = substitute [Variable v1, d1] vI vO
+  in GET v1' d1'
+renameVariables (SET v1 d1 d2) vI vO =
+  let [Variable v1', d1',d2'] = substitute [Variable v1, d1, d2] vI vO
+  in SET v1' d1' d2'
+renameVariables (GETARRAY v1 d1) vI vO = 
+  let [Variable v1', d1'] = substitute [Variable v1, d1] vI vO
+  in GETARRAY v1' d1'
+renameVariables (SETARRAY v1 d1 d2) vI vO =
+  let [Variable v1', d1', d2'] = substitute [Variable v1, d1, d2] vI vO
+  in SETARRAY v1' d1' d2'
+renameVariables (METHOD v1 d1 d2) vI vO =
+  let (Variable v1':d1':d2') = substitute ([Variable v1, d1]++d2) vI vO
+  in METHOD v1' d1' d2'
+renameVariables (Send d1 d2) vI vO =
+  let [d1', d2'] = substitute [d1,d2] vI vO
+  in Send d1' d2'
+renameVariables (GETResult v1 v2 v3) vI vO =
+  let [Variable v1', Variable v2', Variable v3'] = substitute [Variable v1, Variable v2,Variable v3] vI vO
+  in GETResult v1' v2' v3'
+renameVariables (METHODResult v1 v2 v3) vI vO =
+  let [Variable v1', Variable v2', Variable v3'] = substitute [Variable v1, Variable v2, Variable v3] vI vO
+  in METHODResult v1' v2' v3'
 renameVariables c _ _ = c
 
 substitute :: [Data] -> Variable -> Variable -> [Data]

@@ -267,18 +267,16 @@ generate' (hd:rst) isDebug = do
     TAC.ArrayAlloc v d -> do -- $ added
       o1 <- variableToOperand v
       o2 <- dataToOperand d
-      let (pre, o2') = if operandIsImmediate o2 then ([mov rdx o2], rdx) else ([], o2)
+      let parentClass = getClassFor (TAC.Variable v)
+      let (pre, o2') = if operandIsImmediate o2 then ([mov rax o2], rax) else ([], o2)
       returnCode $ pre ++ 
-                 [instr "multipush rcx, rsi, rdi, r8, r9, r10, r11"
-                 , push o2'
-                 , imul' rdi o2' (Immediate $ ImmediateInt 8)
-                 , add rdi (Immediate $ ImmediateInt 8)
-                 , instr "call malloc"
-                 , instr "test rax, rax"
-                 , instr "jz alloc_error"
-                 , instr "pop QWORD [rax]"
-                 , instr "multipop rcx, rsi, rdi, r8, r9, r10, r11"
-                 , mov o1 rax]
+                     [instr $ "push "++toCode o2'++"\n"++
+                              "add "++toCode o2'++", 3\n"++
+                              "allociate "++toCode o2'++"\n"++
+                              "mov QWORD [rax], handle_object\n"++
+                              "mov QWORD [rax+8], "++parentClass++"\n"++
+                              "pop QWORD [rax+16]\n "++
+                              "mov "++toCode o1++", rax"]
 
     TAC.ArrayDealloc v -> do -- $ added
       o <- variableToOperand v
@@ -739,7 +737,7 @@ generate' (hd:rst) isDebug = do
       o1 <- variableToOperand v
       returnCode $ if l == "length_" then
           [pop rax
-          , instr $ "mov rax, [rax]"
+          , instr $ "mov rax, [rax+16]"
           , mov o1 rax]
         else
           [instr $ "call " ++ l
@@ -761,11 +759,15 @@ generate' (hd:rst) isDebug = do
     TAC.DatLabel label index _type name -> 
       returnCode[instr $        
         label++":\n"++
-        "dq env_label_class\n"++
+        "dq handle_object\n"++
+        "dq class_label\n"++
+        "dq 1\n"++
+        "dq "++label++"_str\n"++
         "dq "++(show _type)++"\n"++
         "dq "++(show index)++"\n"++
-        "dq "++label++"_namearray\n"++
-        label++"_namearray:\n"++
+        label++"_str:\n"++
+        "dq handle_object\n"++
+        "dq class_primitive_char \n"++
         "dq "++(show (length name))++"\n"++
         (toArraySequence name)]
 
@@ -778,11 +780,152 @@ generate' (hd:rst) isDebug = do
       o2 <- dataToOperand varFrom
       returnCode [Just (Solve o1 o2 label)]
 
+    TAC.GET v d -> do
+      o1 <- variableToOperand v
+      o2 <- dataToOperand d
+      returnCode [instr $
+        "allociate 5\n"++
+        "mov QWORD [rax], handle_object\n"++
+        "mov QWORD [rax+8], class_message_get\n"++
+        "mov QWORD [rax+16], 1\n"++
+        "mov QWORD [rax+24], "++toCode o2++"\n"++
+        "mov "++toCode o1++", rax"]
+
+    TAC.SET v d1 d2 -> do
+      o1 <- variableToOperand v
+      o2 <- dataToOperand d1
+      o3 <- dataToOperand d2
+      let parentClass = getClassFor d2
+      temp <- getTemporary      
+      returnCode [instr $
+        "allociate 4\n"++
+        "mov QWORD [rax], handle_object\n"++
+        "mov QWORD [rax+8], "++parentClass++"\n"++
+        "mov QWORD [rax+16], 1\n"++
+        "mov QWORD [rax+24], "++toCode o3++"\n"++
+        "mov "++toCode temp++", rax\n"++
+        "allociate 5\n"++
+        "mov QWORD [rax], handle_object\n"++
+        "mov QWORD [rax+8], class_message_set\n"++
+        "mov QWORD [rax+16], 1\n"++
+        "mov QWORD [rax+24], "++toCode o2++"\n"++
+        "mov QWORD [rax+32], "++toCode temp++"\n"++
+        "mov "++toCode o1++", rax"]
+    
+    TAC.GETARRAY v d -> do
+      o1 <- variableToOperand v
+      o2 <- dataToOperand d
+      returnCode [instr $
+        "allociate 5\n"++
+        "mov QWORD [rax], handle_object\n"++
+        "mov QWORD [rax+8], class_message_get_array\n"++
+        "mov QWORD [rax+16], 1\n"++
+        "mov QWORD [rax+24], "++toCode o2++"\n"++
+        "mov "++toCode o1++", rax"]
+
+    TAC.SETARRAY v d1 d2 -> do
+      o1 <- variableToOperand v
+      o2 <- dataToOperand d1
+      o3 <- dataToOperand d2
+      let parentClass = getClassFor d2
+      temp <- getTemporary      
+      returnCode [instr $
+        "allociate 4\n"++
+        "mov QWORD [rax], handle_object\n"++
+        "mov QWORD [rax+8], "++parentClass++"\n"++
+        "mov QWORD [rax+16], 1\n"++
+        "mov QWORD [rax+24], "++toCode o3++"\n"++
+        "mov "++toCode temp++", rax\n"++
+        "allociate 5\n"++
+        "mov QWORD [rax], handle_object\n"++
+        "mov QWORD [rax+8], class_message_set_array\n"++
+        "mov QWORD [rax+16], 1\n"++
+        "mov QWORD [rax+24], "++toCode o2++"\n"++
+        "mov QWORD [rax+32], "++toCode temp++"\n"++
+        "mov "++toCode o1++", rax"]
+
+    TAC.METHOD v1 d1 param -> do
+      o1 <- variableToOperand v1
+      o2 <- dataToOperand d1
+      temp <- getTemporary
+      paramStr <- createParameter 24 temp param
+      let paramArray =  "allociate "++show(3 + (length param))++"\n"++
+                        "mov QWORD [rax], handle_object \n"++
+                        "mov QWORD [rax+8], class_primitive_ref\n"++
+                        "mov QWORD [rax +16], "++show(length param)++"\n"++
+                        "mov "++toCode temp++", rax\n"++
+                        paramStr
+      let methodMessage = "allociate 6\n"++
+                          "mov QWORD [rax], handle_object\n"++
+                          "mov QWORD [rax+8], class_message_function\n"++
+                          "mov QWORD [rax+16], 1\n"++
+                          "mov QWORD [rax+24], "++toCode o2++"\n"++
+                          "mov QWORD [rax+32], 0\n"++
+                          "mov QWORD [rax+40], "++toCode temp
+      returnCode [instr $ paramArray++methodMessage, instr $"mov "++toCode o1++", rax"]
+
+    TAC.Send msg obj -> do
+      o1 <- dataToOperand msg
+      o2 <- dataToOperand obj
+      let (pre, o2') = if not $ operandIsRegister o2 then ([mov rax o2], rax) else ([], o2)
+      temp <- getTemporary
+      returnCode $ pre++[instr $ "mov "++toCode temp++", ["++toCode o2'++"]\n"++
+                          "push "++toCode o2++"\n"++
+                          "push "++toCode o1++"\n"++
+                          "call "++toCode temp]
+
+    TAC.GETResult v vt msg -> do
+      o1 <- variableToOperand v
+      o2 <- variableToOperand msg
+      ot <- variableToOperand vt
+      let (pre, o2') = if not $ operandIsRegister o2 then ([mov rax o2], rax) else ([], o2)
+      temp <- getTemporary
+      returnCode $ pre ++ [instr $ "mov "++toCode temp++", ["++toCode o2'++"+32]\n"++
+                         "mov "++toCode o1++", ["++toCode temp++"+24]\n"++
+                         "mov "++toCode ot++", ["++toCode temp++"+8]"]
+
+    TAC.METHODResult v vt msg -> do
+      o1 <- variableToOperand v
+      o2 <- variableToOperand msg
+      ot <- variableToOperand vt
+      let (pre, o2') = if not $ operandIsRegister o2 then ([mov rax o2], rax) else ([], o2)
+      temp <- getTemporary
+      returnCode $ pre++ [instr $ "mov "++toCode temp++", ["++toCode o2'++"+32]\n"++
+                          "mov "++toCode o1++", ["++toCode temp++"+24]\n"++
+                          "mov "++toCode ot++", ["++toCode temp++"+8]"]
+
   (m, high, liveData, line) <- get
   put (m, high, liveData, line+1)
   rest <- generate' rst isDebug
   return $ ("; " ++ show hd){-:(debug hd line)-}:(fmap toCode code ++ rest)
   where
+
+    createParameter:: Int->Location -> [TAC.Data]->State StateContent (String)
+    createParameter _ _ [] = return []
+    createParameter n o (p:r) = do
+      op <- dataToOperand p
+      rest <- createParameter (n+8) o r
+      return $ "allociate 4\n"++
+               "mov QWORD [rax], handle_object\n"++
+               "mov QWORD [rax+8], "++getClassFor p++"\n"++
+               "mov QWORD [rax+16], 1\n"++
+               "mov QWORD [rax+24], "++toCode op++"\n"++
+               "mov QWORD ["++toCode o++"+"++show n++"], rax\n"++
+               rest
+    
+    getClassFor:: TAC.Data -> String      
+    getClassFor d2 = case d2 of
+        TAC.ImmediateInteger _ -> "class_primitive_int"
+        TAC.ImmediateChar _ -> "class_primitive_char"
+        TAC.ImmediateDouble _ -> "class_primitive_double"
+        TAC.ImmediateReference _ _ -> "class_primitive_ref"
+        TAC.Variable var ->if | endswith ":int" var -> "class_primitive_int"
+                              | endswith ":char" var -> "class_primitive_char"
+                              | endswith ":double" var -> "class_primitive_double"
+                              | otherwise -> "class_primitive_ref"
+ 
+
+  
     rax, rdx, rdi, xmm0 :: Operand
     rax = (Location (Register RAX))
     rdx = (Location (Register RDX))

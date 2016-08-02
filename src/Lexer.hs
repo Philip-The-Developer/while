@@ -94,6 +94,8 @@ process ('#':source) pos = process source'' (nextLine pos)
 -- "update" the position for the remaining source incrementing the column by 2
 process (':':'=':source) pos =
   PosToken pos Assign : process source (incrColumn pos 2)
+process ('<':'-':source) pos =
+  PosToken pos Arrow : process source (incrColumn pos 2)
 
 -- Relational operators
 process ('<':'=':source) pos =

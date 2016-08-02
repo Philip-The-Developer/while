@@ -74,7 +74,8 @@ data Token
   | Function               -- $ Function
   | LabelSpec              --   Label environment
   | Token Prelude.Char             -- ^ Single char tokens – used for parentheses, braces, …
-  | Type Type              -- $ Base types (@int@ and @float@)  
+  | Type Type              -- $ Base types (@int@ and @float@) 
+  | Arrow                  -- A arrow @<-@ 
   deriving (Eq)
 
 -- | Display tokens in the form @\<token[,attribute]\>@.
@@ -89,6 +90,7 @@ instance Show Token where
   show (RelOp ro)     = "<relop," ++ show ro ++ ">"
   show (MathOp mo)    = "<mathop," ++ show mo ++ ">"
   show Assign         = "<:=>"
+  show (Arrow)        = "<<->"
   show NameSpace      = "<:>"
   show Dot            = "<.>"
   show ToClass        = "<toClass>"
@@ -181,6 +183,10 @@ instance Show Type where
   show (TPointer t) = (show t)++"*"
 
 getLabel:: Type -> String
+getLabel TInt = "class_primitive_int"
+getLabel TDouble = "class_primitive_double"
+getLabel TChar = "class_primitive_char"
+getLabel TRef = "class_primitive_ref"
 getLabel t = "type_"++(getLabelImpl t)
 getLabelImpl:: Type -> String
 getLabelImpl TInt = "int"

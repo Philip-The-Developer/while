@@ -16,8 +16,8 @@ global buffer.current
 global buffer.remaining
 global buffer
 global exit_program
-global env_class_class
-global env_label_class
+global label_env_handle
+global label_env_length
 global label_env_parent
 global label_env_labels
 global label_env_offsets
@@ -25,15 +25,22 @@ global label_env_type
 global label_env_index
 global label_env_name
 global label_env_new
+global class_class_str
+global class_primitive_int
+global class_primitive_double
+global class_primitive_char
+global class_primitive_ref
+global class_class
+global class_label
+global class_function
+global class_message_get
+global class_message_set
+global class_message_get_array
+global class_message_set_array
+global class_message_function
+global handle_object
+global handle_class
 global type_void
-global type_int
-global type_double
-global type_char
-global type_ref  
-global type_array_int
-global type_array_double
-global type_array_char
-global type_array_ref
 global eof
 global main
 
@@ -576,14 +583,13 @@ section .data
   class_message_function_labels:
     dq handle_object
     dq class_primitive_ref
-    dq 7
+    dq 6
     dq label_env_handle
     dq label_env_parent
     dq label_env_length
     dq label_env_key
     dq label_env_result
     dq label_env_parameter
-    dq label_env_callee
 
   class_message_function_offsets:
     dq handle_object
@@ -596,6 +602,96 @@ section .data
     dq 32
     dq 40
     dq 48
+
+  class_message_get_array:
+    dq handle_class
+    dq class_class
+    dq 1
+    dq class_message_get_array_str
+    dq empty_ref_obj
+    dq empty_int_obj
+    dq class_message_get_array_labels
+    dq class_message_get_array_offsets
+  
+  class_message_get_array_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 10 
+    dq 'F'
+    dq 'R'
+    dq 'O'
+    dq 'M'
+    dq '_'
+    dq 'A'
+    dq 'R'
+    dq 'R'
+    dq 'A'
+    dq 'Y'
+
+  class_message_get_array_labels:
+    dq handle_object
+    dq class_primitive_ref
+    dq 5
+    dq label_env_handle
+    dq label_env_parent
+    dq label_env_length
+    dq label_env_key ; a label
+    dq label_env_value
+
+  class_message_get_array_offsets:
+    dq handle_object
+    dq class_primitive_int
+    dq 5
+    dq 0
+    dq 8
+    dq 16
+    dq 24
+    dq 32
+
+  class_message_set_array:
+    dq handle_class
+    dq class_class
+    dq 1
+    dq class_message_set_array_str
+    dq empty_ref_obj
+    dq empty_int_obj
+    dq class_message_set_array_labels
+    dq class_message_set_array_offsets
+  
+  class_message_set_array_str:
+    dq handle_object
+    dq class_primitive_char
+    dq 8 
+    dq 'T'
+    dq 'O'
+    dq '_'
+    dq 'A'
+    dq 'R'
+    dq 'R'
+    dq 'A'
+    dq 'Y'
+
+  class_message_set_array_labels:
+    dq handle_object
+    dq class_primitive_ref
+    dq 5
+    dq label_env_handle
+    dq label_env_parent
+    dq label_env_length
+    dq label_env_key ; a label
+    dq label_env_value
+
+  class_message_set_array_offsets:
+    dq handle_object
+    dq class_primitive_int
+    dq 5
+    dq 0
+    dq 8
+    dq 16
+    dq 24
+    dq 32
+  
+
 ;               ______
 ;______________/labels\_________________________________
 
@@ -1601,6 +1697,13 @@ new_:
 
   ;              _____________
   ;_____________/function code\________________________________________________
+  mov r8, [rbx+48]
+  mov r9, [r8+16]
+  allociate r9
+  mov QWORD [rax], handle_object
+  mov QWORD [rax+8], rbx
+  mov QWORD [rax+16], 1
+  mov rbx, rax
   ;            ___________
   ;___________/return code\_____________________________________________________
   .return_sequence:
@@ -1628,25 +1731,26 @@ new_:
 handle_class:
   mov rax, rsp
   multipush rbx, rcx, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15
-  mov r12, [rax+16] ; r12 = object
-  mov r14, [rax+8]  ; r14 = message
-  mov r15, [r14 +8] ; rdx = class of message
-  cmp QWORD [rdx], class_message_set
+  mov r14, [rax+16] ; r14 = object
+  mov r15, [rax+8]  ; r15 = message
+  mov rdx, [r15 +8] ; rdx = class of message
+  cmp QWORD rdx, class_message_set
   je .set
-  cmp QWORD [rdx], class_message_get
+  cmp QWORD rdx, class_message_get
   je .get
-  cmp QWORD [rdx], class_message_function
+  cmp QWORD rdx, class_message_function
   je handle_object.function
 
 ;                   ___
 ;__________________(set\_______________________________________________________
   .set:
-    mov rbx, [r14+24]; rbx = key:label
+    mov rbx, [r15+24]; rbx = key:label
     mov rcx, [rbx+32]; rcx = type of label
-    cmp rcx, class_function
+    mov r10, [rcx+8]; r10 = class of label
+    cmp r10, class_function
     jne .setAttribute
-    mov r10, [r12+32]; r10 = array of Labels
-    mov r11, [r12+40]; r11 = array of functions 
+    mov r10, [r14+32]; r10 = array of Labels
+    mov r11, [r14+40]; r11 = array of functions 
     mov rcx, [rbx+40]; rcx = index of label
     cmp QWORD[r10+16], rcx
     jle index_error
@@ -1654,14 +1758,14 @@ handle_class:
     je .returnSet
       ;TODO search for Label
       .returnSet:
-        mov rax, [r14+32] ; rax = value object
+        mov rax, [r15+32] ; rax = value object
         mov rbx, [rax+24] ; rbx = value
         mov QWORD[r11+24+rcx*8], rbx
         jmp .returnSeq
     
   .setAttribute:
-    mov r10, [r12+48]; r10 = array of Labels
-    mov r11, [r12+56]; r11 = array of offsets 
+    mov r10, [r14+48]; r10 = array of Labels
+    mov r11, [r14+56]; r11 = array of offsets 
     mov rcx, [rbx+40]; rcx = index of label
     cmp QWORD[r10+16], rcx
     jle index_error
@@ -1669,19 +1773,20 @@ handle_class:
     je .attrreturnSet
       ;TODO search for Label
       .attrreturnSet:
-        mov rax, [r14+32] ; rax = value object
+        mov rax, [r15+32] ; rax = value object
         mov rbx, [rax+24] ; rbx = value
         mov QWORD[r11+24+rcx*8], rbx
         jmp .returnSeq
 ;                  ___
 ;_________________/get\________________________________________________________
   .get:
-    mov rbx, [r14+24]; rbx = key:label
+    mov rbx, [r15+24]; rbx = key:label
     mov rcx, [rbx+32]; rcx = type of label
-    cmp rcx, class_function
+    mov r10, [rcx+8]; r10 = class of label
+    cmp r10, class_function
     jne .getAttribute
-    mov r10, [r12+32]; r10 = array of labels
-    mov r11, [r12+40]; r11 = array of functions
+    mov r10, [r14+32]; r10 = array of labels
+    mov r11, [r14+40]; r11 = array of functions
     mov rcx, [rbx+40]; rcx = index of label
     cmp QWORD[r10+16], rcx
     jle index_error
@@ -1697,12 +1802,12 @@ handle_class:
         mov QWORD [rax+16], 1
         mov QWORD [rax+24], rbx
         ;---
-        mov QWORD[r14+32], rax
+        mov QWORD[r15+32], rax
         jmp .returnSeq
 
   .getAttribute:
-    mov r10, [r12+48]; r10 = array of labels
-    mov r11, [r12+56]; r11 = array of offsets
+    mov r10, [r14+48]; r10 = array of labels
+    mov r11, [r14+56]; r11 = array of offsets
     mov rcx, [rbx+40]; rcx = index of label
     cmp QWORD[r10+16], rcx
     jle index_error
@@ -1718,11 +1823,14 @@ handle_class:
         mov QWORD [rax+16], 1
         mov QWORD [rax+24], rbx
         ;---
-        mov QWORD[r14+32], rax
+        mov QWORD[r15+32], rax
         jmp .returnSeq
 
   .returnSeq:
   multipop rbx, rcx, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15
+  pop rax
+  add rsp, 16
+  push rax
   ret
 
 ;================================================================================
@@ -1734,12 +1842,17 @@ handle_object:
   mov r14, [rax+16] ; r14 = object
   mov r15, [rax+8]  ; r15 = message
   mov rdx, [r15 +8] ; rdx = class of message
-  cmp QWORD [rdx], class_message_set
+  cmp QWORD rdx, class_message_set
   je .set
-  cmp QWORD [rdx], class_message_get
+  cmp QWORD rdx, class_message_get
   je .get
-  cmp QWORD [rdx], class_message_function
+  cmp QWORD rdx, class_message_function
   je .function
+  cmp QWORD rdx, class_message_set_array
+  je .set_array
+  cmp QWORD rdx, class_message_get_array
+  je .get_array
+  jmp index_error
 ;                      ___
 ;_____________________/get\_______________________________________________________
   .set:
@@ -1753,11 +1866,11 @@ handle_object:
     mov QWORD [rax+16], 1
     mov QWORD [rax+24], r13
     ;--
+    push rax
     push QWORD r8
     push QWORD rax
     call r9
-    pop rax ; rax = getMessage
-    add rsp, 8
+    pop rax ; rax = message
     mov r8, [rax+32]; r8 = return object
     mov r9, [r8+24]; r9 = offset
     mov r12, [r15+32]; r12 = value object
@@ -1776,16 +1889,30 @@ handle_object:
     mov QWORD [rax+16], 1
     mov QWORD [rax+24], r13
     ;--
+    push rax
     push QWORD r8
     push QWORD rax
     call r9
     pop rax ; rax = getMessage
-    add rsp, 8
     mov r8, [rax+32]; r8 = return object
     mov r9, [r8+24]; r9 = offset
     mov r12, [r14+r9]; r12 = value object
+    cmp r12, 0
+    je .returnDefaultValue
     mov QWORD [r15+32], r12
     jmp .returnSeq
+    .returnDefaultValue:
+     ;-- create Object
+       mov r8, [r13 + 32]
+       allociate 4
+       mov QWORD [rax], handle_object
+       mov QWORD [rax+8], r8
+       mov QWORD [rax+16], 1
+       mov QWORD [rax+24], 0
+     ;--
+       mov QWORD [r15+32], rax
+       jmp .returnSeq
+     
 ;                      ________
 ;_____________________/function\__________________________________________________
   .function:
@@ -1799,35 +1926,33 @@ handle_object:
     mov QWORD [rax+16], 1
     mov QWORD [rax+24], r13
     ;--
+    push rax
     push QWORD r8
     push QWORD rax
     call r9
     pop rax ; rax = getMessage
-    add rsp, 8
     mov r8, [rax+32]; r8 = return object
     mov r9, [r8+24]; r9 = address
 
     mov r8, [r15+40]; r8 = parameter array
     push r14
     mov r11, [r8+16]; r11 = parameter count
+    add r8, 24; r8 = content of parameter array (after header)
     imul r10, r11, 8
     add r10, r8; r10 = last parameter address
-    mov rbx, [r8+24]; rbx = current parameter
+    mov rbx, r8 ; rbx = current parameter
     .parameter_loop:
       cmp rbx, r10
-      jg .end_parameter_loop
+      jge .end_parameter_loop
       mov rcx, [rbx]; rcx = current parameter object
       push QWORD [rcx+24]
       add rbx, 8
       jmp .parameter_loop
     .end_parameter_loop:
     call r9; call method/ result is in rax
-    imul r11, r11, 8
-    add rsp, r11; pop parameter
-    add rsp, 8; pop self reference
     mov rbx, rax; rbx = result of functioncall
     mov r8, [r13+32]; r8 = type /hopfull it is a class_function TODO
-    mov r9, [r8+56]; r9 = return type
+    mov r9, [r8+32]; r9 = return type
     ;-- create object
     allociate 4
     mov QWORD [rax], handle_object
@@ -1837,7 +1962,43 @@ handle_object:
     ;--
     mov QWORD[r15+32], rax
     jmp .returnSeq   
-    
+;                       _________
+;______________________/get array\________________________________
+  .get_array:
+    mov r8, [r15+24] ; r8 = array index
+    mov r9, [r14+16] ; r9 = length
+    cmp r8, r9
+    jge index_error
+    cmp r8, 0
+    jl index_error
+    mov r10, [r14+24+(r8*8)];r10 = value
+    mov r11, [r14+8]; r11 = class
+    ;--create Object
+    allociate 4
+    mov QWORD [rax], handle_object
+    mov QWORD [rax+8], r11
+    mov QWORD [rax+16], 1
+    mov QWORD [rax+24], r10 
+    ;--
+    mov QWORD[r15+32],rax
+    jmp .returnSeq
+;                       _________
+;______________________/set array\________________________________
+  .set_array:
+    mov r8, [r15+24] ; r8 = array index
+    mov r9, [r14+16] ; r9 = length
+    cmp r8, r9
+    jge index_error
+    cmp r8, 0
+    jl index_error
+    mov r10, [r15+32]; r10 = value object
+    mov r11, [r10+24]; r11 = value
+    mov QWORD[r14+24+(r8*8)], r11
+    jmp .returnSeq
+
   .returnSeq:
   multipop rbx, rcx, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15
+  pop rax
+  add rsp, 16
+  push rax
   ret

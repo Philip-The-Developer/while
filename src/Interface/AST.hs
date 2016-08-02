@@ -60,6 +60,7 @@ data Command
   | ArrayAlloc Type Expression Address         -- $ allocate dynamically an array
                                               -- expression to an array element
   | Declaration Type String
+  | Set Address Address Expression             -- set operation
   | Environment Command                       -- $ push and pop environment
   | Function Type String Command Command          -- $ Type signature and code
   | LabelEnvironment String Command
@@ -131,6 +132,7 @@ walkAST tc te tb = walkC
     walkC (Function t id p c) = tc (Function t id (walkC p) (walkC c))         -- $ added
     walkC (LabelEnvironment i p) = tc (LabelEnvironment i (walkC p))
     walkC (NONE) = NONE
+    valkC (Set addr id e) = tc (Set addr id (walkE e))
 
     walkE :: Expression -> Expression
     walkE (Calculation op e1 e2) = te (Calculation op (walkE e1) (walkE e2))
@@ -170,6 +172,7 @@ instance ASTPart Command where
   showASTPart (Environment _) = "push scope"                                  -- $ added
   showASTPart (Function _ _ _ _) = "function _ (_) {_}"                             -- $ added
   showASTPart (LabelEnvironment i _) = "labels "++i++"{_}"
+  showASTPart (Set _ _ _) = "_ . _ <- _"
 
 -- | The AST expression is output-able.
 instance ASTPart Expression where

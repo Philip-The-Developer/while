@@ -7,8 +7,8 @@ if [ $1 != "test" ]; then
 	bin/parser-generator src/Parser/While.parser &>> build.txt
 	Generator=$?
 	echo "" >> build.txt
-	echo "\$ cabal install --bindir bin/" &>> build.txt
-	cabal install --bindir bin/ >> build.txt
+	echo "\$ cabal install --bindir bin/" >> build.txt
+	cabal install --bindir bin/ &>> build.txt
 	Compiler=$?
 
 	if [ $Compiler != 0 ]

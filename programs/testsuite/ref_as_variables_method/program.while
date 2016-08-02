@@ -15,10 +15,10 @@ ref class;
 class := toClass L;
 class.label1 := recv9;
 class.label2 := recv8;
-ref obj; obj := obj.env:new();
+ref obj; obj := class.env:new();
 
-#output obj.label1();
-#output obj.label2();
+output obj.label1();
+output obj.label2();
 output obj.a();
 output obj.b();
 

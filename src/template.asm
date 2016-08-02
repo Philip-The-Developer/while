@@ -16,6 +16,18 @@
     mov QWORD [buffer.remaining], rax
 %endmacro
 
+%macro allociate 1
+  mov rax, %1
+  multipush rcx, rsi, rdi, r8, r9, r10, r11
+  push rax
+  imul rdi, rax, 8
+  call malloc
+  test rax, rax
+  jz alloc_error
+  pop QWORD [rax]
+  multipop rcx, rsi, rdi, r8, r9, r10, r11
+%endmacro
+
 ; Increment our rsi register (=buffer.current) and decrent the remaining bytes
 %macro inc_rsi 0
     ; Move forward in our buffer
@@ -142,21 +154,29 @@ extern output_character
 extern buffer.remaining
 extern buffer.current
 extern buffer
-extern env_class_class
-extern env_label_class
 extern label_env_parent
 extern type_void
-extern type_int
-extern type_double
-extern type_char
-extern type_ref  
-extern type_array_int
-extern type_array_double
-extern type_array_char
-extern type_array_ref
+extern class_primitive_int
+extern class_primitive_double
+extern class_primitive_char
+extern class_primitive_ref
+extern class_class
+extern class_label
+extern class_function
+extern class_message_get
+extern class_message_set
+extern class_message_get_array
+extern class_message_set_array
+extern class_message_function
 extern exit_program
 extern label_env_new
 extern eof
+extern class_class_str
+extern handle_object
+extern handle_class
+extern label_env_handle
+extern label_env_parent
+extern label_env_length
 
 global main_code
 main_code:

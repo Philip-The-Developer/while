@@ -3,11 +3,14 @@ labels myEnv (
   int j
 );
 
+int buffer;
 ref class; 
 class := toClass myEnv;
 ref obj;
 obj := class.env:new();
-read obj.myEnv:i;
-read obj.myEnv:j;
+read buffer; 
+obj.myEnv:i := buffer;
+read buffer;
+obj.myEnv:j := buffer;
 output obj.myEnv:i;
 output obj.myEnv:j;
