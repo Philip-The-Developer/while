@@ -1,0 +1,24 @@
+function int add1(int i){
+return i+1;
+};
+
+function int add2(int i){
+return i+2;
+};
+
+function int(int) getFunction(int f){
+  int(int) akk;
+  if f = 0 then akk := add1
+  else akk := add2;
+ return akk;
+};
+
+int(int) func;
+func := add1;
+int erg;
+erg := func(13);
+output erg;
+
+func := add2;
+erg := func(13);
+output erg;

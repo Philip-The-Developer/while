@@ -37,15 +37,14 @@ import Data.Int (
     Int64
   )
 
-import Debug.Trace (
-    trace
-  )
-
 import qualified Interface.Token as T
 import qualified Interface.AST as AST
 import qualified Interface.TAC as TAC
 import GarbageCollection.GarbageCollection (
     dealloc
+  )
+import Debug.Trace(
+    trace
   )
 -- $| The generator state has to track two counters, one for the temporary
 -- variables and one for the labels, the mapping from variable to data type,
@@ -148,7 +147,7 @@ program prog = do
 -- an appendix with user-defined functions for later use and
 -- checks the existence of a return statement.
 command :: AST.Command -> TAC.Label -> State GenState (TAC.TAC, TAC.TAC, TACstream, ReturnType) -- $ modified
-command cmd next | trace (show cmd) True = case cmd of
+command cmd next = case cmd of
   (AST.Sequence c1 c2) -> do
     (dir1, tac1, stream1, type1) <- command c1 next
     (dir2, tac2, stream2, type2) <- command c2 next
@@ -250,19 +249,19 @@ command cmd next | trace (show cmd) True = case cmd of
         (T.TDouble) -> return (dir1, tac1++ [TAC.FRead var1], [], T.Void)
         otherwise -> error $ "read is only suported for int, char and double outputs.\n The expression \""++show addr++"\" has returns type \""++show type1++"\"."
       
-  (AST.Function typ id params cmd) -> do
+  (AST.Function typ id params cmd) | trace (show typ) True -> do
     declared <- lookup id
     label <- newLabel
     if not $ isNothing declared
       then error $ "Identifier for function \""++show id++"\" declared twice."
       else do
         let func_type = T.TFunction typ (params2Type params)
-        insert id (id, func_type)
+        insert id ("$"++id++"$", func_type)
         (c,env,ret,labelMap) <- get
         let (tacP,envMap) = allociateParameter params Map.empty
         let ((dir1,tac1, tacStream1),(_,_,_,labelMap')) = runState (program cmd) ((0,0),[envMap]++env, typ, labelMap)
         put (c,env,ret,labelMap')
-        return (dir1,[],(id,tacP++[TAC.Call "dummy:double" "dummy"]++tac1): tacStream1, T.Void)
+        return (dir1,[],("$"++id++"$",tacP++[TAC.Call "dummy:double" "dummy"]++tac1): tacStream1, T.Void)
 
   (AST.ArrayAlloc typ expr addr) -> do
     
@@ -350,11 +349,11 @@ addressInto :: AST.Address -> Maybe String -> Maybe TAC.Data -> State GenState (
 addressInto (AST.Identifier i) prevVar value =do
   vt <- lookup i
   if isNothing vt
-    then do
-      dl <- lookupLabel ("default:"++i)
-      if isNothing $ dl
-        then error $ "Variable \""++i++"\" has not been declaret."
-        else addressInto (AST.Label "default" i) prevVar value
+  then do
+    dl <- lookupLabel ("default:"++i)
+    if isNothing $ dl
+    then error $ "Variable \""++i++"\" has not been declaret."
+    else addressInto (AST.Label "default" i) prevVar value
   else do
     let (var, varType_) = fromJust vt
     if isNothing prevVar
@@ -363,9 +362,13 @@ addressInto (AST.Identifier i) prevVar value =do
       then do
         case varType_ of
           T.TFunction _ _ -> do
-            vref' <- newTemp
-            let vref = vref'++":"++(show varType_) 
-            return ([], [TAC.Copy vref (TAC.ImmediateReference [] var)], vref, varType_)
+            if endswith "$" var
+            then do
+              vref' <- newTemp
+              let vref = vref'++":"++(show varType_) 
+              return ([], [TAC.Copy vref (TAC.ImmediateReference [] var)], vref, varType_)
+            else do
+              return ([],[], var++":"++show varType_,varType_)
           otherwise -> return ([],[], var++":"++show varType_, varType_)
       else do
         let tac = [TAC.Copy (var++":"++show varType_) (fromJust value)]
@@ -413,7 +416,7 @@ addressInto (AST.FromArray addr exprIndex) prevVar value = do
            let tacArray = [TAC.SETARRAY msg data2 (fromJust value), TAC.Send (TAC.Variable msg) (TAC.Variable data1)]
            return (dir1++dir2,tac1++tac2++tac3++tacArray, "void", T.Void) 
 
-addressInto (AST.FunctionCall addr params) prevVar value | trace (show addr) True = do
+addressInto (AST.FunctionCall addr params) prevVar value = do
   case addr of
     (AST.Identifier "length") ->do
       (dir, tac, data_, type_) <- expression params
@@ -435,9 +438,15 @@ addressInto (AST.FunctionCall addr params) prevVar value | trace (show addr) Tru
           let (label,retType) = fromJust declared
           case retType of
             (T.TFunction ret _) -> do
-              var' <- newTemp
-              let var = var'++":"++show ret
-              return (dir1, tac1++[TAC.Call var label], var, ret)
+              if endswith "$" label
+              then do
+                var' <- newTemp
+                let var = var'++":"++show ret
+                return (dir1, tac1++[TAC.Call var label], var, ret)
+              else do
+                var' <- newTemp
+                let var = var'++":"++show ret
+                return (dir1, tac1++[TAC.VCall var (label++":"++(show retType))],var,ret)
             (T.TRef) -> if isNothing prevVar
               then error $ "Method call does not declare calling object."
               else do

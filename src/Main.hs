@@ -241,7 +241,7 @@ main = do
     let liveVariablesGraphs = fmap LV.liveVariables basicBlockGraphs -- $ modified
     when outputGraphs $ LV.renderLiveVariablesGraph
                         (addExtension outputFile "live-variables.pdf")
-                        $ liveVariablesGraphs !! 1
+                        $ liveVariablesGraphs !! 1 
     when outputDotFiles $ LV.dotLiveVariablesGraph
                           (addExtension outputFile "live-variables.dot")
                           $ liveVariablesGraphs !! 1
@@ -249,7 +249,7 @@ main = do
     let renamedLVGraphs = fmap LV.renameBlockLocalVariables liveVariablesGraphs -- $ modified
     when outputGraphs $ LV.renderLiveVariablesGraph
                         (addExtension outputFile "live-variables-renamed.pdf")
-                        $ renamedLVGraphs !!1
+                        $ renamedLVGraphs !! 1
     when outputDotFiles $ LV.dotLiveVariablesGraph
                           (addExtension outputFile "live-variables-renamed.dot")
                           $ renamedLVGraphs !! 1
@@ -273,6 +273,9 @@ main = do
                      ++ "\n"
 
     let (nasmCodes, frames) = unzip $ zipWith N.process finishedTACs liveRanges   -- $ modifieid
+    putStrLn $ "after Nasm"
+    putStrLn $ (show nasmCodes)
+    putStrLn $ "##############\n"++(show frames)
     when debugMode $ putStrLn $ "*** NASM code:\n" ++ numberLinesAt 140 (if length nasmCodes > 1 then nasmCodes !! 1 else "")
     
     let userDefined_functions = GC.returnSequence names (tail nasmCodes) frames -- $ added
