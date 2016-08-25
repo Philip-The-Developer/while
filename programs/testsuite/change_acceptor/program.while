@@ -1,0 +1,26 @@
+labels test(int a; char b; int c);
+
+function int myAcceptor(ref object; ref message){
+  ref key; 
+  key := message.env:key;
+  if message.env:parent = SET and key.env:type = INT
+  then{
+    object accepts object_acceptor;
+    object.key := 13;
+    object accepts myAcceptor;
+  } else {
+    int mock;
+    mock := object_acceptor(object; message);
+  };
+  return 0;
+};
+
+ref class;
+ref object;
+class := toClass test;
+object := class.env:new();
+object accepts myAcceptor;
+object.a := 300;
+object.b := 'h';
+output object.a;
+output object.b;

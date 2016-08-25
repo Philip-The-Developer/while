@@ -385,6 +385,52 @@ address:: AST.Address -> State GenState (TAC.TAC, TAC.TAC, String, T.Type)
 address addr = addressInto addr Nothing Nothing
 
 addressInto :: AST.Address -> Maybe String -> Maybe TAC.Data -> State GenState (TAC.TAC, TAC.TAC, String, T.Type)
+
+addressInto (AST.Identifier "INT") Nothing Nothing = do
+  res' <- newTemp
+  let res = res'++":ref"
+  return ([],[TAC.Copy res (TAC.ImmediateReference [] "class_primitive_int")],res,T.TRef)
+
+addressInto (AST.Identifier "DOUBLE") Nothing Nothing = do
+  res' <- newTemp
+  let res = res'++":ref"
+  return ([],[TAC.Copy res (TAC.ImmediateReference [] "class_primitive_double")],res,T.TRef)
+
+addressInto (AST.Identifier "CHAR") Nothing Nothing = do
+  res' <- newTemp
+  let res = res'++":ref"
+  return ([],[TAC.Copy res (TAC.ImmediateReference [] "class_primitive_char")],res, T.TRef)
+
+addressInto (AST.Identifier "REF") Nothing Nothing = do
+  res' <- newTemp
+  let res = res'++":ref"
+  return ([],[TAC.Copy res (TAC.ImmediateReference [] "class_primitive_ref")],res, T.TRef)
+
+addressInto (AST.Identifier "GET") Nothing Nothing = do
+  res' <- newTemp
+  let res = res'++":ref"
+  return ([],[TAC.Copy res (TAC.ImmediateReference [] "class_message_get")],res, T.TRef)
+
+addressInto (AST.Identifier "SET") Nothing Nothing = do
+  res' <- newTemp
+  let res = res'++":ref"
+  return ([],[TAC.Copy res (TAC.ImmediateReference [] "class_message_set")],res, T.TRef)
+
+addressInto (AST.Identifier "METHOD") Nothing Nothing = do
+  res' <- newTemp
+  let res = res'++":ref"
+  return ([],[TAC.Copy res (TAC.ImmediateReference [] "class_message_function")],res, T.TRef)
+
+addressInto (AST.Identifier "AGET") Nothing Nothing = do
+  res' <- newTemp
+  let res = res'++":ref"
+  return ([],[TAC.Copy res (TAC.ImmediateReference [] "class_message_get_array")],res, T.TRef)
+
+addressInto (AST.Identifier "ASET") Nothing Nothing = do
+  res' <- newTemp
+  let res = res'++":ref"
+  return ([],[TAC.Copy res (TAC.ImmediateReference [] "class_message_set_array")],res, T.TRef)
+
 addressInto (AST.Identifier i) prevVar value =do
   vt <- lookup i
   if isNothing vt
