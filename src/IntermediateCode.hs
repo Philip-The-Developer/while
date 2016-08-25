@@ -72,12 +72,34 @@ type TACstream = [(TAC.Label, TAC.TAC)]
 getType:: AST.Command -> String
 getType (AST.Declaration t n) = show t
 
+createLabelMap:: DataLabelScopes
+createLabelMap = Map.fromList 
+    [
+     ("env:new",("label_env_new", [AST.Declaration (T.TFunction T.TRef T.Void) "new"])),
+     ("env:handle",("label_env_handle",[AST.Declaration (T.TFunction T.TInt (T.TypeSequence T.TRef T.TRef)) "handle"])),
+     ("env:parent", ("label_env_parent",[AST.Declaration T.TRef "parent"])),
+     ("env:length", ("label_env_length",[AST.Declaration T.TInt "length"])),
+     ("env:name", ("label_env_name", [AST.Declaration T.TRef "name"])),
+     ("env:funcLabels", ("label_env_funcLabels",[AST.Declaration T.TRef "funcLabels"])),
+     ("env:funcAddress",("label_env_funcAddress",[AST.Declaration T.TRef "funcAddress"])),
+     ("env:attrLabels",("label_env_attrLabels",[AST.Declaration T.TRef "attrLabels"])),
+     ("env:attrOffsets",("label_env_attrOffsets",[AST.Declaration T.TRef "attrOffsets"])),
+     ("env:type",("label_env_type",[AST.Declaration T.TRef "type"])),
+     ("env:index",("label_env_index",[AST.Declaration T.TInt "index"])),
+     ("env:key", ("label_env_key",[AST.Declaration T.TRef "key"])),
+     ("env:parameter", ("label_env_parameter",[AST.Declaration T.TRef "parameter"])),
+     ("env:callee", ("label_env_callee",[AST.Declaration T.TRef "callee"])),
+     ("env:result",("label_env_result",[AST.Declaration T.TRef "result"])),
+     ("env:value", ("label_env_value", [AST.Declaration T.TRef "value"])),
+     ("env:fparameter",("label_env_fparameter",[AST.Declaration T.TRef "fparameter"]))
+    ]
+
 -- $| Given an abstract syntax tree it generates and intermediate representation
 -- in three address code and an appendix with user-defined functions for later use.
 process :: AST.AST -> TACstream -- $ modified
 process ast = ("",directives):("",intermediateCode):appendix
   where
-    ((directives,intermediateCode,appendix), _) = runState (program ast) ((0,0),[Map.empty], T.Void, Map.insert "env:new" ("label_env_new",[AST.Declaration (T.TFunction T.TRef T.Void) "new"]) Map.empty)
+    ((directives,intermediateCode,appendix), _) = runState (program ast) ((0,0),[Map.empty], T.Void, createLabelMap)
 
 -- | Generates a new label and increments the internal label counter.
 newLabel :: State GenState (TAC.Label)
