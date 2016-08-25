@@ -1,20 +1,31 @@
 labels test(int a; char b);
 
+function int printChars(char[] arr){
+  int i;
+  i := 0;
+  output ' ';
+  while i < length(arr) do{
+    output arr[i];
+    i := i +1;
+  };
+  return 0;
+};
+
 function int reflect(ref obj){
+int mock;
 ref parent;
 ref[] labelarray;
 parent := obj.env:parent;
 parent accepts object_acceptor;
 labelarray := parent.env:attrLabels;
 int i;
-output length(labelarray);
+i := 3;
 while i < length(labelarray) do{
-  output i;
   ref label;
   char[] chars;
   label := labelarray[i];
   chars := label.env:name;
-  output chars[0];
+  mock := printChars(chars);
   i := i + 1;
 };
 return 0;

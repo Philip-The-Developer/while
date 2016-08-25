@@ -1884,7 +1884,8 @@ $handle_object$:
     mov r8, [rax+32]; r8 = return object
     mov r9, [r8+24]; r9 = offset
     mov r12, [r15+32]; r12 = value object
-    mov QWORD [r14+r9], r12
+    mov r13, [r12+24]; r13 = value
+    mov QWORD [r14+r9], r13
     jmp .returnSeq
 ;                      ___
 ;_____________________/set\_______________________________________________________
@@ -1909,7 +1910,14 @@ $handle_object$:
     mov r12, [r14+r9]; r12 = value object
     cmp r12, 0
     je .returnDefaultValue
-    mov QWORD [r15+32], r12
+    ;--create Object
+    mov r8, [r13 + 32]; r8 := value type
+    allociate 4
+    mov QWORD [rax], $handle_object$
+    mov QWORD [rax + 8], r8
+    mov QWORD [rax + 16], 1
+    mov QWORD [rax + 24], r12
+    mov QWORD [r15+32], rax
     jmp .returnSeq
     .returnDefaultValue:
      ;-- create Object
