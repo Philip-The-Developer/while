@@ -276,7 +276,7 @@ generate' (hd:rst) isDebug | trace (show hd) True = do
                      [instr $ "push "++toCode o2'++"\n"++
                               "add "++toCode o2'++", 3\n"++
                               "allociate "++toCode o2'++"\n"++
-                              "mov QWORD [rax], handle_object\n"++
+                              "mov QWORD [rax], $handle_object$\n"++
                               "mov QWORD [rax+8], "++parentClass++"\n"++
                               "pop QWORD [rax+16]\n "++
                               "mov "++toCode o1++", rax"]
@@ -331,6 +331,12 @@ generate' (hd:rst) isDebug | trace (show hd) True = do
       let (pre, o1') = if not $ operandIsRegister o1 then ([mov rax o1], rax) else ([], o1)
       if | operandIsImmediateDouble o2 -> returnCode $ pre ++ [mov' o2, instr $ "mov QWORD ["++toCode o1'++"], rax"]
          | otherwise -> returnCode $ pre++ [instr $ "mov QWORD ["++toCode o1'++"], "++toCode o2]
+
+    TAC.Accept v1 v2 -> do
+      o1 <- variableToOperand v1
+      o2 <- variableToOperand v2
+      let (pre, o1') = if not $ operandIsRegister o1 then ([mov rax o1], rax) else ([], o1)
+      returnCode $ pre++[instr $ "mov QWORD ["++toCode o1'++"], "++toCode o2]
 
     TAC.ShowError l -> do
       returnCode [instr $ "jmp "++l]
@@ -762,14 +768,14 @@ generate' (hd:rst) isDebug | trace (show hd) True = do
     TAC.DatLabel label index _type name -> 
       returnCode[instr $        
         label++":\n"++
-        "dq handle_object\n"++
+        "dq $handle_object$\n"++
         "dq class_label\n"++
         "dq 1\n"++
         "dq "++label++"_str\n"++
         "dq "++(show _type)++"\n"++
         "dq "++(show index)++"\n"++
         label++"_str:\n"++
-        "dq handle_object\n"++
+        "dq $handle_object$\n"++
         "dq class_primitive_char \n"++
         "dq "++(show (length name))++"\n"++
         (toArraySequence name)]
@@ -788,7 +794,7 @@ generate' (hd:rst) isDebug | trace (show hd) True = do
       o2 <- dataToOperand d
       returnCode [instr $
         "allociate 5\n"++
-        "mov QWORD [rax], handle_object\n"++
+        "mov QWORD [rax], $handle_object$\n"++
         "mov QWORD [rax+8], class_message_get\n"++
         "mov QWORD [rax+16], 1\n"++
         "mov QWORD [rax+24], "++toCode o2++"\n"++
@@ -802,13 +808,13 @@ generate' (hd:rst) isDebug | trace (show hd) True = do
       temp <- getTemporary      
       returnCode [instr $
         "allociate 4\n"++
-        "mov QWORD [rax], handle_object\n"++
+        "mov QWORD [rax], $handle_object$\n"++
         "mov QWORD [rax+8], "++parentClass++"\n"++
         "mov QWORD [rax+16], 1\n"++
         "mov QWORD [rax+24], "++toCode o3++"\n"++
         "mov "++toCode temp++", rax\n"++
         "allociate 5\n"++
-        "mov QWORD [rax], handle_object\n"++
+        "mov QWORD [rax], $handle_object$\n"++
         "mov QWORD [rax+8], class_message_set\n"++
         "mov QWORD [rax+16], 1\n"++
         "mov QWORD [rax+24], "++toCode o2++"\n"++
@@ -820,7 +826,7 @@ generate' (hd:rst) isDebug | trace (show hd) True = do
       o2 <- dataToOperand d
       returnCode [instr $
         "allociate 5\n"++
-        "mov QWORD [rax], handle_object\n"++
+        "mov QWORD [rax], $handle_object$\n"++
         "mov QWORD [rax+8], class_message_get_array\n"++
         "mov QWORD [rax+16], 1\n"++
         "mov QWORD [rax+24], "++toCode o2++"\n"++
@@ -834,13 +840,13 @@ generate' (hd:rst) isDebug | trace (show hd) True = do
       temp <- getTemporary      
       returnCode [instr $
         "allociate 4\n"++
-        "mov QWORD [rax], handle_object\n"++
+        "mov QWORD [rax], $handle_object$\n"++
         "mov QWORD [rax+8], "++parentClass++"\n"++
         "mov QWORD [rax+16], 1\n"++
         "mov QWORD [rax+24], "++toCode o3++"\n"++
         "mov "++toCode temp++", rax\n"++
         "allociate 5\n"++
-        "mov QWORD [rax], handle_object\n"++
+        "mov QWORD [rax], $handle_object$\n"++
         "mov QWORD [rax+8], class_message_set_array\n"++
         "mov QWORD [rax+16], 1\n"++
         "mov QWORD [rax+24], "++toCode o2++"\n"++
@@ -853,13 +859,13 @@ generate' (hd:rst) isDebug | trace (show hd) True = do
       temp <- getTemporary
       paramStr <- createParameter 24 temp param
       let paramArray =  "allociate "++show(3 + (length param))++"\n"++
-                        "mov QWORD [rax], handle_object \n"++
+                        "mov QWORD [rax], $handle_object$ \n"++
                         "mov QWORD [rax+8], class_primitive_ref\n"++
                         "mov QWORD [rax +16], "++show(length param)++"\n"++
                         "mov "++toCode temp++", rax\n"++
                         paramStr
       let methodMessage = "allociate 6\n"++
-                          "mov QWORD [rax], handle_object\n"++
+                          "mov QWORD [rax], $handle_object$\n"++
                           "mov QWORD [rax+8], class_message_function\n"++
                           "mov QWORD [rax+16], 1\n"++
                           "mov QWORD [rax+24], "++toCode o2++"\n"++
@@ -909,7 +915,7 @@ generate' (hd:rst) isDebug | trace (show hd) True = do
       op <- dataToOperand p
       rest <- createParameter (n+8) o r
       return $ "allociate 4\n"++
-               "mov QWORD [rax], handle_object\n"++
+               "mov QWORD [rax], $handle_object$\n"++
                "mov QWORD [rax+8], "++getClassFor p++"\n"++
                "mov QWORD [rax+16], 1\n"++
                "mov QWORD [rax+24], "++toCode op++"\n"++

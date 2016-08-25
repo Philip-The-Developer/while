@@ -25,6 +25,16 @@ global label_env_type
 global label_env_index
 global label_env_name
 global label_env_new
+global label_env_funcLabels
+global label_env_funcAddress
+global label_env_attrLabels
+global label_env_attrOffsets
+global label_env_key
+global label_env_parameter
+global label_env_callee
+global label_env_result
+global label_env_value
+global label_env_fparameter
 global class_class_str
 global class_primitive_int
 global class_primitive_double
@@ -38,8 +48,8 @@ global class_message_set
 global class_message_get_array
 global class_message_set_array
 global class_message_function
-global handle_object
-global handle_class
+global $handle_object$
+global $handle_class$
 global type_void
 global eof
 global main
@@ -234,7 +244,7 @@ section .data
 ;__________/Primitive classes\___________________________________________________
 
   class_primitive_int:
-    dq handle_class
+    dq $handle_class$
     dq class_class
     dq 1
     dq class_primitive_int_str
@@ -243,7 +253,7 @@ section .data
     dq empty_ref_obj
     dq empty_int_obj 
   class_primitive_int_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 3
     dq 'i'
@@ -251,12 +261,12 @@ section .data
     dq 't'
 
   empty_int_obj:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_int
     dq 0
 
   class_primitive_double:
-    dq handle_class
+    dq $handle_class$
     dq class_class
     dq 1
     dq class_primitive_double_str
@@ -265,7 +275,7 @@ section .data
     dq empty_ref_obj
     dq empty_int_obj 
   class_primitive_double_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 6
     dq 'd'
@@ -276,7 +286,7 @@ section .data
     dq 'e'
 
   class_primitive_char:
-    dq handle_class
+    dq $handle_class$
     dq class_class
     dq 1
     dq class_primitive_char_str
@@ -285,7 +295,7 @@ section .data
     dq empty_ref_obj
     dq empty_int_obj 
   class_primitive_char_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 4
     dq 'c'
@@ -294,7 +304,7 @@ section .data
     dq 'r'
 
   class_primitive_ref:
-    dq handle_class
+    dq $handle_class$
     dq class_class
     dq 1
     dq class_primitive_ref_str
@@ -303,7 +313,7 @@ section .data
     dq empty_ref_obj
     dq empty_int_obj 
   class_primitive_ref_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 3
     dq 'r'
@@ -311,14 +321,14 @@ section .data
     dq 'f'
 
   empty_ref_obj:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_ref
     dq 0
 
 ;                     ______________
 ;____________________/function class\___________________________________
   class_function:
-    dq handle_class
+    dq $handle_class$
     dq class_class
     dq 1
     dq class_function_str
@@ -328,7 +338,7 @@ section .data
     dq class_function_attribute_offsets
 
   class_function_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 8
     dq 'f'
@@ -341,7 +351,7 @@ section .data
     dq 'n'
 
   class_function_attribute_labels:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_ref
     dq 5
     dq label_env_handle
@@ -351,7 +361,7 @@ section .data
     dq label_env_result
 
   class_function_attribute_offsets:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_int
     dq 5
     dq 0
@@ -361,14 +371,14 @@ section .data
     dq 32
    
   env_new_function_type:
-    dq handle_object
+    dq $handle_object$
     dq class_function
     dq 1
     dq env_new_function_type_param
     dq class_primitive_ref
 
   env_new_function_type_param:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_ref
     dq 0
 
@@ -376,7 +386,7 @@ section .data
 ;____________________/class class\_______________________________________
 
   class_class:
-    dq handle_class
+    dq $handle_class$
     dq class_class
     dq 1
     dq class_class_str
@@ -386,7 +396,7 @@ section .data
     dq class_class_attribute_offset
 
   class_class_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 5
     dq 'c'
@@ -396,19 +406,19 @@ section .data
     dq 's'
 
   class_class_function_label:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_ref
     dq 1
     dq label_env_new
 
   class_class_function_address:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_int
     dq 1
     dq new_
 
   class_class_attribute_label:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_ref
     dq 8
     dq label_env_handle
@@ -421,7 +431,7 @@ section .data
     dq label_env_attrOffsets
 
   class_class_attribute_offset:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_int
     dq 8
     dq 0
@@ -437,7 +447,7 @@ section .data
 ;_________________/label class\___________________
 
   class_label:
-    dq handle_class
+    dq $handle_class$
     dq class_class
     dq 1
     dq class_label_str
@@ -447,7 +457,7 @@ section .data
     dq class_label_attribute_offsets
 
   class_label_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 5
     dq 'l'
@@ -457,7 +467,7 @@ section .data
     dq 'l'
 
   class_label_attribute_labels:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_ref
     dq 6
     dq label_env_handle
@@ -468,7 +478,7 @@ section .data
     dq label_env_index
 
   class_label_attribute_offsets:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_int
     dq 6
     dq 0
@@ -482,7 +492,7 @@ section .data
 ;______________/Message Class\__________________________
 
   class_message_set:
-    dq handle_class
+    dq $handle_class$
     dq class_class
     dq 1
     dq class_message_set_str
@@ -492,7 +502,7 @@ section .data
     dq class_message_set_offsets
 
   class_message_set_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 3
     dq 'S'
@@ -500,7 +510,7 @@ section .data
     dq 'T'
 
   class_message_set_labels:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_ref
     dq 5
     dq label_env_handle
@@ -510,7 +520,7 @@ section .data
     dq label_env_value
 
   class_message_set_offsets:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_int
     dq 5
     dq 0
@@ -522,7 +532,7 @@ section .data
 
 
   class_message_get:
-    dq handle_class
+    dq $handle_class$
     dq class_class
     dq 1
     dq class_message_get_str
@@ -532,7 +542,7 @@ section .data
     dq class_message_get_offsets
 
   class_message_get_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 3
     dq 'G'
@@ -540,7 +550,7 @@ section .data
     dq 'T'
 
   class_message_get_labels:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_ref
     dq 5
     dq label_env_handle
@@ -550,7 +560,7 @@ section .data
     dq label_env_value
 
   class_message_get_offsets:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_int
     dq 5
     dq 0
@@ -560,7 +570,7 @@ section .data
     dq 32
 
   class_message_function:
-    dq handle_class
+    dq $handle_class$
     dq class_class
     dq 1
     dq class_message_function_str
@@ -570,7 +580,7 @@ section .data
     dq class_message_function_offsets
 
   class_message_function_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 6
     dq 'M'
@@ -581,7 +591,7 @@ section .data
     dq 'D'
 
   class_message_function_labels:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_ref
     dq 6
     dq label_env_handle
@@ -592,7 +602,7 @@ section .data
     dq label_env_parameter
 
   class_message_function_offsets:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_int
     dq 7
     dq 0
@@ -604,7 +614,7 @@ section .data
     dq 48
 
   class_message_get_array:
-    dq handle_class
+    dq $handle_class$
     dq class_class
     dq 1
     dq class_message_get_array_str
@@ -614,7 +624,7 @@ section .data
     dq class_message_get_array_offsets
   
   class_message_get_array_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 10 
     dq 'F'
@@ -629,7 +639,7 @@ section .data
     dq 'Y'
 
   class_message_get_array_labels:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_ref
     dq 5
     dq label_env_handle
@@ -639,7 +649,7 @@ section .data
     dq label_env_value
 
   class_message_get_array_offsets:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_int
     dq 5
     dq 0
@@ -649,7 +659,7 @@ section .data
     dq 32
 
   class_message_set_array:
-    dq handle_class
+    dq $handle_class$
     dq class_class
     dq 1
     dq class_message_set_array_str
@@ -659,7 +669,7 @@ section .data
     dq class_message_set_array_offsets
   
   class_message_set_array_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 8 
     dq 'T'
@@ -672,7 +682,7 @@ section .data
     dq 'Y'
 
   class_message_set_array_labels:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_ref
     dq 5
     dq label_env_handle
@@ -682,7 +692,7 @@ section .data
     dq label_env_value
 
   class_message_set_array_offsets:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_int
     dq 5
     dq 0
@@ -696,7 +706,7 @@ section .data
 ;______________/labels\_________________________________
 
   label_env_new:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_new_str
@@ -704,7 +714,7 @@ section .data
     dq 0
 
   label_env_new_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 7
     dq 'e'
@@ -716,7 +726,7 @@ section .data
     dq 'w'
 
   label_env_handle:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_handle_str
@@ -724,7 +734,7 @@ section .data
     dq 0
 
   label_env_handle_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 10
     dq 'e'
@@ -739,7 +749,7 @@ section .data
     dq 'e'
 
   label_env_parent:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_parent_str
@@ -747,7 +757,7 @@ section .data
     dq 1
   
   label_env_parent_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 10
     dq 'e'
@@ -762,7 +772,7 @@ section .data
     dq 't'
 
   label_env_length:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_length_str
@@ -770,7 +780,7 @@ section .data
     dq 2
 
   label_env_length_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 10
     dq 'e'
@@ -785,7 +795,7 @@ section .data
     dq 'h'
 
   label_env_name:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_name_str
@@ -793,7 +803,7 @@ section .data
     dq 3
 
   label_env_name_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 8
     dq 'e'
@@ -806,7 +816,7 @@ section .data
     dq 'e'
 
   label_env_funcLabels:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_funcLabels_str
@@ -814,7 +824,7 @@ section .data
     dq 4
 
   label_env_funcLabels_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 14
     dq 'e'
@@ -833,7 +843,7 @@ section .data
     dq 's'
 
   label_env_funcAddress:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_funcAddress_str
@@ -841,7 +851,7 @@ section .data
     dq 5
 
   label_env_funcAddress_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 15
     dq 'e'
@@ -861,7 +871,7 @@ section .data
     dq 's'
 
   label_env_attrLabels:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_attrLabels_str
@@ -869,7 +879,7 @@ section .data
     dq 6
 
   label_env_attrLabels_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 14
     dq 'e'
@@ -888,7 +898,7 @@ section .data
     dq 's'
 
   label_env_attrOffsets:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_attrOffsets_str
@@ -896,7 +906,7 @@ section .data
     dq 7
 
   label_env_attrOffsets_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 15
     dq 'e'
@@ -916,7 +926,7 @@ section .data
     dq 's'
 
   label_env_type:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_type_str
@@ -924,7 +934,7 @@ section .data
     dq 4
    
   label_env_type_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 8
     dq 'e'
@@ -937,7 +947,7 @@ section .data
     dq 'e'
 
   label_env_index:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_index_str
@@ -945,7 +955,7 @@ section .data
     dq 5
 
   label_env_index_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 8
     dq 'e'
@@ -959,7 +969,7 @@ section .data
     dq 'x'
  
   label_env_key:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_key_str
@@ -967,7 +977,7 @@ section .data
     dq 3
 
   label_env_key_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 7
     dq 'e'
@@ -979,7 +989,7 @@ section .data
     dq 'y'
     
   label_env_parameter:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_parameter_str
@@ -987,7 +997,7 @@ section .data
     dq 5
 
   label_env_parameter_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 13
     dq 'e'
@@ -1005,7 +1015,7 @@ section .data
     dq 'r'
     
   label_env_callee:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_callee_str
@@ -1013,7 +1023,7 @@ section .data
     dq 6
 
   label_env_callee_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 10
     dq 'e'
@@ -1028,7 +1038,7 @@ section .data
     dq 'e'
 
   label_env_result:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_result_str
@@ -1036,7 +1046,7 @@ section .data
     dq 4
 
   label_env_result_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 10
     dq 'e'
@@ -1051,7 +1061,7 @@ section .data
     dq 't'
 
   label_env_value:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_value_str
@@ -1059,7 +1069,7 @@ section .data
     dq 4
 
   label_env_value_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 9
     dq 'e'
@@ -1073,7 +1083,7 @@ section .data
     dq 'e'
 
   label_env_fparameter:
-    dq handle_object
+    dq $handle_object$
     dq class_label
     dq 1
     dq label_env_fparameter_str
@@ -1081,7 +1091,7 @@ section .data
     dq 3
 
   label_env_fparameter_str:
-    dq handle_object
+    dq $handle_object$
     dq class_primitive_char
     dq 14
     dq 'e'
@@ -1700,7 +1710,7 @@ new_:
   mov r8, [rbx+48]
   mov r9, [r8+16]
   allociate r9
-  mov QWORD [rax], handle_object
+  mov QWORD [rax], $handle_object$
   mov QWORD [rax+8], rbx
   mov QWORD [rax+16], 1
   mov rbx, rax
@@ -1728,7 +1738,7 @@ new_:
 ;===============================================================================
 ; Handle a message for a class
 ;===============================================================================
-handle_class:
+$handle_class$:
   mov rax, rsp
   multipush rbx, rcx, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15
   mov r14, [rax+16] ; r14 = object
@@ -1739,7 +1749,7 @@ handle_class:
   cmp QWORD rdx, class_message_get
   je .get
   cmp QWORD rdx, class_message_function
-  je handle_object.function
+  je $handle_object$.function
 
 ;                   ___
 ;__________________(set\_______________________________________________________
@@ -1797,7 +1807,7 @@ handle_class:
         mov rbx, [r11+24+rcx*8] ; rbx = value
         ;--- create object
         allociate 4
-        mov QWORD [rax], handle_object
+        mov QWORD [rax], $handle_object$
         mov QWORD [rax+8], class_primitive_int
         mov QWORD [rax+16], 1
         mov QWORD [rax+24], rbx
@@ -1818,7 +1828,7 @@ handle_class:
         mov rbx, [r11+24+rcx*8] ; rbx = value
         ;--- create object
         allociate 4
-        mov QWORD [rax], handle_object
+        mov QWORD [rax], $handle_object$
         mov QWORD [rax+8], class_primitive_int
         mov QWORD [rax+16], 1
         mov QWORD [rax+24], rbx
@@ -1836,7 +1846,7 @@ handle_class:
 ;================================================================================
 ; handle object
 ;================================================================================
-handle_object:
+$handle_object$:
   mov rax, rsp
   multipush rbx, rcx, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15
   mov r14, [rax+16] ; r14 = object
@@ -1861,7 +1871,7 @@ handle_object:
     mov r9, [r8]; r9 = handle method of class
     ;-- create get-message
     allociate 5
-    mov QWORD [rax], handle_object
+    mov QWORD [rax], $handle_object$
     mov QWORD [rax+8], class_message_get
     mov QWORD [rax+16], 1
     mov QWORD [rax+24], r13
@@ -1884,7 +1894,7 @@ handle_object:
     mov r9, [r8]; r9 = handle method of class
     ;-- create get-message
     allociate 5
-    mov QWORD [rax], handle_object
+    mov QWORD [rax], $handle_object$
     mov QWORD [rax+8], class_message_get
     mov QWORD [rax+16], 1
     mov QWORD [rax+24], r13
@@ -1905,7 +1915,7 @@ handle_object:
      ;-- create Object
        mov r8, [r13 + 32]
        allociate 4
-       mov QWORD [rax], handle_object
+       mov QWORD [rax], $handle_object$
        mov QWORD [rax+8], r8
        mov QWORD [rax+16], 1
        mov QWORD [rax+24], 0
@@ -1921,7 +1931,7 @@ handle_object:
     mov r9, [r8]; r9 = handle method of class
     ;-- create get-message
     allociate 5
-    mov QWORD [rax], handle_object
+    mov QWORD [rax], $handle_object$
     mov QWORD [rax+8], class_message_get
     mov QWORD [rax+16], 1
     mov QWORD [rax+24], r13
@@ -1955,7 +1965,7 @@ handle_object:
     mov r9, [r8+32]; r9 = return type
     ;-- create object
     allociate 4
-    mov QWORD [rax], handle_object
+    mov QWORD [rax], $handle_object$
     mov QWORD [rax+8], r9
     mov QWORD [rax+16], 1
     mov QWORD [rax+24], rbx
@@ -1975,7 +1985,7 @@ handle_object:
     mov r11, [r14+8]; r11 = class
     ;--create Object
     allociate 4
-    mov QWORD [rax], handle_object
+    mov QWORD [rax], $handle_object$
     mov QWORD [rax+8], r11
     mov QWORD [rax+16], 1
     mov QWORD [rax+24], r10 

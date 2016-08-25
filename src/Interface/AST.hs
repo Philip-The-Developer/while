@@ -64,6 +64,7 @@ data Command
   | Environment Command                       -- $ push and pop environment
   | Function Type String Command Command          -- $ Type signature and code
   | LabelEnvironment String Command
+  | Accepts Address Address                   -- set an acceptor for an object.
   deriving (Show, Eq)
 
 -- | An arithmetic expression.
@@ -132,7 +133,8 @@ walkAST tc te tb = walkC
     walkC (Function t id p c) = tc (Function t id (walkC p) (walkC c))         -- $ added
     walkC (LabelEnvironment i p) = tc (LabelEnvironment i (walkC p))
     walkC (NONE) = NONE
-    valkC (Set addr id e) = tc (Set addr id (walkE e))
+    walkC (Set addr id e) = tc (Set addr id (walkE e))
+    walkC (Accepts obj hand) = tc (Accepts obj hand)
 
     walkE :: Expression -> Expression
     walkE (Calculation op e1 e2) = te (Calculation op (walkE e1) (walkE e2))
@@ -173,6 +175,7 @@ instance ASTPart Command where
   showASTPart (Function _ _ _ _) = "function _ (_) {_}"                             -- $ added
   showASTPart (LabelEnvironment i _) = "labels "++i++"{_}"
   showASTPart (Set _ _ _) = "_ . _ <- _"
+  showASTPart (Accepts _ _) = "_ accepts _"
 
 -- | The AST expression is output-able.
 instance ASTPart Expression where

@@ -76,6 +76,7 @@ data Token
   | Token Prelude.Char             -- ^ Single char tokens – used for parentheses, braces, …
   | Type Type              -- $ Base types (@int@ and @float@) 
   | Arrow                  -- A arrow @<-@ 
+  | Accepts                -- Accepts keyword
   deriving (Eq)
 
 -- | Display tokens in the form @\<token[,attribute]\>@.
@@ -107,6 +108,7 @@ instance Show Token where
   show Function       = "<function>"                  -- $ added
   show LabelSpec      = "<label enviroment>"
   show (Token c)      = "<" ++ [c] ++ ">"
+  show Accepts        = "accepts"
 
 -- | Operations on boolean values.
 data LogOp

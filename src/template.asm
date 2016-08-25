@@ -172,12 +172,26 @@ extern exit_program
 extern label_env_new
 extern eof
 extern class_class_str
-extern handle_object
-extern handle_class
+extern $handle_object$
+extern $handle_class$
 extern label_env_handle
 extern label_env_parent
 extern label_env_length
-
+extern label_env_labels
+extern label_env_offsets
+extern label_env_type
+extern label_env_index
+extern label_env_name
+extern label_env_funcLabels
+extern label_env_funcAddress
+extern label_env_attrLabels
+extern label_env_attrOffsets
+extern label_env_key
+extern label_env_parameter
+extern label_env_callee
+extern label_env_result
+extern label_env_value
+extern label_env_fparameter
 global main_code
 main_code:
 ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

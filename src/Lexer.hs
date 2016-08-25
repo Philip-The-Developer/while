@@ -150,6 +150,7 @@ process (cur:source) pos
         "ref"    -> Type TRef
         "labels" -> LabelSpec
         "function"->Function      -- $ added
+        "accepts" ->Accepts
         _        -> Id (cur:name)
 
 -- $ Integers and double-precision floating-point numbers
@@ -209,4 +210,4 @@ isAlpha c = isAsciiLower c || isAsciiUpper c
 {-# ANN isAlphaNumeric "HLint: ignore Use isAlphaNum" #-}
 -- | Returns whether a given character is a character from @[a-zA-Z0-9]@.
 isAlphaNumeric :: Prelude.Char -> Bool
-isAlphaNumeric c = isAlpha c || isDigit c
+isAlphaNumeric c = isAlpha c || isDigit c || c == '_'

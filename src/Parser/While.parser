@@ -39,6 +39,7 @@ mod         { PosToken _ (MathOp Mod) }
 ':'         { PosToken _ NameSpace}
 '.'         { PosToken _ Dot}
 eof         { PosToken _  Eof }
+accepts     { PosToken _ Accepts }
 read        { PosToken _  Read }
 output      { PosToken _  Output }
 return      { PosToken _  Return }       -- $ added
@@ -79,6 +80,7 @@ Cmd     :: { AST.Command }
 
 Instr    :: { AST.Command }
         | Addr ':=' Expr                { AST.Assign $1 $3 }
+        | Addr accepts Addr             { AST.Accepts $1 $3 }
         | Type '[' Expr ']' Addr        { AST.ArrayAlloc $1 $3 $5 }
         | output Expr                   { AST.Output $2 }
         | read Addr                     { AST.Read $2 }

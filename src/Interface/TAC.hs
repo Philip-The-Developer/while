@@ -87,6 +87,7 @@ data Command
   | METHOD Variable Data [Data] --{mehode label [Parameter]}
   | GETResult Variable Variable Variable -- variable type-variable message
   | METHODResult Variable Variable Variable -- variable type-variable message
+  | Accept Variable Variable              -- Accepts a handler for an object @Accept object handler@
   deriving (Eq)
 
 -- | Gives a neat output for three address commands.
@@ -147,6 +148,7 @@ instance Show Command where
   show (GETResult var t message) = var ++" = ("++show t++") .READ_ANSWER "++message
   show (METHODResult var t message) = var ++ " = ("++show t++") .READ_ANSWER "++message
   show (Comment s) = "; "++s
+  show (Accept object handler) = object++" accepts "++handler
 
 getCalculation :: T.MathOp -> T.Type -> Variable -> Data -> Data -> Command
 getCalculation T.Plus T.TDouble v d1 d2 = FAdd v d1 d2
@@ -352,6 +354,7 @@ getUseVariables (METHOD _ d1 d2) = variablesFromData ([d1] ++ d2)
 getUseVariables (Send msg obj) = variablesFromData [msg, obj]
 getUseVariables (GETResult _ _ msg) = [msg]
 getUseVariables (METHODResult _ _ msg) = [msg]
+getUseVariables (Accept obj hand) = [obj, hand]
 getUseVariables _ = []
 
 getVariables :: Command -> [Variable]
@@ -493,6 +496,9 @@ renameVariables (GETResult v1 v2 v3) vI vO =
 renameVariables (METHODResult v1 v2 v3) vI vO =
   let [Variable v1', Variable v2', Variable v3'] = substitute [Variable v1, Variable v2, Variable v3] vI vO
   in METHODResult v1' v2' v3'
+renameVariables (Accept v1 v2) vI vO =
+  let [Variable v1', Variable v2'] = substitute [Variable v1, Variable v2] vI vO
+  in Accept v1' v2'
 renameVariables c _ _ = c
 
 substitute :: [Data] -> Variable -> Variable -> [Data]

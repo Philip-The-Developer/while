@@ -72,6 +72,13 @@ type TACstream = [(TAC.Label, TAC.TAC)]
 getType:: AST.Command -> String
 getType (AST.Declaration t n) = show t
 
+createVariableMap:: Environment
+createVariableMap = [Map.fromList
+    [
+     ("object_acceptor",("$handle_object$", T.TFunction T.TInt $ T.TypeSequence T.TRef T.TRef)),
+     ("class_accwptor", ("$handle_class$", T.TFunction T.TInt $ T.TypeSequence T.TRef T.TRef))
+    ]]
+
 createLabelMap:: DataLabelScopes
 createLabelMap = Map.fromList 
     [
@@ -99,7 +106,7 @@ createLabelMap = Map.fromList
 process :: AST.AST -> TACstream -- $ modified
 process ast = ("",directives):("",intermediateCode):appendix
   where
-    ((directives,intermediateCode,appendix), _) = runState (program ast) ((0,0),[Map.empty], T.Void, createLabelMap)
+    ((directives,intermediateCode,appendix), _) = runState (program ast) ((0,0),createVariableMap, T.Void, createLabelMap)
 
 -- | Generates a new label and increments the internal label counter.
 newLabel :: State GenState (TAC.Label)
@@ -313,6 +320,16 @@ command cmd next = case cmd of
     let (dataLabel'',tac) = labelenvironment name labels (c,e,r,dataLabel') 
     put (c,e,r,dataLabel'')
     return (tac,[],[],T.Void)
+  
+  AST.Accepts object handler -> do
+    (dir1, tac1, data1, type1) <- address object
+    (dir2, tac2, data2, type2) <- address handler
+    if type1 /= T.TRef
+    then error $ "'"++show object++"' is not a ref."
+    else if type2 /= T.TFunction T.TInt (T.TypeSequence T.TRef T.TRef)
+      then error $ "'"++ show handler++"' is not a int(ref;ref)"
+      else return (dir1++dir2, tac1++tac2++[TAC.Accept data1 data2],[],T.Void)
+     
 
   _ -> error $ "Command \""++show cmd++"\" can not be compiled into immediate code."  
 -- $| Generates three address code for one expression in the AST (possibly
@@ -726,13 +743,13 @@ mapType (T.TFunction type1 type2) isArray labelMap = (label', labelMap', dirResu
     (datas, labelMapR, dirR) = functionType2Directive rolledOut labelMapResult
     directives' = if isNothing $Map.lookup labelName labelMapR
                     then dirR++[TAC.CustomLabel labelName,
-                          TAC.DATA $ TAC.ImmediateReference [] "handle_object",
+                          TAC.DATA $ TAC.ImmediateReference [] "$handle_object$",
                           TAC.DATA $ TAC.ImmediateReference [] "class_function",
                           TAC.DATA $ TAC.ImmediateInteger 1,
                           TAC.DATA $ TAC.ImmediateReference [] (labelName++"_parameter"),
                           TAC.DATA $ dataResult,
                           TAC.CustomLabel $ labelName++"_parameter",
-                          TAC.DATA $ TAC.ImmediateReference [] "handle_object",
+                          TAC.DATA $ TAC.ImmediateReference [] "$handle_object$",
                           TAC.DATA $ TAC.ImmediateReference [] "class_primitive_ref",
                           TAC.DATA $ TAC.ImmediateInteger $ fromIntegral $ length rolledOut]++datas
                     else []
@@ -776,7 +793,7 @@ toClassDirective name labelMap = if isNothing $ Map.lookup labelName labelMap
                then error $ "Label environment "++name++" has not been declared."
                else fromJust cmds'
     tac' =      (TAC.CustomLabel labelName): 
-                (TAC.DATA $ TAC.ImmediateReference [] "handle_class"):
+                (TAC.DATA $ TAC.ImmediateReference [] "$handle_class$"):
                 (TAC.DATA $ TAC.ImmediateReference [] "class_class"):
                 (TAC.DATA $ TAC.ImmediateInteger 1 ):
                 (TAC.DATA $ TAC.ImmediateReference [] "class_class_str"):
@@ -785,7 +802,7 @@ toClassDirective name labelMap = if isNothing $ Map.lookup labelName labelMap
                 (TAC.DATA $ TAC.ImmediateReference [] refArrayName):
                 (TAC.DATA $ TAC.ImmediateReference [] offsetArrayName):
                 (TAC.CustomLabel refArrayName):
-                (TAC.DATA $ TAC.ImmediateReference [] "handle_object"):
+                (TAC.DATA $ TAC.ImmediateReference [] "$handle_object$"):
                 (TAC.DATA $ TAC.ImmediateReference [] "class_primitive_ref"):
 		(TAC.DATA $ TAC.ImmediateInteger $ fromIntegral $ (length refArray) +3):
                 (TAC.DATA $ TAC.ImmediateReference [] "label_env_handle"):
@@ -793,7 +810,7 @@ toClassDirective name labelMap = if isNothing $ Map.lookup labelName labelMap
                 (TAC.DATA $ TAC.ImmediateReference [] "label_env_length"):[] ++
                 (refArray) ++
                 (TAC.CustomLabel offsetArrayName):
-                (TAC.DATA $ TAC.ImmediateReference [] "handle_object"):
+                (TAC.DATA $ TAC.ImmediateReference [] "$handle_object$"):
                 (TAC.DATA $ TAC.ImmediateReference [] "class_primitive_int"):
                 (TAC.DATA $ TAC.ImmediateInteger $ fromIntegral $ (length offsetArray)+3):
                 (TAC.DATA $ TAC.ImmediateInteger 0):
@@ -801,12 +818,12 @@ toClassDirective name labelMap = if isNothing $ Map.lookup labelName labelMap
                 (TAC.DATA $ TAC.ImmediateInteger 16):[] ++
                 (offsetArray)++
 		[TAC.CustomLabel funcArrayName]++
-                (TAC.DATA $ TAC.ImmediateReference [] "handle_object"):
+                (TAC.DATA $ TAC.ImmediateReference [] "$handle_object$"):
                 (TAC.DATA $ TAC.ImmediateReference [] "class_primitive_ref"):[]++
 		[TAC.DATA $ TAC.ImmediateInteger $ fromIntegral $ length funcArray]++
                 (funcArray)++
                 [TAC.CustomLabel functionMapName]++
-                [TAC.DATA $ TAC.ImmediateReference [] "handle_object"]++
+                [TAC.DATA $ TAC.ImmediateReference [] "$handle_object$"]++
                 [TAC.DATA $ TAC.ImmediateReference [] "class_primitive_int"]++
                 [TAC.DATA $ TAC.ImmediateInteger $ fromIntegral $ length funcArray]++
                 (funcMap $ length funcArray)
