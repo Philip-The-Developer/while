@@ -13,8 +13,10 @@ This compiler is optimized for Linux operating systems.
 To compile, nasm and gcc are recommended.
 
 For development, a Haskell Platform with Cabal as package manager are required.
-There is a buildscript 'build.sh' which builds the parser and compiler for you.
+There is a buildscript `build.sh` which builds the parser and compiler for you.
+
 Run `build.sh a` to build the compiler and run the testsuite.
+
 Run `build.sh test` to omit the build sequence and run the testsuite only.
 
 Have fun.
