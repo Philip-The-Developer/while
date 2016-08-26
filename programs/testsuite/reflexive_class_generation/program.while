@@ -1,0 +1,31 @@
+labels groupA(int a; int b; int c);
+
+ref[6] labelarray;
+int[6] offsets;
+labelarray[0] := env:handle;
+labelarray[1] := env:parent;
+labelarray[2] := env:length;
+labelarray[3] := :a;
+labelarray[4] := :b;
+labelarray[5] := :c;
+offsets[0] := 0;
+offsets[1] := 8;
+offsets[2] := 16;
+offsets[3] := 24;
+offsets[4] := 32;
+offsets[5] := 40;
+ref class;
+class := CLASSCLASS.env:new();
+class accepts object_acceptor;
+class.env:attrLabels := labelarray;
+class.env:attrOffsets := offsets;
+class accepts class_acceptor;
+
+ref object;
+object := class.env:new();
+object.a := 1;
+object.b := 2;
+object.c := 3;
+output object.a;
+output object.b;
+output object.c;

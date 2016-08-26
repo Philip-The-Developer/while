@@ -76,7 +76,7 @@ createVariableMap:: Environment
 createVariableMap = [Map.fromList
     [
      ("object_acceptor",("$handle_object$", T.TFunction T.TInt $ T.TypeSequence T.TRef T.TRef)),
-     ("class_accwptor", ("$handle_class$", T.TFunction T.TInt $ T.TypeSequence T.TRef T.TRef))
+     ("class_acceptor", ("$handle_class$", T.TFunction T.TInt $ T.TypeSequence T.TRef T.TRef))
     ]]
 
 createLabelMap:: DataLabelScopes
@@ -410,6 +410,11 @@ addressInto (AST.Identifier "GET") Nothing Nothing = do
   res' <- newTemp
   let res = res'++":ref"
   return ([],[TAC.Copy res (TAC.ImmediateReference [] "class_message_get")],res, T.TRef)
+
+addressInto (AST.Identifier "CLASSCLASS") Nothing Nothing = do
+  res' <- newTemp
+  let res = res'++":ref"
+  return ([],[TAC.Copy res (TAC.ImmediateReference [] "class_class")],res, T.TRef)
 
 addressInto (AST.Identifier "SET") Nothing Nothing = do
   res' <- newTemp
