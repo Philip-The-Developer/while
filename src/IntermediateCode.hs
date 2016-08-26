@@ -60,12 +60,12 @@ type Environment = [Map String (String, T.Type)]
 type Type = String
 -- $| This is just a string.
 type ReturnType = T.Type
--- TODO docu| This is a Map of frontend label names to a tupel of
+-- This is a mapping from a label declaration to jump label in NASM
 type DataLabelScopes = Map String (String,[AST.Command])
 -- $| This is a list of UDF names and TACs.
 type TACstream = [(TAC.Label, TAC.TAC)]
 
---TODO docu
+-- returns the name of the type of an AST.Declartaion
 getType:: AST.Command -> String
 getType (AST.Declaration t n) = show t
 
@@ -741,13 +741,12 @@ allociateParameter (AST.Declaration t id) map = (tac, map')
     tac = [TAC.Pop $ id++":"++show t]
     map' = Map.insert id (id, t) map 
 
--- TODO documentation
+--reads a labelenvironment and creates TAC for the directive environment
 labelenvironment :: String -> AST.Command -> GenState -> (DataLabelScopes, TAC.TAC)
 labelenvironment name labels (_,_,_,labelMap) = (labelMap', tac')
   where
     (labelMap', tac', _, _) = getLabels name labels 3 0 labelMap
 
--- TODO documentation
 getLabels :: String -> AST.Command -> Int64 -> Int64 -> DataLabelScopes -> (DataLabelScopes, TAC.TAC, Int64, Int64)
 getLabels labelSpec labels attIndex funcIndex labelMap = case labels of
   AST.Sequence c1 c2 -> (labelMap2, tac1++tac2, attIndex2, funcIndex2)
@@ -821,7 +820,7 @@ functionType2Directive (t:tt) labelMap = case t of
     
                     
 
--- TODO
+-- writes TAC to construct a class
 toClassDirective :: String -> DataLabelScopes -> (DataLabelScopes, TAC.TAC)
 toClassDirective name labelMap = if isNothing $ Map.lookup labelName labelMap 
                 then (labelMap', tac')
