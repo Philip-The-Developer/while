@@ -59,9 +59,6 @@ import Control.Monad (
 import Data.String.Utils (
     endswith, replace
   )
-import Debug.Trace (
-    trace
-  )
 
 import qualified Data.Map.Strict as Map
 import qualified Interface.TAC as TAC
@@ -167,7 +164,7 @@ generate tac isDebug = do
 -- | Generates the assembly code from an AST.
 generate' :: TAC.TAC -> Bool -> State StateContent [String]
 generate' [] isDebug = return []
-generate' (hd:rst) isDebug | trace (show hd) True = do
+generate' (hd:rst) isDebug = do
   code <- case hd of
     TAC.Read v -> do
       o <- variableToOperand v
@@ -228,7 +225,7 @@ generate' (hd:rst) isDebug | trace (show hd) True = do
             _ -> force [fmov xmm0 o]
       return $ preCode ++ force [push $ Immediate $ ImmediateInt 0, instr "call output_float", pop rax]
 
-    TAC.Return d | trace ("ret: "++(show d)) True -> do -- $ added
+    TAC.Return d -> do -- $ added
       o <- dataToOperand d
       returnCode [mov (Location (Register RBX)) o
                  , instr $ "jmp .return_sequence"]

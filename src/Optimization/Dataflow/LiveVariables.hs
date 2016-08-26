@@ -83,9 +83,6 @@ import Control.Monad.State (
     State,
     evalState, get, put, return
   )
-import Debug.Trace(
-   trace
-  )
 
 type LiveVariablesGraph = Gr ([Command], Set Variable, Set Variable) ()
 
@@ -102,7 +99,7 @@ liveVariables = nmap removeDefUse . calcLive . nmap calculateDefUse . globalComm
   where
     calculateDefUse :: [Command]
                     -> ([Command], Set Variable, Set Variable)
-    calculateDefUse (cmds)| trace "calculateDefUse" True= (cmds, def, use)
+    calculateDefUse (cmds) = (cmds, def, use)
       where
         (def, use) = foldl' foldFunc (Set.empty, Set.empty) cmds
         foldFunc (defI, useI) cmd = (defO, useO)
@@ -112,13 +109,13 @@ liveVariables = nmap removeDefUse . calcLive . nmap calculateDefUse . globalComm
 
     removeDefUse :: ([Command], Set Variable, Set Variable, Set a, Set a)
                  -> ([Command], Set a, Set a)
-    removeDefUse (cmds, _, _, s1, s2)| trace "removeDefUse" True= (cmds, s1, s2)
+    removeDefUse (cmds, _, _, s1, s2) = (cmds, s1, s2)
 
     calcLive
       :: LiveVariablesGraph
       -> Gr ([Command], Set Variable, Set Variable, Set Variable, Set Variable)
             ()
-    calcLive g| trace "calcLive" True = g''
+    calcLive g = g''
       where
         g' = nmap (\(c, v1, v2) -> (c, v1, v2, Set.empty, Set.empty)) g
         g'' = fix g'

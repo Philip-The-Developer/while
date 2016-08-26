@@ -237,7 +237,6 @@ main = do
     when outputDotFiles $ BB.dotGraph
                           (addExtension outputFile "basic-blocks.dot")
                           $ basicBlockGraphs !! 1
-    putStrLn $ "basicBlockGraphs"
     let liveVariablesGraphs = fmap LV.liveVariables basicBlockGraphs -- $ modified
     when outputGraphs $ LV.renderLiveVariablesGraph
                         (addExtension outputFile "live-variables.pdf")
@@ -245,7 +244,6 @@ main = do
     when outputDotFiles $ LV.dotLiveVariablesGraph
                           (addExtension outputFile "live-variables.dot")
                           $ liveVariablesGraphs !! 1
-    putStrLn $ "liveVariablesGraphs"
     let renamedLVGraphs = fmap LV.renameBlockLocalVariables liveVariablesGraphs -- $ modified
     when outputGraphs $ LV.renderLiveVariablesGraph
                         (addExtension outputFile "live-variables-renamed.pdf")
@@ -257,14 +255,11 @@ main = do
     -- let blockDAG = LV.blockDAG liveVariablesGraph
 
     -- let variablesLiveAtEntry = seq allEmpty $ LV.getVariablesLiveAtEntry liveVariablesGraph
-    putStrLn $ "renamedLVGraphs"
     let variablesLiveAtEntry = LV.getVariablesLiveAtEntry $ head liveVariablesGraphs -- $ modified
     when (not $ null variablesLiveAtEntry) $ hPutStrLn stderr $
       "Warning: The following variables are (possibly) not initialized before "
       ++ "use: " ++ intercalate "," variablesLiveAtEntry
-    putStrLn $ "variablesLiveAtEntry"
     let liveRanges = fmap LV.variableLiveRanges renamedLVGraphs -- $ modified
-    putStrLn $ "liveRanges"
     let finishedTACs = fmap (BB.graphToTac . -- $ modified
                                  LV.removeLiveVariableAnnotations) renamedLVGraphs
 
@@ -273,9 +268,6 @@ main = do
                      ++ "\n"
 
     let (nasmCodes, frames) = unzip $ zipWith N.process finishedTACs liveRanges   -- $ modifieid
-    putStrLn $ "after Nasm"
-    putStrLn $ (show nasmCodes)
-    putStrLn $ "##############\n"++(show frames)
     when debugMode $ putStrLn $ "*** NASM code:\n" ++ numberLinesAt 140 (if length nasmCodes > 1 then nasmCodes !! 1 else "")
     
     let userDefined_functions = GC.returnSequence names (tail nasmCodes) frames -- $ added

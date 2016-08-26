@@ -43,9 +43,6 @@ import qualified Interface.TAC as TAC
 import GarbageCollection.GarbageCollection (
     dealloc
   )
-import Debug.Trace(
-    trace
-  )
 -- $| The generator state has to track two counters, one for the temporary
 -- variables and one for the labels, the mapping from variable to data type,
 -- return type. Function signatures, function labels and variable location names,
@@ -278,7 +275,7 @@ command cmd next = case cmd of
         (T.TDouble) -> return (dir1, tac1++ [TAC.FRead var1], [], T.Void)
         otherwise -> error $ "read is only suported for int, char and double outputs.\n The expression \""++show addr++"\" has returns type \""++show type1++"\"."
       
-  (AST.Function typ id params cmd) | trace (show typ) True -> do
+  (AST.Function typ id params cmd) -> do
     declared <- lookup id
     label <- newLabel
     if not $ isNothing declared
